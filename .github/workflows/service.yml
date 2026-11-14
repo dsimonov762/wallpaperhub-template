@@ -1,0 +1,98 @@
+# One service implementation, held to docs/SERVICE-SPEC.md. Called by ci.yml for every services/<service>/<impl>/Dockerfile;
+# you can also call it from a workflow of your own (for example in the repository of a single service).
+# Builds the image through the compose file (<SERVICE>_DIR), starts the infrastructure and the service, runs
+# `make conformance` (health, authentication, errors and localization, JSON logs, traces/logs/metrics in Tempo/Loki/Prometheus,
+# fail-fast configuration, graceful shutdown).
+name: service
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: account, media, catalog or notification
+        required: true
+        type: string
+      dir:
+        description: folder of the implementation with its Dockerfile, for example services/account/go
+        required: true
+        type: string
+      lifecycle:
+        description: also run C1 (fail fast) and S1 (graceful shutdown); S1 stops the container
+        type: boolean
+        default: true
+      telemetry:
+        description: start Grafana, Loki, Tempo, Prometheus and Alloy and check T1-T3 (needs about 7 GB more than the runner of a private repository has)
+        type: boolean
+        default: true
+      runner:
+        description: runner label; the observability stack needs a 16 GB runner
+        type: string
+        default: ubuntu-26.04
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    name: conformance
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 40
+    env:
+      SERVICE: ${{ inputs.service }}
+      DIR: ${{ inputs.dir }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install Hurl
+        run: scripts/ci/install-hurl.sh
+      - name: Hurl needs libxml2.so.2 (Ubuntu 26.04 only ships libxml2.so.16)
+        run: |
+          lib="/usr/lib/$(uname -m)-linux-gnu"
+          if ! ldconfig -p | grep -q 'libxml2\.so\.2 '; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends libxml2-16
+            sudo ln -sf "$lib/libxml2.so.16" "$lib/libxml2.so.2"
+            sudo ldconfig
+          fi
+          hurl --version
+      - name: Point the compose file at this implementation
+        id: impl
+        run: |
+          [ -f "$DIR/Dockerfile" ] || { echo "::error::$DIR/Dockerfile not found"; exit 1; }
+          case "$SERVICE" in account|media|catalog|notification) ;; *) echo "::error::unknown service $SERVICE"; exit 1;; esac
+          echo "$(echo "$SERVICE" | tr a-z A-Z)_DIR=../$DIR" >> "$GITHUB_ENV"
+          # GitHub Actions expressions have no replace(); build the artifact name in bash (services/account/go -> logs-services-account-go)
+          echo "log_artifact=logs-${DIR//\//-}" >> "$GITHUB_OUTPUT"
+      - run: make env
+      - name: Infrastructure, schemas${{ inputs.telemetry && ' and observability' || '' }}
+        env:
+          TELEMETRY: ${{ inputs.telemetry }}
+        run: |
+          if [ "$TELEMETRY" = true ]; then make up-obs; else make up; fi
+      - name: Build and start the service
+        env:
+          TELEMETRY: ${{ inputs.telemetry }}
+        run: |
+          profiles="--profile infra --profile apps"
+          [ "$TELEMETRY" = true ] && profiles="$profiles --profile observability"
+          docker compose --project-directory infra -f infra/docker-compose.yml $profiles up -d --build --no-deps "$SERVICE"
+          bash scripts/wait-healthy.sh 300
+      - name: Conformance
+        env:
+          LIFECYCLE: ${{ inputs.lifecycle }}
+          TELEMETRY: ${{ inputs.telemetry }}
+        run: |
+          args=""
+          [ "$LIFECYCLE" = true ] && args="$args --lifecycle"
+          [ "$TELEMETRY" = true ] || args="$args --no-telemetry"
+          make conformance SVC="$SERVICE" ARGS="$args"
+      - name: Collect logs
+        if: failure()
+        run: scripts/ci/collect-logs.sh ci-logs
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: ${{ steps.impl.outputs.log_artifact }}
+          path: ci-logs/
+      - name: Stop
+        if: always()
+        run: make down

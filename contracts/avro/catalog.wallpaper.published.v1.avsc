@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "WallpaperPublished",
+  "namespace": "dev.wallpaperhub.catalog.v1",
+  "doc": "A wallpaper became PUBLISHED and is searchable. Notification resolves the author's email and locale from authorId over gRPC.",
+  "fields": [
+    { "name": "eventId",      "type": "string" },
+    { "name": "wallpaperId",  "type": "string" },
+    { "name": "authorId",     "type": "string" },
+    { "name": "title",        "type": "string" },
+    { "name": "category",     "type": "string" },
+    { "name": "tags",         "type": { "type": "array", "items": "string" }, "default": [] },
+    { "name": "thumbnailUrl", "type": ["null", "string"], "default": null },
+    { "name": "occurredAt",   "type": { "type": "long", "logicalType": "timestamp-millis" } }
+  ]
+}

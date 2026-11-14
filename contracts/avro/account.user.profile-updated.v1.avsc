@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "name": "UserProfileUpdated",
+  "namespace": "dev.wallpaperhub.account.v1",
+  "doc": "Full snapshot of the author-facing profile fields (not a delta), so catalog can apply it idempotently with a Mongo bulkWrite.",
+  "fields": [
+    { "name": "eventId",     "type": "string" },
+    { "name": "userId",      "type": "string" },
+    { "name": "username",    "type": "string" },
+    { "name": "displayName", "type": "string" },
+    { "name": "avatarUrl",   "type": ["null", "string"], "default": null },
+    { "name": "occurredAt",  "type": { "type": "long", "logicalType": "timestamp-millis" } }
+  ]
+}

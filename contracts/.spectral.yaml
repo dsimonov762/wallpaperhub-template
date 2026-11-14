@@ -1,0 +1,112 @@
+# Lint rules for contracts/openapi/{account,media,catalog,notification}.yaml. Run: make contracts-lint
+# (common.yaml is a library of shared components, not an API, so it is not linted on its own: its parts are
+# linted through the specs that use them.)
+extends: ["spectral:oas"]
+
+rules:
+  # --- built-in rules adjusted for this project --------------------------------------------------------------------
+  info-contact: off            # a template has no team to name; set one per API when you adopt it
+  # WebSocketFrame documents the frames of /notifications/ws; no HTTP operation can reference it.
+  oas3-unused-component: off
+
+  # --- Wallpaper Hub conventions (README sections 5.2, 5.3, 7) -----------------------------------------------------
+  wh-error-problem-json:
+    description: Every 4xx/5xx response is application/problem+json (README 5.3).
+    severity: error
+    given: $.paths[*][get,put,post,patch,delete].responses[?(@property.match(/^[45]/))]
+    then:
+      field: content
+      function: schema
+      functionOptions:
+        schema: { type: object, required: ["application/problem+json"] }
+
+  wh-error-has-problem-schema:
+    description: The problem+json body of an error response is the shared Problem schema.
+    severity: error
+    given: $.paths[*][get,put,post,patch,delete].responses[?(@property.match(/^[45]/))].content['application/problem+json']
+    then:
+      field: schema
+      function: schema
+      functionOptions:
+        schema:
+          type: object
+          required: [properties]
+          properties:
+            properties: { type: object, required: [type, title, status] }
+
+  wh-page-size-max-100:
+    description: "A page size above 100 is refused, so every `size` query parameter declares maximum: 100 (README 5.1)."
+    severity: error
+    given: $.paths..parameters[*]
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          if:
+            type: object
+            properties: { name: { const: size }, in: { const: query } }
+            required: [name, in]
+          then:
+            properties:
+              schema: { type: object, properties: { maximum: { const: 100 } }, required: [maximum] }
+            required: [schema]
+
+  wh-property-camel-case:
+    description: JSON property names are camelCase.
+    severity: error
+    given: $..properties[*]~
+    then:
+      function: pattern
+      functionOptions: { match: "^[a-z][a-zA-Z0-9]*$" }
+
+  wh-path-kebab-case:
+    description: Path segments are lower-case kebab-case; parameters are camelCase in braces.
+    severity: error
+    given: $.paths[*]~
+    then:
+      function: pattern
+      functionOptions: { match: "^(/([a-z0-9]+(-[a-z0-9]+)*|\\{[a-z][a-zA-Z0-9]*\\}))+$" }
+
+  wh-operation-id-camel-case:
+    description: operationId is camelCase (generated clients derive method names from it).
+    severity: error
+    given: $.paths[*][get,put,post,patch,delete].operationId
+    then:
+      function: pattern
+      functionOptions: { match: "^[a-z][a-zA-Z0-9]*$" }
+
+  wh-security-default:
+    description: The API declares bearerAuth for everything; a public operation opts out with `security - []`.
+    severity: error
+    given: $
+    then:
+      field: security
+      function: truthy
+
+  wh-create-needs-idempotency-key:
+    description: A POST that creates a resource (answers 201) takes an Idempotency-Key header (README 5.2), unless it says `x-idempotency - not-applicable`.
+    severity: error
+    given: $.paths[*].post
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          if:
+            type: object
+            properties: { responses: { type: object, required: ["201"] } }
+            required: [responses]
+            not: { required: [x-idempotency] }
+          then:
+            required: [parameters]
+            properties:
+              parameters:
+                type: array
+                contains:
+                  type: object
+                  properties: { name: { const: Idempotency-Key }, in: { const: header } }
+                  required: [name, in]
+
+overrides:
+  - files: ["notification.yaml#/paths/~1notifications~1ws/get"]
+    rules:
+      operation-success-response: off   # a WebSocket upgrade answers 101

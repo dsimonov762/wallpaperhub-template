@@ -1,0 +1,38 @@
+# One page of the catalog. Select `author` on a list to see the N+1 problem the DataLoader solves:
+# 20 wallpapers must produce ONE GetUsersByIds call to account-service, not 20 GetUser calls.
+query WallpapersPage($filter: WallpaperFilter, $first: Int = 20, $after: String) {
+  wallpapers(filter: $filter, first: $first, after: $after) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    edges {
+      cursor
+      node {
+        id
+        title
+        tags
+        category
+        favoriteCount
+        favoritedByMe
+        dimensions {
+          width
+          height
+        }
+        variants {
+          kind
+          url
+          width
+          height
+        }
+        author {
+          id
+          username
+          displayName
+          avatarUrl
+        }
+      }
+    }
+  }
+}

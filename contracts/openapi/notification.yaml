@@ -1,0 +1,466 @@
+openapi: 3.0.3
+info:
+  title: Wallpaper Hub - notification-service API
+  version: 1.0.0
+  description: |
+    The in-app inbox, notification preferences and real-time push. Emails are sent by the service in reaction to
+    Kafka events and are not part of this API. Shared conventions (pagination, problem+json errors,
+    `Idempotency-Key`, `If-Match`, `Accept-Language`) are defined in `common.yaml`.
+
+    ## Real-time push (README 4.4)
+
+    Two transports carry the same payloads: Server-Sent Events (primary) and WebSocket.
+
+    Browsers cannot set an `Authorization` header on `EventSource` or `WebSocket`, so the client first calls
+    `POST /notifications/stream-tickets` (with its access token) and connects with `?ticket=...`. The ticket is
+    valid for 30 seconds and can be used once. Non-browser clients may send the access token directly.
+
+    | Event | `data` | Notes |
+    |---|---|---|
+    | `notification` | a `Notification` | SSE `id:` is the notification id; reconnect with `Last-Event-ID` to replay missed items |
+    | `heartbeat` | a `HeartbeatEvent` | every 15 seconds, no `id:`, keeps proxies from closing the connection |
+    | `error` | a `Problem` | the stream is closed afterwards |
+
+    A WebSocket carries the same events as JSON text frames shaped like `WebSocketFrame`. A user may hold at most
+    3 concurrent connections (`stream.too-many-connections`, `429`).
+servers:
+  - url: /api/v1
+    description: Through the gateway, relative to the host that serves this document
+  - url: http://localhost:8080/api/v1
+    description: Local compose stack
+security:
+  - bearerAuth: []
+tags:
+  - name: Inbox
+    description: The caller's notifications.
+  - name: Preferences
+    description: Language, channels and digest.
+  - name: Push
+    description: Real-time delivery over SSE and WebSocket.
+  - name: Admin
+    description: Administrator tools.
+
+paths:
+  /notifications:
+    get:
+      tags: [Inbox]
+      operationId: listNotifications
+      summary: List the caller's inbox
+      description: Paged inbox, newest first by default.
+      x-access: authenticated
+      x-error-codes: [pagination.size-too-large, pagination.sort-not-allowed]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/Page'
+        - $ref: 'common.yaml#/components/parameters/Size'
+        - $ref: '#/components/parameters/NotificationSort'
+        - name: unread
+          in: query
+          required: false
+          description: Only unread notifications when true, only read ones when false, all when left out.
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: One page of notifications.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPage'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /notifications/{id}/read:
+    post:
+      tags: [Inbox]
+      operationId: markNotificationRead
+      summary: Mark a notification as read
+      description: "Idempotent: marking a read notification again changes nothing."
+      x-access: owner
+      x-error-codes: [notification.not-found]
+      parameters:
+        - $ref: '#/components/parameters/NotificationIdPath'
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '204':
+          description: The notification is marked as read.
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /notifications/stream-tickets:
+    post:
+      tags: [Push]
+      operationId: createStreamTicket
+      x-idempotency: not-applicable   # every call must issue a new one-time ticket
+      summary: Get a one-time ticket for SSE or WebSocket
+      description: |
+        Returns a ticket for `GET /notifications/stream?ticket=...` or `GET /notifications/ws?ticket=...`.
+        The ticket is stored in Redis, expires after 30 seconds and works once.
+      x-access: authenticated
+      x-error-codes: []
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '201':
+          description: The ticket.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamTicket'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '429':
+          $ref: 'common.yaml#/components/responses/RateLimited'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /notifications/stream:
+    get:
+      tags: [Push]
+      operationId: streamNotifications
+      summary: Server-Sent Events stream of notifications
+      description: |
+        A long-lived `text/event-stream` response: no response timeout at the gateway and no buffering. The first
+        thing after connecting is a replay of inbox items newer than `Last-Event-ID`, if given.
+        Authenticate with the access token (non-browser clients) or with `?ticket=` (browsers).
+      x-access: authenticated
+      x-error-codes: [stream.ticket-invalid, stream.too-many-connections]
+      security:
+        - bearerAuth: []
+        - streamTicket: []
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - name: Last-Event-ID
+          in: header
+          required: false
+          description: Id of the last notification the client received. Sent automatically by `EventSource` on reconnect.
+          schema:
+            $ref: 'common.yaml#/components/schemas/NotificationId'
+      responses:
+        '200':
+          description: The event stream.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                id: ntf_01HXZ3T7P2R5X8A1C4E7G0H3JK
+                event: notification
+                data: {"id":"ntf_01HXZ3T7P2R5X8A1C4E7G0H3JK","type":"WALLPAPER_PUBLISHED","title":"Wallpaper published","body":"“Misty Pines” is now published.","data":{"wallpaperId":"wp_01HXZ3R2M7P4T9W1E5Y8A0C3DF"},"read":false,"readAt":null,"createdAt":"2026-11-09T12:05:00Z"}
+
+                event: heartbeat
+                data: {"time":"2026-11-09T12:05:15Z"}
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '429':
+          $ref: 'common.yaml#/components/responses/RateLimited'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /notifications/ws:
+    get:
+      tags: [Push]
+      operationId: connectNotificationSocket
+      summary: WebSocket stream of notifications
+      description: |
+        Upgrades to a WebSocket that carries the same events as the SSE stream, as JSON text frames shaped like
+        `WebSocketFrame`. Authenticate with the access token (non-browser clients) or with `?ticket=` (browsers).
+        Replay on reconnect is not part of the WebSocket flavor: use `GET /notifications` to catch up.
+      x-access: authenticated
+      x-error-codes: [stream.ticket-invalid, stream.too-many-connections]
+      security:
+        - bearerAuth: []
+        - streamTicket: []
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '101':
+          description: Switching protocols, the WebSocket is open.
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '429':
+          $ref: 'common.yaml#/components/responses/RateLimited'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /notification-preferences:
+    get:
+      tags: [Preferences]
+      operationId: getNotificationPreferences
+      summary: Get the caller's notification preferences
+      description: Returns the defaults (email and in-app on, digest on, locale from the profile) until the user changes them.
+      x-access: authenticated
+      x-error-codes: []
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '200':
+          description: The preferences.
+          headers:
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+    put:
+      tags: [Preferences]
+      operationId: updateNotificationPreferences
+      summary: Replace the caller's notification preferences
+      description: Replaces all channel and event preferences at once. Requires `If-Match` with the current ETag; a stale value is answered with 409 `request.version-conflict`.
+      x-access: authenticated
+      x-error-codes: [request.version-conflict]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferences'
+            example:
+              locale: de
+              channels:
+                email: true
+                inApp: true
+              digest:
+                enabled: false
+      responses:
+        '200':
+          description: The stored preferences.
+          headers:
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /admin/notifications/test:
+    post:
+      tags: [Admin]
+      operationId: sendTestNotification
+      summary: Send a test notification
+      description: |
+        Creates an in-app notification of type `TEST` for a user (the caller by default) and pushes it to the open
+        streams. Administrators only.
+      x-access: admin
+      x-error-codes: [user.not-found, idempotency.key-reused, idempotency.in-progress]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestNotificationRequest'
+            example:
+              message: Hello from the admin API
+      responses:
+        '201':
+          description: The notification that was created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: 'common.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: 'common.yaml#/components/securitySchemes/bearerAuth'
+    streamTicket:
+      type: apiKey
+      in: query
+      name: ticket
+      description: One-time ticket from `POST /notifications/stream-tickets`, for browsers that cannot set headers.
+
+  parameters:
+    NotificationIdPath:
+      name: id
+      in: path
+      required: true
+      description: Notification id.
+      schema:
+        $ref: 'common.yaml#/components/schemas/NotificationId'
+    NotificationSort:
+      name: sort
+      in: query
+      required: false
+      description: Sort order, `<field>,<direction>`.
+      schema:
+        type: string
+        enum: ['createdAt,desc', 'createdAt,asc']
+        default: 'createdAt,desc'
+
+  schemas:
+    NotificationType:
+      type: string
+      enum: [WELCOME, WALLPAPER_PUBLISHED, WALLPAPER_MODERATED, ASSET_REJECTED, TEST]
+      description: |
+        Which event produced the notification. They correspond to the `notification.<event>` texts in
+        `contracts/i18n` (`welcome`, `wallpaper-published`, `wallpaper-moderated`, `asset-rejected`).
+    Notification:
+      type: object
+      description: An inbox entry. `title` and `body` are rendered in the recipient's language when the entry is created.
+      required: [id, type, title, body, read, createdAt]
+      properties:
+        id:
+          $ref: 'common.yaml#/components/schemas/NotificationId'
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        title:
+          type: string
+          example: Wallpaper published
+        body:
+          type: string
+          example: '“Misty Pines” is now published.'
+        data:
+          type: object
+          description: References for deep links. Which keys are present depends on `type`.
+          properties:
+            wallpaperId:
+              $ref: 'common.yaml#/components/schemas/WallpaperId'
+            assetId:
+              $ref: 'common.yaml#/components/schemas/AssetId'
+            decision:
+              type: string
+              enum: [APPROVED, REJECTED, REMOVED]
+        read:
+          type: boolean
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      example:
+        id: ntf_01HXZ3T7P2R5X8A1C4E7G0H3JK
+        type: WALLPAPER_PUBLISHED
+        title: Wallpaper published
+        body: '“Misty Pines” is now published.'
+        data:
+          wallpaperId: wp_01HXZ3R2M7P4T9W1E5Y8A0C3DF
+        read: false
+        readAt: null
+        createdAt: '2026-11-09T12:05:00Z'
+    NotificationPage:
+      allOf:
+        - $ref: 'common.yaml#/components/schemas/PageMeta'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Notification'
+    NotificationPreferences:
+      type: object
+      required: [locale, channels, digest]
+      additionalProperties: false
+      properties:
+        locale:
+          $ref: 'common.yaml#/components/schemas/Locale'
+        channels:
+          type: object
+          description: Where notifications are delivered.
+          required: [email, inApp]
+          additionalProperties: false
+          properties:
+            email:
+              type: boolean
+            inApp:
+              type: boolean
+        digest:
+          type: object
+          description: The weekly digest email.
+          required: [enabled]
+          additionalProperties: false
+          properties:
+            enabled:
+              type: boolean
+    StreamTicket:
+      type: object
+      required: [ticket, expiresInSeconds]
+      properties:
+        ticket:
+          type: string
+          minLength: 16
+          description: Opaque one-time ticket.
+        expiresInSeconds:
+          type: integer
+          example: 30
+      example:
+        ticket: 9d2f6c1a8b7e4f30a5c1d2e3f4a5b6c7
+        expiresInSeconds: 30
+    HeartbeatEvent:
+      type: object
+      required: [time]
+      properties:
+        time:
+          type: string
+          format: date-time
+    WebSocketFrame:
+      type: object
+      description: One JSON text frame of the WebSocket flavor of the stream.
+      required: [event, data]
+      properties:
+        event:
+          type: string
+          enum: [notification, heartbeat, error]
+        id:
+          type: string
+          nullable: true
+          description: The notification id for `notification` events, otherwise null.
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/Notification'
+            - $ref: '#/components/schemas/HeartbeatEvent'
+            - $ref: 'common.yaml#/components/schemas/Problem'
+    TestNotificationRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        userId:
+          allOf:
+            - $ref: 'common.yaml#/components/schemas/UserId'
+          description: Recipient. Defaults to the caller.
+        message:
+          type: string
+          minLength: 1
+          maxLength: 200
+          default: Test notification

@@ -1,0 +1,47 @@
+{
+  "from": 0,
+  "size": 20,
+  "track_total_hits": true,
+  "_source": false,
+  "query": {
+    "function_score": {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "multi_match": {
+                "query": "misty pines",
+                "type": "best_fields",
+                "fields": ["title^3", "tags^2", "description"],
+                "fuzziness": "AUTO"
+              }
+            }
+          ],
+          "filter": [
+            { "term": { "status": "PUBLISHED" } },
+            { "term": { "category": "NATURE" } },
+            { "term": { "tags": "forest" } },
+            { "term": { "tags": "fog" } },
+            { "range": { "dimensions.width": { "gte": 1920 } } },
+            { "range": { "dimensions.height": { "gte": 1080 } } }
+          ]
+        }
+      },
+      "field_value_factor": {
+        "field": "favoriteCount",
+        "modifier": "log1p",
+        "factor": 0.2,
+        "missing": 0
+      },
+      "boost_mode": "sum"
+    }
+  },
+  "sort": [
+    { "_score": "desc" },
+    { "createdAt": "desc" }
+  ],
+  "aggs": {
+    "CATEGORY": { "terms": { "field": "category", "size": 20 } },
+    "TAG": { "terms": { "field": "tags", "size": 20 } }
+  }
+}

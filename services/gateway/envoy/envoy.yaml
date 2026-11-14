@@ -1,0 +1,1068 @@
+# Wallpaper Hub - API gateway on Envoy (README section 3.1, "off-the-shelf" mode).
+#
+#   :8080  public listener   routing, CORS, rate limits, JWT pre-validation, body limits, SSE/WebSocket
+#   :8081  management        /health/live, /health/ready, /health/startup, /metrics
+#   :9901  Envoy admin       bound to 127.0.0.1 inside the container and not published
+#
+# Assumed upstream contract (the service template, README section 12):
+#   <service>:8080/*              public API (+ GET /openapi.json, used by /docs)
+#   <service>:8081/health/ready   dependency-aware readiness, polled by Envoy health checks
+#
+# See CHEATSHEET.md for "README concept -> where it lives in this file".
+
+node:
+  id: wallpaperhub-gateway
+  cluster: api-gateway
+
+admin:
+  address:
+    socket_address: { address: 127.0.0.1, port_value: 9901 }
+
+# Memory safety net. The gateway container has mem_limit 384m in docker-compose.yml; the heap budget below
+# (288 MiB) sits under it, so Envoy sheds load (shrinks its heap, then refuses new requests) before the
+# kernel OOM-kills it. Needs a tcmalloc build of Envoy; if the startup log rejects the fixed_heap monitor,
+# remove this block. Keep max_heap_size_bytes at about 75% of the container limit.
+overload_manager:
+  refresh_interval: 0.25s
+  resource_monitors:
+    - name: envoy.resource_monitors.fixed_heap
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.resource_monitors.fixed_heap.v3.FixedHeapConfig
+        max_heap_size_bytes: 301989888   # 288 MiB
+  actions:
+    - name: envoy.overload_actions.shrink_heap
+      triggers:
+        - name: envoy.resource_monitors.fixed_heap
+          threshold: { value: 0.90 }
+    - name: envoy.overload_actions.stop_accepting_requests
+      triggers:
+        - name: envoy.resource_monitors.fixed_heap
+          threshold: { value: 0.98 }
+
+static_resources:
+  listeners:
+    # ------------------------------------------------------------------ public
+    - name: public
+      address:
+        socket_address: { address: 0.0.0.0, port_value: 8080 }
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: gateway_public
+                codec_type: AUTO
+                server_name: wallpaperhub-gateway
+                # Envoy trusts no proxy in front of it: client IP = TCP peer; the Lua filter below replaces any
+                # client-supplied X-Forwarded-For with it
+                use_remote_address: true
+                xff_num_trusted_hops: 0
+                # Generates X-Request-Id (an inbound one from a client is replaced)
+                generate_request_id: true
+                # ...and returned to the client, so a user can quote it in a bug report
+                always_set_request_id_in_response: true
+                normalize_path: true
+                merge_slashes: true
+                path_with_escaped_slashes_action: UNESCAPE_AND_REDIRECT
+                request_headers_timeout: 10s
+                stream_idle_timeout: 300s
+                common_http_protocol_options:
+                  idle_timeout: 3600s
+                  headers_with_underscores_action: REJECT_REQUEST
+                # WebSocket passthrough (notifications/ws, GraphQL subscriptions)
+                upgrade_configs:
+                  - upgrade_type: websocket
+
+                # Root span for every request, exported over OTLP to Alloy.
+                # Envoy also puts a W3C traceparent on the upstream request.
+                tracing:
+                  random_sampling: { value: 100 }
+                  custom_tags:
+                    - tag: request_id
+                      request_header: { name: x-request-id }
+                  provider:
+                    name: envoy.tracers.opentelemetry
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.config.trace.v3.OpenTelemetryConfig
+                      service_name: api-gateway
+                      grpc_service:
+                        envoy_grpc: { cluster_name: alloy_otlp }
+                        timeout: 1s
+
+                # Structured JSON access log (query string is left out: it can carry SSE tickets)
+                access_log:
+                  - name: envoy.access_loggers.stdout
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                      log_format:
+                        json_format:
+                          time: "%START_TIME%"
+                          service: api-gateway
+                          request_id: "%REQ(X-REQUEST-ID)%"
+                          trace_id: "%TRACE_ID%"
+                          method: "%REQ(:METHOD)%"
+                          path: "%PATH(NQ)%"
+                          status: "%RESPONSE_CODE%"
+                          response_flags: "%RESPONSE_FLAGS%"
+                          response_code_details: "%RESPONSE_CODE_DETAILS%"
+                          duration_ms: "%DURATION%"
+                          bytes_received: "%BYTES_RECEIVED%"
+                          bytes_sent: "%BYTES_SENT%"
+                          upstream_cluster: "%UPSTREAM_CLUSTER%"
+                          upstream_host: "%UPSTREAM_HOST%"
+                          client_ip: "%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%"
+                          user_agent: "%REQ(USER-AGENT)%"
+
+                # Errors generated by the gateway itself use RFC 9457 problem+json like the services.
+                # The texts come from contracts/i18n (problem.<slug>.title/detail); the language is the first tag of
+                # Accept-Language (de, es), English otherwise. Generated: python3 scripts/gen-gateway-errors.py
+                local_reply_config:
+                  mappers:
+                    # BEGIN generated: local_reply mappers (scripts/gen-gateway-errors.py, do not edit by hand)
+                    # GET /health answered by the health_check filter (200 only while every upstream is healthy)
+                    - filter:
+                        status_code_filter:
+                          comparison: { op: EQ, value: { default_value: 200, runtime_key: gateway.lr.200 } }
+                      body_format_override:
+                        content_type: application/json
+                        json_format:
+                          status: UP
+                    - filter:
+                        and_filter:
+                          filters:
+                            - status_code_filter:
+                                comparison: { op: EQ, value: { default_value: 401, runtime_key: gateway.lr.401 } }
+                            - header_filter:
+                                header:
+                                  name: accept-language
+                                  string_match:
+                                    safe_regex: { regex: "(?i)^\\s*de([-_;,\\s].*)?$" }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: de } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/unauthorized
+                          title: "Nicht authentifiziert"
+                          status: "%RESPONSE_CODE%"
+                          detail: "Ein gültiges Zugriffstoken ist erforderlich."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        and_filter:
+                          filters:
+                            - status_code_filter:
+                                comparison: { op: EQ, value: { default_value: 404, runtime_key: gateway.lr.404 } }
+                            - header_filter:
+                                header:
+                                  name: accept-language
+                                  string_match:
+                                    safe_regex: { regex: "(?i)^\\s*de([-_;,\\s].*)?$" }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: de } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/not-found
+                          title: "Nicht gefunden"
+                          status: "%RESPONSE_CODE%"
+                          detail: "Die angeforderte Ressource existiert nicht."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        and_filter:
+                          filters:
+                            - status_code_filter:
+                                comparison: { op: EQ, value: { default_value: 413, runtime_key: gateway.lr.413 } }
+                            - header_filter:
+                                header:
+                                  name: accept-language
+                                  string_match:
+                                    safe_regex: { regex: "(?i)^\\s*de([-_;,\\s].*)?$" }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: de } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/payload-too-large
+                          title: "Anfrage zu groß"
+                          status: "%RESPONSE_CODE%"
+                          detail: "Der Anfragetext überschreitet die zulässige Größe."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        and_filter:
+                          filters:
+                            - status_code_filter:
+                                comparison: { op: EQ, value: { default_value: 429, runtime_key: gateway.lr.429 } }
+                            - header_filter:
+                                header:
+                                  name: accept-language
+                                  string_match:
+                                    safe_regex: { regex: "(?i)^\\s*de([-_;,\\s].*)?$" }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: de } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/rate-limited
+                          title: "Zu viele Anfragen"
+                          status: "%RESPONSE_CODE%"
+                          detail: "Das Anfragelimit wurde überschritten. Versuche es nach der im Header Retry-After angegebenen Zeit erneut."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        and_filter:
+                          filters:
+                            - or_filter:
+                                filters:
+                                  - status_code_filter:
+                                      comparison: { op: EQ, value: { default_value: 502, runtime_key: gateway.lr.502 } }
+                                  - status_code_filter:
+                                      comparison: { op: EQ, value: { default_value: 503, runtime_key: gateway.lr.503 } }
+                                  - status_code_filter:
+                                      comparison: { op: EQ, value: { default_value: 504, runtime_key: gateway.lr.504 } }
+                            - header_filter:
+                                header:
+                                  name: accept-language
+                                  string_match:
+                                    safe_regex: { regex: "(?i)^\\s*de([-_;,\\s].*)?$" }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: de } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/upstream-unavailable
+                          title: "Dienst nicht verfügbar"
+                          status: "%RESPONSE_CODE%"
+                          detail: "Ein erforderlicher Dienst ist vorübergehend nicht erreichbar. Bitte versuche es später erneut."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        and_filter:
+                          filters:
+                            - status_code_filter:
+                                comparison: { op: EQ, value: { default_value: 401, runtime_key: gateway.lr.401 } }
+                            - header_filter:
+                                header:
+                                  name: accept-language
+                                  string_match:
+                                    safe_regex: { regex: "(?i)^\\s*es([-_;,\\s].*)?$" }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: es } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/unauthorized
+                          title: "No autenticado"
+                          status: "%RESPONSE_CODE%"
+                          detail: "Se requiere un token de acceso válido."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        and_filter:
+                          filters:
+                            - status_code_filter:
+                                comparison: { op: EQ, value: { default_value: 404, runtime_key: gateway.lr.404 } }
+                            - header_filter:
+                                header:
+                                  name: accept-language
+                                  string_match:
+                                    safe_regex: { regex: "(?i)^\\s*es([-_;,\\s].*)?$" }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: es } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/not-found
+                          title: "No encontrado"
+                          status: "%RESPONSE_CODE%"
+                          detail: "El recurso solicitado no existe."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        and_filter:
+                          filters:
+                            - status_code_filter:
+                                comparison: { op: EQ, value: { default_value: 413, runtime_key: gateway.lr.413 } }
+                            - header_filter:
+                                header:
+                                  name: accept-language
+                                  string_match:
+                                    safe_regex: { regex: "(?i)^\\s*es([-_;,\\s].*)?$" }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: es } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/payload-too-large
+                          title: "Solicitud demasiado grande"
+                          status: "%RESPONSE_CODE%"
+                          detail: "El cuerpo de la solicitud supera el tamaño permitido."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        and_filter:
+                          filters:
+                            - status_code_filter:
+                                comparison: { op: EQ, value: { default_value: 429, runtime_key: gateway.lr.429 } }
+                            - header_filter:
+                                header:
+                                  name: accept-language
+                                  string_match:
+                                    safe_regex: { regex: "(?i)^\\s*es([-_;,\\s].*)?$" }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: es } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/rate-limited
+                          title: "Demasiadas solicitudes"
+                          status: "%RESPONSE_CODE%"
+                          detail: "Se superó el límite de solicitudes. Vuelve a intentarlo después del tiempo indicado en el encabezado Retry-After."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        and_filter:
+                          filters:
+                            - or_filter:
+                                filters:
+                                  - status_code_filter:
+                                      comparison: { op: EQ, value: { default_value: 502, runtime_key: gateway.lr.502 } }
+                                  - status_code_filter:
+                                      comparison: { op: EQ, value: { default_value: 503, runtime_key: gateway.lr.503 } }
+                                  - status_code_filter:
+                                      comparison: { op: EQ, value: { default_value: 504, runtime_key: gateway.lr.504 } }
+                            - header_filter:
+                                header:
+                                  name: accept-language
+                                  string_match:
+                                    safe_regex: { regex: "(?i)^\\s*es([-_;,\\s].*)?$" }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: es } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/upstream-unavailable
+                          title: "Servicio no disponible"
+                          status: "%RESPONSE_CODE%"
+                          detail: "Un servicio necesario no está disponible temporalmente. Inténtalo de nuevo más tarde."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        status_code_filter:
+                          comparison: { op: EQ, value: { default_value: 401, runtime_key: gateway.lr.401 } }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: en } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/unauthorized
+                          title: "Unauthorized"
+                          status: "%RESPONSE_CODE%"
+                          detail: "A valid access token is required."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        status_code_filter:
+                          comparison: { op: EQ, value: { default_value: 404, runtime_key: gateway.lr.404 } }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: en } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/not-found
+                          title: "Not found"
+                          status: "%RESPONSE_CODE%"
+                          detail: "The requested resource does not exist."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        status_code_filter:
+                          comparison: { op: EQ, value: { default_value: 413, runtime_key: gateway.lr.413 } }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: en } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/payload-too-large
+                          title: "Payload too large"
+                          status: "%RESPONSE_CODE%"
+                          detail: "The request body exceeds the allowed size."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        status_code_filter:
+                          comparison: { op: EQ, value: { default_value: 429, runtime_key: gateway.lr.429 } }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: en } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/rate-limited
+                          title: "Too many requests"
+                          status: "%RESPONSE_CODE%"
+                          detail: "Rate limit exceeded. Retry after the number of seconds in the Retry-After header."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    - filter:
+                        or_filter:
+                          filters:
+                            - status_code_filter:
+                                comparison: { op: EQ, value: { default_value: 502, runtime_key: gateway.lr.502 } }
+                            - status_code_filter:
+                                comparison: { op: EQ, value: { default_value: 503, runtime_key: gateway.lr.503 } }
+                            - status_code_filter:
+                                comparison: { op: EQ, value: { default_value: 504, runtime_key: gateway.lr.504 } }
+                      headers_to_add:
+                        - { append_action: OVERWRITE_IF_EXISTS_OR_ADD, header: { key: content-language, value: en } }
+                      body_format_override:
+                        content_type: application/problem+json
+                        json_format:
+                          type: https://wallpaperhub.dev/problems/upstream-unavailable
+                          title: "Upstream unavailable"
+                          status: "%RESPONSE_CODE%"
+                          detail: "A required service is temporarily unavailable. Please try again later."
+                          instance: "%PATH(NQ)%"
+                          requestId: "%REQ(X-REQUEST-ID)%"
+                    # END generated
+                  body_format:
+                    content_type: application/problem+json
+                    json_format:
+                      type: about:blank
+                      title: Gateway error
+                      status: "%RESPONSE_CODE%"
+                      detail: "%RESPONSE_CODE_DETAILS%"
+                      instance: "%PATH(NQ)%"
+                      requestId: "%REQ(X-REQUEST-ID)%"
+
+                # Filter order: strip spoofable headers -> aggregated health -> CORS (answers preflight
+                # before auth) -> rate limit per IP -> JWT -> rate limit per user -> body limit -> response
+                # compression -> router
+                http_filters:
+                  # Drop client-supplied identity headers (X-User-*) so they can never be spoofed
+                  - name: envoy.filters.http.lua
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+                      default_source_code:
+                        inline_string: |
+                          function envoy_on_request(handle)
+                            local headers = handle:headers()
+                            local doomed = {}
+                            for name, _ in pairs(headers) do
+                              if string.sub(string.lower(name), 1, 7) == "x-user-" then
+                                doomed[#doomed + 1] = name
+                              end
+                            end
+                            for _, name in ipairs(doomed) do
+                              headers:remove(name)
+                            end
+                            -- Envoy appends the peer address to a client-supplied X-Forwarded-For instead of
+                            -- replacing it, so the first entry would be attacker-controlled. Services (and logs)
+                            -- must be able to trust it: set it to the TCP peer, nothing else.
+                            local peer = handle:streamInfo():downstreamDirectRemoteAddress()
+                            if peer ~= nil then
+                              peer = string.gsub(peer, ":%d+$", "")
+                              peer = string.gsub(peer, "^%[(.*)%]$", "%1")
+                              headers:replace("x-forwarded-for", peer)
+                            end
+                          end
+
+                          -- Security headers on EVERY response. The virtual host adds them only when a route
+                          -- matched, so a 404 for an unknown path (generated by the gateway) would miss them.
+                          function envoy_on_response(handle)
+                            local headers = handle:headers()
+                            headers:replace("strict-transport-security", "max-age=31536000; includeSubDomains")
+                            headers:replace("x-content-type-options", "nosniff")
+                            headers:replace("x-frame-options", "DENY")
+                            headers:replace("referrer-policy", "no-referrer")
+                          end
+
+                  # GET /health: 200 only while every upstream cluster is 100% healthy, else 503
+                  - name: envoy.filters.http.health_check
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.health_check.v3.HealthCheck
+                      pass_through_mode: false
+                      headers:
+                        - name: ":path"
+                          string_match: { exact: /health }
+                      cluster_min_healthy_percentages:
+                        account: { value: 100 }
+                        media: { value: 100 }
+                        catalog: { value: 100 }
+                        notification: { value: 100 }
+
+                  - name: envoy.filters.http.cors
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
+
+                  # Rate limit 1 of 2, BEFORE authentication: one token bucket per client IP (the TCP peer),
+                  # created on first use for every distinct address (the empty descriptor value is a wildcard).
+                  # Protects anonymous endpoints and bounds garbage-token floods. Routes override the numbers below.
+                  # The shared bucket (token_bucket) is only an emergency valve far above any normal load, so that
+                  # a single client can never empty a bucket that everybody else depends on.
+                  # Buckets live in this gateway process: with N gateway instances the limits multiply by N.
+                  - name: envoy.filters.http.local_ratelimit
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+                      stat_prefix: gateway_ip_rl
+                      token_bucket: { max_tokens: 6000, tokens_per_fill: 6000, fill_interval: 60s }
+                      max_dynamic_descriptors: 10000
+                      rate_limits: &rl_by_ip
+                        - actions:
+                            - remote_address: {}
+                      descriptors:
+                        - entries: [{ key: remote_address }]
+                          token_bucket: { max_tokens: 600, tokens_per_fill: 600, fill_interval: 60s }
+                      filter_enabled: &rl_enabled
+                        runtime_key: gateway.rl.enabled
+                        default_value: { numerator: 100, denominator: HUNDRED }
+                      filter_enforced: &rl_enforced
+                        runtime_key: gateway.rl.enforced
+                        default_value: { numerator: 100, denominator: HUNDRED }
+                      enable_x_ratelimit_headers: DRAFT_VERSION_03
+                      response_headers_to_add: &retry_after_60
+                        - append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                          header: { key: retry-after, value: "60" }
+
+                  # Coarse check: signature (JWKS from Keycloak, cached + refreshed), iss, exp/nbf with
+                  # 30 s skew. Audience and roles stay with the services (zero trust inside the network).
+                  # Every route needs a valid token unless it opts out in typed_per_filter_config.
+                  - name: envoy.filters.http.jwt_authn
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication
+                      bypass_cors_preflight: true
+                      providers:
+                        keycloak:
+                          issuer: http://localhost:8180/realms/wallpaperhub
+                          # Keep the original Authorization header for the upstream service
+                          forward: true
+                          clock_skew_seconds: 30
+                          # sub -> x-user-sub, only used by the per-user rate limiter below (x-user-* is stripped from
+                          # clients first, and removed again before the request leaves for a service)
+                          claim_to_headers:
+                            - { header_name: x-user-sub, claim_name: sub }
+                          from_headers:
+                            - { name: authorization, value_prefix: "Bearer " }
+                          remote_jwks:
+                            http_uri:
+                              uri: http://keycloak:8080/realms/wallpaperhub/protocol/openid-connect/certs
+                              cluster: keycloak
+                              timeout: 3s
+                            cache_duration: 600s
+                            async_fetch: {}
+                            retry_policy: { num_retries: 2 }
+                      rules:
+                        - match: { prefix: / }
+                          requires: { provider_name: keycloak }
+                      requirement_map:
+                        # "valid if present": a missing token passes, a bad one is rejected
+                        valid_if_present:
+                          requires_any:
+                            requirements:
+                              - { provider_name: keycloak }
+                              - { allow_missing: {} }
+
+                  # Rate limit 2 of 2, AFTER authentication: one bucket per client, the user id (token subject) for
+                  # signed-in users, the IP otherwise. Users behind one NAT do not share a budget.
+                  - name: gateway.lua.client_key
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+                      default_source_code:
+                        inline_string: |
+                          function envoy_on_request(handle)
+                            local headers = handle:headers()
+                            local sub = headers:get("x-user-sub")
+                            local key
+                            if sub ~= nil and sub ~= "" then
+                              key = "u:" .. sub
+                            else
+                              key = "ip:" .. (headers:get("x-forwarded-for") or "unknown")
+                            end
+                            headers:replace("x-ratelimit-client", key)
+                          end
+                  - name: gateway.local_ratelimit.client
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+                      stat_prefix: gateway_client_rl
+                      token_bucket: { max_tokens: 6000, tokens_per_fill: 6000, fill_interval: 60s }
+                      max_dynamic_descriptors: 10000
+                      rate_limits: &rl_by_client
+                        - actions:
+                            - request_headers: { header_name: x-ratelimit-client, descriptor_key: client }
+                      descriptors:
+                        - entries: [{ key: client }]
+                          token_bucket: { max_tokens: 300, tokens_per_fill: 300, fill_interval: 60s }
+                      filter_enabled: *rl_enabled
+                      filter_enforced: *rl_enforced
+                      enable_x_ratelimit_headers: DRAFT_VERSION_03
+                      response_headers_to_add: *retry_after_60
+
+                  # Default request body limit; media (35 MiB) overrides it, SSE/WebSocket disable it
+                  - name: envoy.filters.http.buffer
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.buffer.v3.Buffer
+                      max_request_bytes: 1048576
+
+                  # Gzip for JSON/HTML responses only; text/event-stream is deliberately not listed
+                  - name: envoy.filters.http.compressor
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.compressor.v3.Compressor
+                      response_direction_config:
+                        common_config:
+                          min_content_length: 256
+                          content_type:
+                            - application/json
+                            - application/problem+json
+                            - application/graphql-response+json
+                            - text/html
+                            - text/plain
+                      compressor_library:
+                        name: gzip
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.compression.gzip.compressor.v3.Gzip
+
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                      suppress_envoy_headers: true
+
+                route_config:
+                  name: public
+                  virtual_hosts:
+                    - name: wallpaperhub
+                      domains: ["*"]
+                      # internal helpers of the rate limiter, never sent to a service
+                      request_headers_to_remove: [x-user-sub, x-ratelimit-client]
+                      response_headers_to_add:
+                        - append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                          header: { key: strict-transport-security, value: "max-age=31536000; includeSubDomains" }
+                        - append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                          header: { key: x-content-type-options, value: nosniff }
+                        - append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                          header: { key: x-frame-options, value: DENY }
+                        - append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                          header: { key: referrer-policy, value: no-referrer }
+                      typed_per_filter_config:
+                        envoy.filters.http.cors:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
+                          allow_origin_string_match:
+                            - { exact: "http://localhost:5173" }
+                            - { exact: "http://localhost:4200" }
+                            - { exact: "http://localhost:8080" }
+                          allow_methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+                          allow_headers: authorization, content-type, accept-language, idempotency-key, if-match, if-none-match, last-event-id, x-request-id, traceparent, tracestate
+                          expose_headers: etag, location, retry-after, x-request-id, x-ratelimit-limit, x-ratelimit-remaining, x-ratelimit-reset
+                          max_age: "600"
+                          allow_credentials: false
+
+                      # First match wins: order matters (README section 3.1)
+                      routes:
+                        # ---- /docs: aggregated Swagger UI built from every service's OpenAPI
+                        - match: { path: /docs/specs/account.json }
+                          route:
+                            cluster: account
+                            regex_rewrite: { pattern: { regex: ".*" }, substitution: /openapi.json }
+                            retry_policy: &idempotent_retry
+                              retry_on: connect-failure,refused-stream,reset,5xx
+                              num_retries: 2
+                              per_try_timeout: 5s
+                              retry_back_off: { base_interval: 0.1s, max_interval: 1s }
+                              # Idempotent methods only (RFC 9110); never POST/PATCH
+                              retriable_request_headers:
+                                - name: ":method"
+                                  string_match: { safe_regex: { regex: "GET|HEAD|OPTIONS|PUT|DELETE" } }
+                          typed_per_filter_config: &no_jwt
+                            envoy.filters.http.jwt_authn:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
+                              disabled: true
+                        - match: { path: /docs/specs/media.json }
+                          route:
+                            cluster: media
+                            regex_rewrite: { pattern: { regex: ".*" }, substitution: /openapi.json }
+                            retry_policy: *idempotent_retry
+                          typed_per_filter_config: *no_jwt
+                        - match: { path: /docs/specs/catalog.json }
+                          route:
+                            cluster: catalog
+                            regex_rewrite: { pattern: { regex: ".*" }, substitution: /openapi.json }
+                            retry_policy: *idempotent_retry
+                          typed_per_filter_config: *no_jwt
+                        - match: { path: /docs/specs/notification.json }
+                          route:
+                            cluster: notification
+                            regex_rewrite: { pattern: { regex: ".*" }, substitution: /openapi.json }
+                            retry_policy: *idempotent_retry
+                          typed_per_filter_config: *no_jwt
+                        - match: { path_separated_prefix: /docs }
+                          response_headers_to_add:
+                            - append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                              header: { key: content-type, value: "text/html; charset=utf-8" }
+                          direct_response:
+                            status: 200
+                            body:
+                              inline_string: |
+                                <!doctype html>
+                                <html>
+                                <head>
+                                  <meta charset="utf-8">
+                                  <title>Wallpaper Hub API</title>
+                                  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+                                </head>
+                                <body>
+                                  <div id="ui"></div>
+                                  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+                                  <script>
+                                    SwaggerUIBundle({
+                                      dom_id: "#ui",
+                                      deepLinking: true,
+                                      persistAuthorization: true,
+                                      urls: [
+                                        { name: "account-service", url: "/docs/specs/account.json" },
+                                        { name: "media-service", url: "/docs/specs/media.json" },
+                                        { name: "catalog-service", url: "/docs/specs/catalog.json" },
+                                        { name: "notification-service", url: "/docs/specs/notification.json" }
+                                      ],
+                                      "urls.primaryName": "account-service"
+                                    });
+                                  </script>
+                                </body>
+                                </html>
+                          typed_per_filter_config: *no_jwt
+
+                        # ---- account / catalog: must come before /api/v1/users/**
+                        - match: { path: /api/v1/users/me/favorites }
+                          route:
+                            cluster: catalog
+                            timeout: 15s
+                            retry_policy: *idempotent_retry
+
+                        # ---- account
+                        - match: { path_separated_prefix: /api/v1/registrations }
+                          route: { cluster: account, timeout: 15s }
+                          typed_per_filter_config:
+                            # Public endpoint: no token, tight rate limit (10 per minute per client IP and gateway instance)
+                            envoy.filters.http.jwt_authn:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
+                              disabled: true
+                            envoy.filters.http.local_ratelimit:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+                              stat_prefix: rl_registrations
+                              token_bucket: { max_tokens: 6000, tokens_per_fill: 6000, fill_interval: 60s }
+                              max_dynamic_descriptors: 10000
+                              rate_limits: *rl_by_ip
+                              descriptors:
+                                - entries: [{ key: remote_address }]
+                                  token_bucket: { max_tokens: 10, tokens_per_fill: 10, fill_interval: 60s }
+                              filter_enabled: *rl_enabled
+                              filter_enforced: *rl_enforced
+                              enable_x_ratelimit_headers: DRAFT_VERSION_03
+                              response_headers_to_add: *retry_after_60
+                        - match: { path_separated_prefix: /api/v1/auth }
+                          route: { cluster: account, timeout: 15s }
+                          typed_per_filter_config:
+                            # refresh/logout carry a refresh token and often an expired access token,
+                            # so the gateway does not require a valid access token here
+                            envoy.filters.http.jwt_authn:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
+                              disabled: true
+                            envoy.filters.http.local_ratelimit:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+                              stat_prefix: rl_auth
+                              token_bucket: { max_tokens: 6000, tokens_per_fill: 6000, fill_interval: 60s }
+                              max_dynamic_descriptors: 10000
+                              rate_limits: *rl_by_ip
+                              descriptors:
+                                - entries: [{ key: remote_address }]
+                                  token_bucket: { max_tokens: 30, tokens_per_fill: 30, fill_interval: 60s }
+                              filter_enabled: *rl_enabled
+                              filter_enforced: *rl_enforced
+                              enable_x_ratelimit_headers: DRAFT_VERSION_03
+                              response_headers_to_add: *retry_after_60
+                        - match: { path_separated_prefix: /api/v1/users }
+                          route:
+                            cluster: account
+                            timeout: 15s
+                            retry_policy: *idempotent_retry
+
+                        # ---- media: uploads up to 35 MiB, 60 s timeout
+                        - match: { path_separated_prefix: /api/v1/media }
+                          route:
+                            cluster: media
+                            timeout: 60s
+                            retry_policy:
+                              retry_on: connect-failure,refused-stream,reset,5xx
+                              num_retries: 2
+                              per_try_timeout: 30s
+                              retry_back_off: { base_interval: 0.1s, max_interval: 1s }
+                              retriable_request_headers:
+                                - name: ":method"
+                                  string_match: { safe_regex: { regex: "GET|HEAD|OPTIONS|PUT|DELETE" } }
+                          typed_per_filter_config:
+                            envoy.filters.http.buffer:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.buffer.v3.BufferPerRoute
+                              buffer: { max_request_bytes: 36700160 }
+                            gateway.local_ratelimit.client:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+                              stat_prefix: rl_media
+                              token_bucket: { max_tokens: 6000, tokens_per_fill: 6000, fill_interval: 60s }
+                              max_dynamic_descriptors: 10000
+                              rate_limits: *rl_by_client
+                              descriptors:
+                                - entries: [{ key: client }]
+                                  token_bucket: { max_tokens: 30, tokens_per_fill: 30, fill_interval: 60s }
+                              filter_enabled: *rl_enabled
+                              filter_enforced: *rl_enforced
+                              enable_x_ratelimit_headers: DRAFT_VERSION_03
+                              response_headers_to_add: *retry_after_60
+
+                        # ---- catalog
+                        - match: { path_separated_prefix: /api/v1/wallpapers/search }
+                          route:
+                            cluster: catalog
+                            timeout: 10s
+                            retry_policy: *idempotent_retry
+                          typed_per_filter_config:
+                            gateway.local_ratelimit.client:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+                              stat_prefix: rl_search
+                              token_bucket: { max_tokens: 6000, tokens_per_fill: 6000, fill_interval: 60s }
+                              max_dynamic_descriptors: 10000
+                              rate_limits: *rl_by_client
+                              descriptors:
+                                - entries: [{ key: client }]
+                                  token_bucket: { max_tokens: 60, tokens_per_fill: 60, fill_interval: 60s }
+                              filter_enabled: *rl_enabled
+                              filter_enforced: *rl_enforced
+                              enable_x_ratelimit_headers: DRAFT_VERSION_03
+                              response_headers_to_add: *retry_after_60
+                        - match:
+                            safe_regex: { regex: "/api/v1/(wallpapers|collections)(/.*)?" }
+                          route:
+                            cluster: catalog
+                            timeout: 15s
+                            retry_policy: *idempotent_retry
+                        # Optional GraphQL subscriptions (graphql-transport-ws over WebSocket): long-lived, and the token travels in
+                        # connection_init instead of a header, so the service validates it (like SSE tickets).
+                        - match:
+                            path: /graphql
+                            headers:
+                              - name: upgrade
+                                string_match: { exact: websocket, ignore_case: true }
+                          route:
+                            cluster: catalog
+                            timeout: 0s
+                            idle_timeout: 0s
+                          typed_per_filter_config:
+                            envoy.filters.http.jwt_authn:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
+                              requirement_name: valid_if_present
+                            envoy.filters.http.buffer:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.buffer.v3.BufferPerRoute
+                              disabled: true
+                        - match: { path: /graphql }
+                          route:
+                            cluster: catalog
+                            timeout: 15s
+                            # GraphQL queries travel over POST, so retries stay off here by design
+                            # (the shared idempotent policy would never fire for them anyway)
+
+                        # ---- notification: SSE + WebSocket are long-lived
+                        - match:
+                            safe_regex: { regex: "/api/v1/notifications/(stream|ws)" }
+                          route:
+                            cluster: notification
+                            timeout: 0s          # no response timeout
+                            idle_timeout: 0s     # no idle timeout (service sends a heartbeat every 15 s)
+                          typed_per_filter_config:
+                            # Browsers cannot set Authorization on EventSource/WebSocket: the service
+                            # checks the one-time ?ticket=. If a header IS sent it must still be valid.
+                            envoy.filters.http.jwt_authn:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
+                              requirement_name: valid_if_present
+                            envoy.filters.http.buffer:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.buffer.v3.BufferPerRoute
+                              disabled: true
+                        # Includes /admin/notifications/test, which the README route table does not list
+                        - match:
+                            safe_regex: { regex: "/api/v1/(notifications|notification-preferences|admin/notifications)(/.*)?" }
+                          route:
+                            cluster: notification
+                            timeout: 15s
+                            retry_policy: *idempotent_retry
+                        # Anything else: no route -> 404 problem+json (401 first if there is no valid token)
+
+    # ------------------------------------------------------------- management
+    - name: management
+      address:
+        socket_address: { address: 0.0.0.0, port_value: 8081 }
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: gateway_management
+                codec_type: AUTO
+                http_filters:
+                  # ready/startup mirror the aggregated /health on the public port
+                  - name: envoy.filters.http.health_check
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.health_check.v3.HealthCheck
+                      pass_through_mode: false
+                      headers:
+                        - name: ":path"
+                          string_match: { safe_regex: { regex: "/health/(ready|startup)" } }
+                      cluster_min_healthy_percentages:
+                        account: { value: 100 }
+                        media: { value: 100 }
+                        catalog: { value: 100 }
+                        notification: { value: 100 }
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                route_config:
+                  name: management
+                  virtual_hosts:
+                    - name: management
+                      domains: ["*"]
+                      routes:
+                        - match: { path: /health/live }
+                          response_headers_to_add:
+                            - append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                              header: { key: content-type, value: application/json }
+                          direct_response:
+                            status: 200
+                            body: { inline_string: '{"status":"UP"}' }
+                        # Prometheus text format, pulled (the OTLP push path is the other half of README decision 8)
+                        - match: { path: /metrics }
+                          route:
+                            cluster: envoy_admin
+                            regex_rewrite: { pattern: { regex: ".*" }, substitution: /stats/prometheus }
+
+  # ================================================================ clusters
+  clusters:
+    - name: account
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
+      connect_timeout: 1s
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: account
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address: { socket_address: { address: account, port_value: 8080 } }
+                  # Active health check against the management port (README: /health/ready)
+                  health_check_config: { port_value: 8081 }
+      health_checks: &upstream_health_check
+        - timeout: 2s
+          interval: 5s
+          interval_jitter: 1s
+          unhealthy_threshold: 3
+          healthy_threshold: 1
+          no_traffic_interval: 5s
+          http_health_check: { path: /health/ready }
+      # Circuit breaking: connection/request caps plus ejection after repeated 5xx. With one
+      # instance per service, ejecting 100% means fast 503s until the host recovers.
+      circuit_breakers: &breakers
+        thresholds:
+          - priority: DEFAULT
+            max_connections: 256
+            max_pending_requests: 128
+            max_requests: 512
+            max_retries: 5
+      outlier_detection: &outlier
+        consecutive_5xx: 5
+        interval: 5s
+        base_ejection_time: 15s
+        max_ejection_percent: 100
+
+    - name: media
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
+      connect_timeout: 1s
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: media
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address: { socket_address: { address: media, port_value: 8080 } }
+                  health_check_config: { port_value: 8081 }
+      health_checks: *upstream_health_check
+      circuit_breakers: *breakers
+      outlier_detection: *outlier
+
+    - name: catalog
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
+      connect_timeout: 1s
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: catalog
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address: { socket_address: { address: catalog, port_value: 8080 } }
+                  health_check_config: { port_value: 8081 }
+      health_checks: *upstream_health_check
+      circuit_breakers: *breakers
+      outlier_detection: *outlier
+
+    - name: notification
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
+      connect_timeout: 1s
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: notification
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address: { socket_address: { address: notification, port_value: 8080 } }
+                  health_check_config: { port_value: 8081 }
+      health_checks: *upstream_health_check
+      circuit_breakers: *breakers
+      outlier_detection: *outlier
+
+    # JWKS source for the jwt_authn filter
+    - name: keycloak
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
+      connect_timeout: 2s
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: keycloak
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address: { socket_address: { address: keycloak, port_value: 8080 } }
+
+    # OTLP/gRPC trace export to Alloy (observability profile; export errors are non-fatal when it is down)
+    - name: alloy_otlp
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
+      connect_timeout: 1s
+      lb_policy: ROUND_ROBIN
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
+      load_assignment:
+        cluster_name: alloy_otlp
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address: { socket_address: { address: alloy, port_value: 4317 } }
+
+    # Target of the management listener's /metrics route
+    - name: envoy_admin
+      type: STATIC
+      connect_timeout: 1s
+      load_assignment:
+        cluster_name: envoy_admin
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address: { socket_address: { address: 127.0.0.1, port_value: 9901 } }

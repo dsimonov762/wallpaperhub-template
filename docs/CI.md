@@ -1,0 +1,60 @@
+# Continuous integration
+
+GitHub Actions workflows in `.github/workflows/`. They run the same `make` targets you run on your machine, so a red pipeline
+can be reproduced locally with one command. Nothing in them depends on a programming language: a service is "any folder with a
+Dockerfile that passes [SERVICE-SPEC.md](SERVICE-SPEC.md)".
+
+| Workflow | When | What |
+|---|---|---|
+| `ci.yml` | every pull request, push to `master` | the jobs below; the single check to require is **`ci / ok`** |
+| `service.yml` | called by `ci.yml` once per implementation (also callable from your own workflow) | build one implementation, start it with the infrastructure, `make conformance` |
+| `system.yml` | push to `master`, nightly 03:17 UTC, manually | all four real services and the gateway: `make e2e-all` (README 4.1 flows, then gateway checks) |
+
+## Jobs of `ci.yml`
+
+| Job | Runs | Local equivalent |
+|---|---|---|
+| `static` | compose files for every profile, shell syntax, Hurl formatting, generated gateway error mappers; cross-checks of OpenAPI/GraphQL/Avro/proto/i18n/gateway against each other and the README; Spectral, buf lint, Avro and GraphQL conventions | `make lint check-contracts contracts-lint` |
+| `breaking` (pull requests) | `contracts/` against the point where the branch left its base branch: oasdiff, `buf breaking`, Avro BACKWARD compatibility, GraphQL breaking changes | `make contracts-breaking BASE=$(git merge-base origin/master HEAD)` |
+| `gateway` | `make up-mocks` (Envoy, Keycloak, Redis, Prism mocks, about 2 GB), `make e2e`, then `make conformance-selftest`: the conformance suite must pass the reference stub as all four services and catch five deliberately broken ones | `make up-mocks e2e conformance-selftest` |
+| `detect` + `services` | one `service.yml` run per `services/<service>/<impl>/Dockerfile` (account, media, catalog, notification). On a pull request only the implementations whose folder changed run, unless `contracts/`, `infra/`, `conformance/`, `scripts/`, `tools/`, the `Makefile` or `.github/` changed: then all of them | `make conformance SVC=<service>` against `make up-obs` and the service started from your implementation |
+| `ok` | fails if any job failed or was cancelled; skipped jobs are fine (no implementation yet, not a pull request) | |
+
+Two implementations of the same service (for example `services/account/java-spring` and `services/account/go`) are both built and tested,
+each against its own copy of the stack. That is the point of the polyglot template: the same pipeline holds every language to the same spec.
+
+## What `service.yml` does for one implementation
+
+1. `<SERVICE>_DIR` is pointed at the implementation (the compose file builds from it).
+2. `make up-obs` (infrastructure, schemas, Grafana/Loki/Tempo/Prometheus/Alloy), then the service alone with `docker compose up -d --build --no-deps <service>`.
+3. `make conformance SVC=<service> ARGS="--lifecycle"`: health endpoints, authentication, errors and localization, JSON logs, traces/logs/metrics arriving in Tempo, Loki and Prometheus, fail-fast configuration, graceful shutdown.
+4. On failure the logs of every container are uploaded as the artifact `logs-<folder>`.
+
+Inputs: `lifecycle` (default true), `telemetry` (default true: with `false` the observability stack is not started and T1-T3 are skipped), `runner` (default `ubuntu-latest`).
+To call it from a workflow of your own: `uses: ./.github/workflows/service.yml` with `service:` and `dir:`.
+
+## Set-up
+
+1. Push the repository to GitHub, enable Actions.
+2. Settings > Branches: require the status check `ci / ok`.
+3. For `system.yml`, set repository variables (Settings > Secrets and variables > Actions > Variables) when your implementations are not in `services/<service>/java-spring`: `ACCOUNT_DIR`, `MEDIA_DIR`, `CATALOG_DIR`, `NOTIFICATION_DIR` (for example `services/account/go`). While a service has no Dockerfile the job ends with a notice instead of failing.
+4. No secrets are needed: every credential in the stack is a local default from `infra/.env.example`.
+
+## Runner size
+
+GitHub's standard Linux runner has 4 CPU and 16 GB for public repositories and 2 CPU and 7 GB for private ones (check the current figures for your plan).
+
+| Stack | Memory | Fits 7 GB | Fits 16 GB |
+|---|---|---|---|
+| `gateway` job (mocks) | about 2 GB | yes | yes |
+| `service.yml` with `telemetry: false` | about 5 GB plus the service | yes, tight | yes |
+| `service.yml` with telemetry | about 6.5 GB plus the service | no | yes |
+| `system.yml` (all services) | about 8 GB | no | yes |
+
+On a private repository use a larger runner for those: set `runner:` in the `services` job of `ci.yml` and the repository variable `CI_RUNNER_APPS` for `system.yml`, or pass `telemetry: false`.
+
+## Not included, on purpose
+
+- Building and pushing images to a registry, deployments: they depend on where you run the services. Add them as further jobs that `needs` the jobs above.
+- Another CI system: the workflows are thin wrappers around `make`; a GitLab or Jenkins pipeline calls the same targets (`make lint check-contracts contracts-lint`, `make contracts-breaking BASE=...`, `make up-mocks e2e conformance-selftest`, `make conformance SVC=...`).
+- Caching of Docker layers and images: the first run of a job pulls about 3 GB of images. Add a registry mirror or `docker/setup-buildx-action` with the GitHub cache when pull time hurts.

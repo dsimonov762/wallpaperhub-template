@@ -1,0 +1,34 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Application metrics arrive by OTLP push (Alloy -> /api/v1/otlp). The jobs below scrape the
+# observability stack itself.
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: alloy
+    static_configs:
+      - targets: ["alloy:12345"]
+
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]
+
+  - job_name: tempo
+    static_configs:
+      - targets: ["tempo:3200"]
+
+  # Optional pull-based /metrics next to the OTLP push (README decision 8).
+  # Uncomment once the services expose /metrics on their management port (8081).
+  # - job_name: wallpaperhub-services-pull
+  #   metrics_path: /metrics
+  #   static_configs:
+  #     - targets:
+  #         - account:8081
+  #         - media:8081
+  #         - catalog:8081
+  #         - notification:8081
+  #         - gateway:8081

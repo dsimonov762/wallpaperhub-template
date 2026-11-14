@@ -1,0 +1,14 @@
+{
+  "size": 10,
+  "_source": false,
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "title.autocomplete": { "query": "mis pin", "operator": "and" } } }
+      ],
+      "filter": [
+        { "term": { "status": "PUBLISHED" } }
+      ]
+    }
+  }
+}

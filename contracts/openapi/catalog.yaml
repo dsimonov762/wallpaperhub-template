@@ -1,0 +1,1028 @@
+openapi: 3.0.3
+info:
+  title: Wallpaper Hub - catalog-service API
+  version: 1.0.0
+  description: |
+    Wallpapers, search, favorites, moderation and (optionally) collections. The same data is available through
+    GraphQL (`contracts/graphql/catalog.graphqls`). Shared conventions (pagination, problem+json errors,
+    `Idempotency-Key`, `If-Match`, `Accept-Language`) are defined in `common.yaml`.
+
+    A wallpaper is created in status `PENDING_MEDIA` and becomes `PUBLISHED` asynchronously when the media
+    pipeline reports the asset as processed (README 4.1). A wallpaper whose asset is already `READY` when it is
+    created is published right away. Lists and search only ever return `PUBLISHED` wallpapers.
+
+    Pagination styles side by side: `GET /wallpapers` and the other lists use offset paging (`page`, `size`,
+    `sort`); `GET /users/me/favorites` uses keyset (cursor) paging (README 5.2).
+servers:
+  - url: /api/v1
+    description: Through the gateway, relative to the host that serves this document
+  - url: http://localhost:8080/api/v1
+    description: Local compose stack
+security:
+  - bearerAuth: []
+tags:
+  - name: Wallpapers
+    description: Create, read, change and delete wallpapers.
+  - name: Search
+    description: Full-text search with facets and autocomplete (Elasticsearch).
+  - name: Favorites
+    description: Favoriting and the caller's favorites.
+  - name: Moderation
+    description: Moderator decisions.
+  - name: Collections
+    description: Optional second entity (README 5.1). An implementation may leave it out.
+    x-optional: true
+
+paths:
+  /wallpapers:
+    get:
+      tags: [Wallpapers]
+      operationId: listWallpapers
+      summary: List published wallpapers
+      description: Paged, filterable list of `PUBLISHED` wallpapers, newest first by default.
+      x-access: authenticated
+      x-error-codes: [pagination.size-too-large, pagination.sort-not-allowed]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/Page'
+        - $ref: 'common.yaml#/components/parameters/Size'
+        - $ref: '#/components/parameters/WallpaperSort'
+        - $ref: '#/components/parameters/CategoryFilter'
+        - $ref: '#/components/parameters/TagFilter'
+        - $ref: '#/components/parameters/AuthorFilter'
+        - $ref: '#/components/parameters/MinWidth'
+        - $ref: '#/components/parameters/MinHeight'
+      responses:
+        '200':
+          description: One page of wallpapers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WallpaperPage'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+    post:
+      tags: [Wallpapers]
+      operationId: createWallpaper
+      summary: Create a wallpaper
+      description: |
+        Verifies the media asset with media-service (REST, client credentials): it must exist, belong to the caller,
+        have purpose `WALLPAPER` and not be `REJECTED`. The wallpaper is then saved (README 4.1 step 6). The author is
+        the caller; the author snapshot is filled from account-service.
+
+        An asset backs at most one wallpaper: a second wallpaper for the same `assetId` is refused with `409`
+        (`wallpaper.asset-already-used`), whatever its status and whoever sends it. The unique index on `assetId` makes
+        this hold for concurrent requests too. The asset is free again once the wallpaper is deleted.
+      x-access: authenticated
+      x-error-codes: [media.asset-not-found, media.asset-not-owned, media.asset-rejected, media.asset-purpose-mismatch, wallpaper.asset-already-used, wallpaper.too-many-tags, idempotency.key-reused, idempotency.in-progress]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWallpaperRequest'
+            example:
+              assetId: ast_01HXZ3Q8K5N2V7B9C4D6F8G0JM
+              title: Misty Pines
+              description: Fog over a pine forest at dawn
+              tags: [forest, fog, nature]
+              category: NATURE
+      responses:
+        '201':
+          description: The wallpaper was created.
+          headers:
+            Location:
+              $ref: 'common.yaml#/components/headers/Location'
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallpaper'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: 'common.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+        '503':
+          $ref: 'common.yaml#/components/responses/UpstreamUnavailable'
+
+  /wallpapers/search:
+    get:
+      tags: [Search]
+      operationId: searchWallpapers
+      summary: Search wallpapers
+      description: |
+        Full-text search over title, description and tags, in relevance order (no `sort` parameter). Uses
+        Elasticsearch; when it is unavailable the service falls back to a degraded Mongo query (README 8).
+        With `autocomplete=true` the text is matched as a title prefix (search-as-you-type) and no facets are
+        computed. Rate-limited.
+      x-access: authenticated
+      x-error-codes: [search.query-too-long, pagination.size-too-large]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - name: q
+          in: query
+          required: true
+          description: Text to search for, at most 100 characters.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+        - $ref: 'common.yaml#/components/parameters/Page'
+        - $ref: 'common.yaml#/components/parameters/Size'
+        - name: facets
+          in: query
+          required: false
+          description: Facets to compute, comma separated (`facets=CATEGORY,TAG`).
+          style: form
+          explode: false
+          schema:
+            type: array
+            uniqueItems: true
+            items:
+              $ref: '#/components/schemas/FacetKey'
+        - $ref: '#/components/parameters/CategoryFilter'
+        - $ref: '#/components/parameters/TagFilter'
+        - name: autocomplete
+          in: query
+          required: false
+          description: Match `q` as a title prefix instead of a full-text query.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: One page of matches, with the requested facets.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '429':
+          $ref: 'common.yaml#/components/responses/RateLimited'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /wallpapers/{id}:
+    parameters:
+      - $ref: '#/components/parameters/WallpaperIdPath'
+    get:
+      tags: [Wallpapers]
+      operationId: getWallpaper
+      summary: Get a wallpaper
+      description: |
+        `PUBLISHED` wallpapers are visible to everyone; wallpapers in any other status only to their author and to
+        moderators. For everybody else the answer is `404`.
+      x-access: authenticated
+      x-error-codes: [wallpaper.not-found]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '200':
+          description: The wallpaper.
+          headers:
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallpaper'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+    put:
+      tags: [Wallpapers]
+      operationId: replaceWallpaper
+      summary: Replace the editable fields of a wallpaper
+      description: |
+        Replaces title, description, tags and category; fields left out are reset (description to null, tags to
+        empty). The asset cannot be changed. Author or moderator only.
+      x-access: owner-or-moderator
+      x-error-codes: [wallpaper.not-found, wallpaper.not-owner, wallpaper.too-many-tags, request.version-conflict]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceWallpaperRequest'
+            example:
+              title: Misty Pines at Dawn
+              description: Fog over a pine forest at dawn
+              tags: [forest, fog]
+              category: NATURE
+      responses:
+        '200':
+          description: The updated wallpaper.
+          headers:
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallpaper'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: 'common.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+    patch:
+      tags: [Wallpapers]
+      operationId: updateWallpaper
+      summary: Change some fields of a wallpaper
+      description: "Partial update: only the given fields change. Author or moderator only."
+      x-access: owner-or-moderator
+      x-error-codes: [wallpaper.not-found, wallpaper.not-owner, wallpaper.too-many-tags, request.version-conflict]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchWallpaperRequest'
+            example:
+              tags: [forest, fog, mist]
+      responses:
+        '200':
+          description: The updated wallpaper.
+          headers:
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallpaper'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: 'common.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+    delete:
+      tags: [Wallpapers]
+      operationId: deleteWallpaper
+      summary: Delete a wallpaper
+      description: |
+        Removes the wallpaper from the catalog and the search index, and frees its media asset for a new wallpaper.
+        Author or moderator only.
+
+        A wallpaper that a moderator took down (status `REMOVED`) cannot be deleted by its author: `409`
+        (`wallpaper.removed-by-moderation`). Otherwise deleting it would free the asset and the author could simply repost
+        the same picture. Only a moderator (or admin) can delete a `REMOVED` wallpaper. A `REJECTED` wallpaper can be
+        deleted by its author, so the asset can be used for a corrected submission.
+      x-access: owner-or-moderator
+      x-error-codes: [wallpaper.not-found, wallpaper.not-owner, wallpaper.removed-by-moderation]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '204':
+          description: The wallpaper was deleted.
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: 'common.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /wallpapers/{id}/favorite:
+    parameters:
+      - $ref: '#/components/parameters/WallpaperIdPath'
+    post:
+      tags: [Favorites]
+      operationId: favoriteWallpaper
+      summary: Add a wallpaper to the caller's favorites
+      description: "Idempotent: favoriting twice changes nothing."
+      x-access: authenticated
+      x-error-codes: [wallpaper.not-found]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '200':
+          description: The favorite state after the call.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoriteState'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+    delete:
+      tags: [Favorites]
+      operationId: unfavoriteWallpaper
+      summary: Remove a wallpaper from the caller's favorites
+      description: "Idempotent: removing a wallpaper that is not a favorite changes nothing."
+      x-access: authenticated
+      x-error-codes: [wallpaper.not-found]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '200':
+          description: The favorite state after the call.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoriteState'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /wallpapers/{id}/moderation:
+    post:
+      tags: [Moderation]
+      operationId: moderateWallpaper
+      summary: Moderate a wallpaper
+      description: |
+        Records a moderator decision. `APPROVED` makes the wallpaper `PUBLISHED`, `REJECTED` and `REMOVED` take it
+        out of the catalog and the search index. A `catalog.wallpaper.moderated` event tells the author.
+        Moderators only.
+      x-access: moderator
+      x-error-codes: [wallpaper.not-found]
+      parameters:
+        - $ref: '#/components/parameters/WallpaperIdPath'
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModerationRequest'
+            example:
+              decision: REMOVED
+              reason: Contains a visible watermark of another site.
+      responses:
+        '200':
+          description: The wallpaper after the decision.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallpaper'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: 'common.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /users/me/favorites:
+    get:
+      tags: [Favorites]
+      operationId: listMyFavorites
+      summary: List the caller's favorites
+      description: |
+        Keyset (cursor) pagination: most recently favorited first. Pass the `nextCursor` of a page as `cursor` to get
+        the next one; it is null on the last page. A cursor is opaque and only valid for this endpoint and caller.
+      x-access: authenticated
+      x-error-codes: [pagination.invalid-cursor, pagination.size-too-large]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/Size'
+        - name: cursor
+          in: query
+          required: false
+          description: Cursor from the previous page. Leave out for the first page.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 512
+      responses:
+        '200':
+          description: One page of favorites.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoritesPage'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /collections:
+    get:
+      tags: [Collections]
+      operationId: listCollections
+      summary: List the caller's collections
+      description: Only collections owned by the caller. Paged; `size` is at most 100.
+      x-optional: true
+      x-access: authenticated
+      x-error-codes: [pagination.size-too-large, pagination.sort-not-allowed]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/Page'
+        - $ref: 'common.yaml#/components/parameters/Size'
+        - $ref: '#/components/parameters/CollectionSort'
+      responses:
+        '200':
+          description: One page of collections.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionPage'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+    post:
+      tags: [Collections]
+      operationId: createCollection
+      summary: Create a collection
+      description: Creates an empty collection owned by the caller. Retried requests with the same `Idempotency-Key` return the first result.
+      x-optional: true
+      x-access: authenticated
+      x-error-codes: [idempotency.key-reused, idempotency.in-progress]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionRequest'
+            example:
+              title: Forest mornings
+              wallpaperIds: [wp_01HXZ3R2M7P4T9W1E5Y8A0C3DF]
+      responses:
+        '201':
+          description: The collection was created.
+          headers:
+            Location:
+              $ref: 'common.yaml#/components/headers/Location'
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /collections/{id}:
+    parameters:
+      - $ref: '#/components/parameters/CollectionIdPath'
+    get:
+      tags: [Collections]
+      operationId: getCollection
+      summary: Get a collection
+      description: Collections are private to their owner.
+      x-optional: true
+      x-access: owner
+      x-error-codes: []
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '200':
+          description: The collection.
+          headers:
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+    put:
+      tags: [Collections]
+      operationId: replaceCollection
+      summary: Replace a collection
+      description: Replaces the title, the description and the list of wallpapers. Requires `If-Match` with the current ETag; a stale value is answered with 409 `request.version-conflict`.
+      x-optional: true
+      x-access: owner
+      x-error-codes: [request.version-conflict]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionRequest'
+            example:
+              title: Forest mornings
+              description: Fog and pines
+              wallpaperIds: [wp_01HXZ3R2M7P4T9W1E5Y8A0C3DF]
+      responses:
+        '200':
+          description: The updated collection.
+          headers:
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+    delete:
+      tags: [Collections]
+      operationId: deleteCollection
+      summary: Delete a collection
+      description: Deletes the collection only, never the wallpapers in it.
+      x-optional: true
+      x-access: owner
+      x-error-codes: []
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '204':
+          description: The collection was deleted.
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: 'common.yaml#/components/securitySchemes/bearerAuth'
+
+  parameters:
+    WallpaperIdPath:
+      name: id
+      in: path
+      required: true
+      description: Wallpaper id.
+      schema:
+        $ref: 'common.yaml#/components/schemas/WallpaperId'
+    CollectionIdPath:
+      name: id
+      in: path
+      required: true
+      description: Collection id.
+      schema:
+        $ref: 'common.yaml#/components/schemas/CollectionId'
+    WallpaperSort:
+      name: sort
+      in: query
+      required: false
+      description: Sort order, `<field>,<direction>`.
+      schema:
+        type: string
+        enum: ['createdAt,desc', 'createdAt,asc', 'favoriteCount,desc']
+        default: 'createdAt,desc'
+    CollectionSort:
+      name: sort
+      in: query
+      required: false
+      description: Sort order, `<field>,<direction>`.
+      schema:
+        type: string
+        enum: ['createdAt,desc', 'createdAt,asc', 'title,asc']
+        default: 'createdAt,desc'
+    CategoryFilter:
+      name: category
+      in: query
+      required: false
+      description: Only this category.
+      schema:
+        $ref: '#/components/schemas/WallpaperCategory'
+    TagFilter:
+      name: tag
+      in: query
+      required: false
+      description: Only wallpapers that have all the given tags. Repeat the parameter for several tags.
+      style: form
+      explode: true
+      schema:
+        type: array
+        maxItems: 20
+        items:
+          $ref: '#/components/schemas/Tag'
+    AuthorFilter:
+      name: authorId
+      in: query
+      required: false
+      description: Only wallpapers by this author.
+      schema:
+        $ref: 'common.yaml#/components/schemas/UserId'
+    MinWidth:
+      name: minWidth
+      in: query
+      required: false
+      description: Minimum width of the full image in pixels.
+      schema:
+        type: integer
+        minimum: 1
+    MinHeight:
+      name: minHeight
+      in: query
+      required: false
+      description: Minimum height of the full image in pixels.
+      schema:
+        type: integer
+        minimum: 1
+
+  schemas:
+    WallpaperStatus:
+      type: string
+      enum: [PENDING_MEDIA, PUBLISHED, REJECTED, REMOVED]
+      description: |
+        `PENDING_MEDIA` while the asset is processed, `PUBLISHED` when visible and searchable, `REJECTED` and
+        `REMOVED` after a moderator decision.
+    WallpaperCategory:
+      type: string
+      enum: [NATURE, ABSTRACT, ANIMALS, ARCHITECTURE, SPACE, TECHNOLOGY, MINIMAL, OTHER]
+    VariantKind:
+      type: string
+      enum: [THUMBNAIL, PREVIEW, FULL]
+    FacetKey:
+      type: string
+      enum: [CATEGORY, TAG]
+    ModerationDecision:
+      type: string
+      enum: [APPROVED, REJECTED, REMOVED]
+    Tag:
+      type: string
+      minLength: 1
+      maxLength: 30
+      pattern: '^[a-z0-9-]+$'
+      description: Lower-case letters, digits and hyphens.
+      example: forest
+    Title:
+      type: string
+      minLength: 1
+      maxLength: 100
+      example: Misty Pines
+    Description:
+      type: string
+      nullable: true
+      maxLength: 2000
+      example: Fog over a pine forest at dawn
+    Tags:
+      type: array
+      maxItems: 20
+      uniqueItems: true
+      description: At most 20 tags per wallpaper (`wallpaper.too-many-tags` is the domain error for more).
+      items:
+        $ref: '#/components/schemas/Tag'
+    Variant:
+      type: object
+      required: [kind, url, width, height]
+      properties:
+        kind:
+          $ref: '#/components/schemas/VariantKind'
+        url:
+          type: string
+          format: uri
+        width:
+          type: integer
+          minimum: 1
+        height:
+          type: integer
+          minimum: 1
+    Author:
+      type: object
+      description: Public author information, resolved from account-service with the stored snapshot as fallback.
+      required: [id, username, displayName]
+      properties:
+        id:
+          $ref: 'common.yaml#/components/schemas/UserId'
+        username:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+    Wallpaper:
+      type: object
+      required: [id, title, tags, category, status, assetId, variants, palette, author, favoriteCount, favoritedByMe, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: 'common.yaml#/components/schemas/WallpaperId'
+        title:
+          $ref: '#/components/schemas/Title'
+        description:
+          $ref: '#/components/schemas/Description'
+        tags:
+          $ref: '#/components/schemas/Tags'
+        category:
+          $ref: '#/components/schemas/WallpaperCategory'
+        status:
+          $ref: '#/components/schemas/WallpaperStatus'
+        assetId:
+          $ref: 'common.yaml#/components/schemas/AssetId'
+        variants:
+          type: array
+          description: Image renditions. Empty while the status is `PENDING_MEDIA`.
+          items:
+            $ref: '#/components/schemas/Variant'
+        dimensions:
+          type: object
+          nullable: true
+          description: Size of the full image. Null while the status is `PENDING_MEDIA`.
+          required: [width, height]
+          properties:
+            width:
+              type: integer
+              minimum: 1
+            height:
+              type: integer
+              minimum: 1
+        palette:
+          type: array
+          description: Dominant colors as `#rrggbb`. Empty while the status is `PENDING_MEDIA`.
+          items:
+            type: string
+            pattern: '^#[0-9a-f]{6}$'
+        blurhash:
+          type: string
+          nullable: true
+        author:
+          $ref: '#/components/schemas/Author'
+        favoriteCount:
+          type: integer
+          minimum: 0
+        favoritedByMe:
+          type: boolean
+          description: Whether the caller favorited this wallpaper.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      example:
+        id: wp_01HXZ3R2M7P4T9W1E5Y8A0C3DF
+        title: Misty Pines
+        description: Fog over a pine forest at dawn
+        tags: [forest, fog, nature]
+        category: NATURE
+        status: PUBLISHED
+        assetId: ast_01HXZ3Q8K5N2V7B9C4D6F8G0JM
+        variants:
+          - kind: THUMBNAIL
+            url: http://localhost:9000/wallpaperhub-media/wallpaper/2026/11/ast_01HXZ3Q8K5N2V7B9C4D6F8G0JM/thumbnail.webp
+            width: 320
+            height: 180
+        dimensions:
+          width: 3840
+          height: 2160
+        palette: ['#2b3a2f', '#8aa08c']
+        blurhash: LKO2?U%2Tw=w]~RBVZRi};RPxuwH
+        author:
+          id: 3f2b8c1e-6a54-4c1d-9d0b-5f8d2a7e9c10
+          username: alice
+          displayName: Alice Example
+          avatarUrl: null
+        favoriteCount: 12
+        favoritedByMe: false
+        createdAt: '2026-11-09T12:00:00Z'
+        updatedAt: '2026-11-09T12:05:00Z'
+    CreateWallpaperRequest:
+      type: object
+      required: [assetId, title, category]
+      additionalProperties: false
+      properties:
+        assetId:
+          $ref: 'common.yaml#/components/schemas/AssetId'
+        title:
+          $ref: '#/components/schemas/Title'
+        description:
+          $ref: '#/components/schemas/Description'
+        tags:
+          $ref: '#/components/schemas/Tags'
+        category:
+          $ref: '#/components/schemas/WallpaperCategory'
+    ReplaceWallpaperRequest:
+      type: object
+      required: [title, category]
+      additionalProperties: false
+      properties:
+        title:
+          $ref: '#/components/schemas/Title'
+        description:
+          $ref: '#/components/schemas/Description'
+        tags:
+          $ref: '#/components/schemas/Tags'
+        category:
+          $ref: '#/components/schemas/WallpaperCategory'
+    PatchWallpaperRequest:
+      type: object
+      description: At least one field is required.
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        title:
+          $ref: '#/components/schemas/Title'
+        description:
+          $ref: '#/components/schemas/Description'
+        tags:
+          $ref: '#/components/schemas/Tags'
+        category:
+          $ref: '#/components/schemas/WallpaperCategory'
+    ModerationRequest:
+      type: object
+      required: [decision]
+      additionalProperties: false
+      properties:
+        decision:
+          $ref: '#/components/schemas/ModerationDecision'
+        reason:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: Shown to the author in the notification.
+    FavoriteState:
+      type: object
+      required: [wallpaperId, favorited, favoriteCount]
+      properties:
+        wallpaperId:
+          $ref: 'common.yaml#/components/schemas/WallpaperId'
+        favorited:
+          type: boolean
+        favoriteCount:
+          type: integer
+          minimum: 0
+    FacetBucket:
+      type: object
+      required: [value, count]
+      properties:
+        value:
+          type: string
+          description: A category name or a tag.
+        count:
+          type: integer
+          minimum: 0
+    Facet:
+      type: object
+      required: [key, buckets]
+      properties:
+        key:
+          $ref: '#/components/schemas/FacetKey'
+        buckets:
+          type: array
+          description: Most frequent values first.
+          items:
+            $ref: '#/components/schemas/FacetBucket'
+    WallpaperPage:
+      allOf:
+        - $ref: 'common.yaml#/components/schemas/PageMeta'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Wallpaper'
+    SearchResult:
+      allOf:
+        - $ref: 'common.yaml#/components/schemas/PageMeta'
+        - type: object
+          required: [items, facets]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Wallpaper'
+            facets:
+              type: array
+              description: One entry per requested facet, in request order. Empty when none was requested.
+              items:
+                $ref: '#/components/schemas/Facet'
+    FavoritesPage:
+      type: object
+      description: Keyset-paged list (no page numbers and no total, which keeps deep pages as cheap as the first).
+      required: [items, size, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wallpaper'
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Page size that was used.
+        nextCursor:
+          type: string
+          nullable: true
+          description: Cursor of the next page, null on the last page.
+    Collection:
+      type: object
+      required: [id, ownerId, title, wallpaperIds, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: 'common.yaml#/components/schemas/CollectionId'
+        ownerId:
+          $ref: 'common.yaml#/components/schemas/UserId'
+        title:
+          $ref: '#/components/schemas/Title'
+        description:
+          $ref: '#/components/schemas/Description'
+        wallpaperIds:
+          type: array
+          maxItems: 200
+          uniqueItems: true
+          items:
+            $ref: 'common.yaml#/components/schemas/WallpaperId'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CollectionRequest:
+      type: object
+      required: [title]
+      additionalProperties: false
+      properties:
+        title:
+          $ref: '#/components/schemas/Title'
+        description:
+          $ref: '#/components/schemas/Description'
+        wallpaperIds:
+          type: array
+          maxItems: 200
+          uniqueItems: true
+          default: []
+          items:
+            $ref: 'common.yaml#/components/schemas/WallpaperId'
+    CollectionPage:
+      allOf:
+        - $ref: 'common.yaml#/components/schemas/PageMeta'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Collection'

@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "UserDeleted",
+  "namespace": "dev.wallpaperhub.account.v1",
+  "doc": "Emitted when a user is soft-deleted. Consumers (catalog, media, notification) clean up what they hold for userId. Carries no PII on purpose.",
+  "fields": [
+    { "name": "eventId",    "type": "string" },
+    { "name": "userId",     "type": "string" },
+    { "name": "occurredAt", "type": { "type": "long", "logicalType": "timestamp-millis" } }
+  ]
+}

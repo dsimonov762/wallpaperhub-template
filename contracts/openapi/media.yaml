@@ -1,0 +1,407 @@
+openapi: 3.0.3
+info:
+  title: Wallpaper Hub - media-service API
+  version: 1.0.0
+  description: |
+    Uploads and the image pipeline. An upload is validated and stored synchronously, then processed
+    asynchronously (variants, blurhash, palette): `POST /media` answers `202` and the asset moves from
+    `PROCESSING` to `READY` or `REJECTED` (README 4.1 and 10). The result is also published to Kafka as
+    `media.asset.processed` / `media.asset.rejected`.
+
+    Limits per purpose (README 10):
+
+    | Purpose | Max size | Formats | Minimum size | Crop |
+    |---|---|---|---|---|
+    | `AVATAR` | 5 MB | jpeg, png, webp | 128 x 128 | square |
+    | `BANNER` | 8 MB | jpeg, png, webp | 1200 x 300 | 3:1 |
+    | `WALLPAPER` | 30 MB | jpeg, png, webp, avif | 1920 x 1080 | none |
+
+    The type is decided from the file content (magic bytes), never from the extension or `Content-Type`.
+    Shared conventions are defined in `common.yaml`.
+servers:
+  - url: /api/v1
+    description: Through the gateway, relative to the host that serves this document
+  - url: http://localhost:8080/api/v1
+    description: Local compose stack
+security:
+  - bearerAuth: []
+tags:
+  - name: Media
+    description: Upload and manage media assets.
+
+paths:
+  /media:
+    post:
+      tags: [Media]
+      operationId: uploadMedia
+      summary: Upload an image
+      description: |
+        Validates the upload, stores the original privately in object storage and enqueues the processing job.
+        Answers `202` right away with the asset in status `PROCESSING`; poll `GET /media/{id}` or wait for the
+        notification. Rate-limited. The gateway allows bodies up to 35 MiB, the purpose-specific limit is
+        enforced here.
+      x-access: authenticated
+      x-error-codes: [media.file-too-large, media.unsupported-type, media.corrupt-image, idempotency.key-reused, idempotency.in-progress]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadRequest'
+            encoding:
+              file:
+                contentType: image/jpeg, image/png, image/webp, image/avif
+      responses:
+        '202':
+          description: Accepted for processing.
+          headers:
+            Location:
+              $ref: 'common.yaml#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadAccepted'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '413':
+          $ref: 'common.yaml#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: 'common.yaml#/components/responses/UnsupportedMedia'
+        '429':
+          $ref: 'common.yaml#/components/responses/RateLimited'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+        '503':
+          $ref: 'common.yaml#/components/responses/UpstreamUnavailable'
+    get:
+      tags: [Media]
+      operationId: listMedia
+      summary: List the caller's assets
+      description: The caller's own assets, newest first by default.
+      x-access: authenticated
+      x-error-codes: [pagination.size-too-large, pagination.sort-not-allowed]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/Page'
+        - $ref: 'common.yaml#/components/parameters/Size'
+        - $ref: '#/components/parameters/MediaSort'
+        - $ref: '#/components/parameters/PurposeFilter'
+        - $ref: '#/components/parameters/StatusFilter'
+      responses:
+        '200':
+          description: One page of assets.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAssetPage'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /media/{id}:
+    parameters:
+      - $ref: '#/components/parameters/AssetIdPath'
+    get:
+      tags: [Media]
+      operationId: getMedia
+      summary: Get an asset
+      description: |
+        Status, metadata and public variants of an asset. Allowed for the owner and for services holding the
+        `internal` role (catalog calls this with a client-credentials token to verify an asset, README 4.1).
+      x-access: owner-or-internal
+      x-error-codes: [media.asset-not-found, media.asset-not-owned]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '200':
+          description: The asset.
+          headers:
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: 'common.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+    delete:
+      tags: [Media]
+      operationId: deleteMedia
+      summary: Delete an asset
+      description: Deletes the asset, its original and all its variants from object storage. Owner only.
+      x-access: owner
+      x-error-codes: [media.asset-not-found, media.asset-not-owned]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '204':
+          description: The asset was deleted.
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: 'common.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+        '503':
+          $ref: 'common.yaml#/components/responses/UpstreamUnavailable'
+
+  /media/{id}/url:
+    get:
+      tags: [Media]
+      operationId: getMediaUrl
+      summary: Get a time-limited download URL
+      description: |
+        A presigned URL for one rendition of the asset. This is the only way to reach the private original.
+        Public variants are also available as plain URLs in `GET /media/{id}`. Owner only.
+      x-access: owner
+      x-error-codes: [media.asset-not-found, media.asset-not-owned]
+      parameters:
+        - $ref: '#/components/parameters/AssetIdPath'
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - name: variant
+          in: query
+          required: false
+          description: Which rendition, `ORIGINAL` or the `kind` of one of the asset's variants.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 32
+            default: ORIGINAL
+        - name: expiresIn
+          in: query
+          required: false
+          description: Lifetime of the URL in seconds.
+          schema:
+            type: integer
+            minimum: 60
+            maximum: 3600
+            default: 300
+      responses:
+        '200':
+          description: The presigned URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignedUrl'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: 'common.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+        '503':
+          $ref: 'common.yaml#/components/responses/UpstreamUnavailable'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: 'common.yaml#/components/securitySchemes/bearerAuth'
+
+  parameters:
+    AssetIdPath:
+      name: id
+      in: path
+      required: true
+      description: Media asset id.
+      schema:
+        $ref: 'common.yaml#/components/schemas/AssetId'
+    MediaSort:
+      name: sort
+      in: query
+      required: false
+      description: Sort order, `<field>,<direction>`.
+      schema:
+        type: string
+        enum: ['createdAt,desc', 'createdAt,asc']
+        default: 'createdAt,desc'
+    PurposeFilter:
+      name: purpose
+      in: query
+      required: false
+      description: Only assets uploaded for this purpose.
+      schema:
+        $ref: '#/components/schemas/MediaPurpose'
+    StatusFilter:
+      name: status
+      in: query
+      required: false
+      description: Only assets in this status.
+      schema:
+        $ref: '#/components/schemas/MediaStatus'
+
+  schemas:
+    MediaPurpose:
+      type: string
+      enum: [AVATAR, BANNER, WALLPAPER]
+    MediaStatus:
+      type: string
+      enum: [PROCESSING, READY, REJECTED]
+      description: |
+        `PROCESSING` after the upload, `READY` once the variants exist, `REJECTED` when the pipeline refused the
+        image (see `rejectReason`).
+    UploadRequest:
+      type: object
+      required: [file, purpose]
+      properties:
+        file:
+          type: string
+          format: binary
+          description: The image.
+        purpose:
+          $ref: '#/components/schemas/MediaPurpose'
+    UploadAccepted:
+      type: object
+      required: [assetId, status]
+      properties:
+        assetId:
+          $ref: 'common.yaml#/components/schemas/AssetId'
+        status:
+          type: string
+          enum: [PROCESSING]
+      example:
+        assetId: ast_01HXZ3Q8K5N2V7B9C4D6F8G0JM
+        status: PROCESSING
+    MediaVariant:
+      type: object
+      description: One processed rendition of an asset. Variants are public and immutable.
+      required: [kind, url, width, height, format, sizeBytes]
+      properties:
+        kind:
+          type: string
+          description: Rendition name, for example `THUMBNAIL`, `PREVIEW` or `FULL` for wallpapers.
+          example: THUMBNAIL
+        url:
+          type: string
+          format: uri
+        width:
+          type: integer
+          minimum: 1
+        height:
+          type: integer
+          minimum: 1
+        format:
+          type: string
+          description: Image format of the file.
+          example: webp
+        sizeBytes:
+          type: integer
+          format: int64
+          minimum: 1
+    MediaAsset:
+      type: object
+      description: |
+        An uploaded image. `width`, `height`, `blurhash`, `palette` and `variants` are filled once the status is
+        `READY`. The private original is never listed.
+      required: [id, ownerId, purpose, status, contentType, sizeBytes, palette, variants, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: 'common.yaml#/components/schemas/AssetId'
+        ownerId:
+          $ref: 'common.yaml#/components/schemas/UserId'
+        purpose:
+          $ref: '#/components/schemas/MediaPurpose'
+        status:
+          $ref: '#/components/schemas/MediaStatus'
+        contentType:
+          type: string
+          description: Content type of the original, decided from its content.
+          example: image/jpeg
+        sizeBytes:
+          type: integer
+          format: int64
+          description: Size of the original.
+        width:
+          type: integer
+          nullable: true
+          description: Width of the normalized full-size image in pixels.
+        height:
+          type: integer
+          nullable: true
+        blurhash:
+          type: string
+          nullable: true
+        palette:
+          type: array
+          description: Dominant colors as `#rrggbb`.
+          items:
+            type: string
+            pattern: '^#[0-9a-f]{6}$'
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaVariant'
+        rejectReason:
+          type: string
+          nullable: true
+          description: |
+            Reason code when the status is `REJECTED`: `UNSUPPORTED_FORMAT`, `TOO_SMALL`, `TOO_LARGE_PIXELS`,
+            `DUPLICATE`, `MODERATION` or another code. Localized texts are `media.reject-reason.<code>`.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      example:
+        id: ast_01HXZ3Q8K5N2V7B9C4D6F8G0JM
+        ownerId: 3f2b8c1e-6a54-4c1d-9d0b-5f8d2a7e9c10
+        purpose: WALLPAPER
+        status: READY
+        contentType: image/jpeg
+        sizeBytes: 8412345
+        width: 3840
+        height: 2160
+        blurhash: LKO2?U%2Tw=w]~RBVZRi};RPxuwH
+        palette: ['#2b3a2f', '#8aa08c']
+        variants:
+          - kind: THUMBNAIL
+            url: http://localhost:9000/wallpaperhub-media/wallpaper/2026/11/ast_01HXZ3Q8K5N2V7B9C4D6F8G0JM/thumbnail.webp
+            width: 320
+            height: 180
+            format: webp
+            sizeBytes: 11234
+        rejectReason: null
+        createdAt: '2026-11-09T12:00:00Z'
+        updatedAt: '2026-11-09T12:00:07Z'
+    PresignedUrl:
+      type: object
+      required: [url, expiresAt]
+      properties:
+        url:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date-time
+    MediaAssetPage:
+      allOf:
+        - $ref: 'common.yaml#/components/schemas/PageMeta'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/MediaAsset'

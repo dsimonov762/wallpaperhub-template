@@ -1,0 +1,628 @@
+openapi: 3.0.3
+info:
+  title: Wallpaper Hub - account-service API
+  version: 1.0.0
+  description: |
+    Registration, user profiles and the educational token endpoints. Everything is served under `/api/v1`
+    and reached through the gateway. Shared conventions (pagination, problem+json errors, `Idempotency-Key`,
+    `If-Match`, `Accept-Language`) are defined in `common.yaml`. The internal gRPC API of this service is a
+    separate contract: `contracts/proto/account/v1/account.proto`.
+
+    Vendor extensions used on every operation: `x-access` (who may call it: `public`, `authenticated`, `owner`,
+    `owner-or-admin`, `admin`, ...) and `x-error-codes` (the domain error codes it can return).
+servers:
+  - url: /api/v1
+    description: Through the gateway, relative to the host that serves this document
+  - url: http://localhost:8080/api/v1
+    description: Local compose stack
+security:
+  - bearerAuth: []
+tags:
+  - name: Registration
+    description: Public sign-up.
+  - name: Users
+    description: Profiles.
+  - name: Auth
+    description: Educational token endpoints (README 7). Normally resource servers never see refresh tokens.
+
+paths:
+  /registrations:
+    post:
+      tags: [Registration]
+      operationId: registerUser
+      summary: Register a new user
+      description: |
+        Creates the user in Keycloak (with the service's client-credentials token) and the profile in this service.
+        The profile row and a `UserRegistered` outbox event are written in one transaction (README 4.3); the event
+        triggers the welcome email. Public and rate-limited.
+        The password must satisfy the realm policy (at least 8 characters, not equal to the username).
+      x-access: public
+      x-error-codes: [user.username-taken, user.email-taken, idempotency.key-reused, idempotency.in-progress]
+      security: []
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+            example:
+              username: alice
+              email: alice@example.com
+              password: correct-horse-battery
+              displayName: Alice Example
+              locale: en
+      responses:
+        '201':
+          description: The user was created.
+          headers:
+            Location:
+              $ref: 'common.yaml#/components/headers/Location'
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '429':
+          $ref: 'common.yaml#/components/responses/RateLimited'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+        '503':
+          $ref: 'common.yaml#/components/responses/UpstreamUnavailable'
+
+  /users:
+    get:
+      tags: [Users]
+      operationId: listUsers
+      summary: List users
+      description: Paged, filterable list of all users. Administrators only.
+      x-access: admin
+      x-error-codes: [pagination.size-too-large, pagination.sort-not-allowed]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/Page'
+        - $ref: 'common.yaml#/components/parameters/Size'
+        - $ref: '#/components/parameters/UserSort'
+        - $ref: '#/components/parameters/UserQuery'
+        - $ref: '#/components/parameters/UserStatusFilter'
+      responses:
+        '200':
+          description: One page of users.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPage'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: 'common.yaml#/components/responses/Forbidden'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /users/me:
+    get:
+      tags: [Users]
+      operationId: getCurrentUser
+      summary: Get the caller's profile
+      description: The caller's own profile, including the e-mail address (which other users never see). The response carries an `ETag` to use in `If-Match` when updating.
+      x-access: authenticated
+      x-error-codes: [user.not-found]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '200':
+          description: The caller's own profile.
+          headers:
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+    patch:
+      tags: [Users]
+      operationId: updateCurrentUser
+      summary: Change the caller's profile
+      description: |
+        Partial update: only the given fields change. A change of `displayName` also writes a `profile-updated`
+        outbox event so that catalog can refresh its author snapshots (README 4.2).
+      x-access: authenticated
+      x-error-codes: [user.not-found, request.version-conflict]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+            example:
+              displayName: Alice in Wonderland
+              bio: Fog, forests and long exposures.
+      responses:
+        '200':
+          description: The updated profile.
+          headers:
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /users/me/avatar:
+    put:
+      tags: [Users]
+      operationId: setAvatar
+      summary: Set the caller's avatar
+      description: |
+        Links an uploaded media asset (purpose `AVATAR`) as the avatar. The profile change and a `profile-updated`
+        outbox event are written in one transaction (README 4.2).
+
+        Before anything is written, account-service verifies the asset with media-service (`GET /media/{id}`, REST,
+        with the caller's own access token forwarded, so media applies its owner check). The asset must exist
+        (`media.asset-not-found`, 404), belong to the caller (`media.asset-not-owned`, 403), have the purpose `AVATAR`
+        (`media.asset-purpose-mismatch`, 409) and not be `REJECTED` (`media.asset-rejected`, 409). `PROCESSING` is
+        accepted, like for wallpapers. While media-service is unreachable the answer is `503`; nothing is changed.
+      x-access: authenticated
+      x-error-codes: [user.not-found, media.asset-not-found, media.asset-not-owned, media.asset-rejected, media.asset-purpose-mismatch, request.version-conflict]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetImageRequest'
+            example:
+              assetId: ast_01HXZ3Q8K5N2V7B9C4D6F8G0JM
+      responses:
+        '200':
+          description: The updated profile.
+          headers:
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: 'common.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+        '503':
+          $ref: 'common.yaml#/components/responses/UpstreamUnavailable'
+
+  /users/me/banner:
+    put:
+      tags: [Users]
+      operationId: setBanner
+      summary: Set the caller's banner
+      description: |
+        Same as the avatar, for a media asset with purpose `BANNER`: the asset is verified with media-service first
+        (exists, owned by the caller, purpose `BANNER`, not `REJECTED`).
+      x-access: authenticated
+      x-error-codes: [user.not-found, media.asset-not-found, media.asset-not-owned, media.asset-rejected, media.asset-purpose-mismatch, request.version-conflict]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+        - $ref: 'common.yaml#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetImageRequest'
+            example:
+              assetId: ast_01HXZ3Q8K5N2V7B9C4D6F8G0JM
+      responses:
+        '200':
+          description: The updated profile.
+          headers:
+            ETag:
+              $ref: 'common.yaml#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: 'common.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+        '503':
+          $ref: 'common.yaml#/components/responses/UpstreamUnavailable'
+
+  /users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/UserIdPath'
+    get:
+      tags: [Users]
+      operationId: getUser
+      summary: Get a public profile
+      description: Public view of any user (no email address, locale or status).
+      x-access: authenticated
+      x-error-codes: [user.not-found]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '200':
+          description: The public profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicUser'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+    delete:
+      tags: [Users]
+      operationId: deleteUser
+      summary: Delete a user (soft delete)
+      description: |
+        Marks the user as deleted (`deleted_at`); the data is purged after the 30-day retention (README 9).
+        A `user.deleted` outbox event tells catalog, media and notification to clean up.
+        Allowed for the user themselves and for administrators.
+      x-access: owner-or-admin
+      x-error-codes: [user.not-found]
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      responses:
+        '204':
+          description: The user was deleted.
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: 'common.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      operationId: refreshToken
+      summary: Exchange a refresh token for new tokens
+      description: |
+        Validates the shape of the refresh token (`typ=Refresh`, `azp`, `exp`) and exchanges it at Keycloak.
+        Educational: normally the client talks to Keycloak directly. No access token is required.
+      x-access: public
+      x-error-codes: [auth.refresh-token-invalid]
+      security: []
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+            example:
+              refreshToken: eyJhbGciOiJIUzUxMiIsInR5cCI6IlJlZnJlc2gifQ.example.signature
+      responses:
+        '200':
+          description: New tokens.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '429':
+          $ref: 'common.yaml#/components/responses/RateLimited'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+        '503':
+          $ref: 'common.yaml#/components/responses/UpstreamUnavailable'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Revoke a refresh token
+      description: Revokes the refresh token at Keycloak, which ends the session. No access token is required.
+      x-access: public
+      x-error-codes: [auth.refresh-token-invalid]
+      security: []
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/AcceptLanguage'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+            example:
+              refreshToken: eyJhbGciOiJIUzUxMiIsInR5cCI6IlJlZnJlc2gifQ.example.signature
+      responses:
+        '204':
+          description: The refresh token was revoked.
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '429':
+          $ref: 'common.yaml#/components/responses/RateLimited'
+        '500':
+          $ref: 'common.yaml#/components/responses/InternalError'
+        '503':
+          $ref: 'common.yaml#/components/responses/UpstreamUnavailable'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: 'common.yaml#/components/securitySchemes/bearerAuth'
+
+  parameters:
+    UserIdPath:
+      name: id
+      in: path
+      required: true
+      description: User id.
+      schema:
+        $ref: 'common.yaml#/components/schemas/UserId'
+    UserSort:
+      name: sort
+      in: query
+      required: false
+      description: Sort order, `<field>,<direction>`.
+      schema:
+        type: string
+        enum: ['createdAt,desc', 'createdAt,asc', 'username,asc', 'username,desc']
+        default: 'createdAt,desc'
+    UserQuery:
+      name: q
+      in: query
+      required: false
+      description: Only users whose username, display name or email contains this text (case-insensitive).
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+    UserStatusFilter:
+      name: status
+      in: query
+      required: false
+      description: Only users with this status. Soft-deleted users are never listed.
+      schema:
+        $ref: '#/components/schemas/UserStatus'
+
+  schemas:
+    Username:
+      type: string
+      minLength: 3
+      maxLength: 30
+      pattern: '^[a-z0-9_]+$'
+      description: Unique handle, lower-case letters, digits and underscores.
+      example: alice
+    DisplayName:
+      type: string
+      minLength: 1
+      maxLength: 60
+      description: Name shown next to the user's wallpapers.
+      example: Alice Example
+    Bio:
+      type: string
+      maxLength: 500
+      description: Free-text biography.
+      example: Fog, forests and long exposures.
+    UserStatus:
+      type: string
+      enum: [ACTIVE, SUSPENDED]
+      description: Account state. A deleted user is not a status, it is removed from every view.
+    RegistrationRequest:
+      type: object
+      required: [username, email, password, displayName]
+      additionalProperties: false
+      properties:
+        username:
+          $ref: '#/components/schemas/Username'
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          example: alice@example.com
+        password:
+          type: string
+          format: password
+          writeOnly: true
+          minLength: 8
+          maxLength: 128
+          description: At least 8 characters and not equal to the username (realm policy).
+        displayName:
+          $ref: '#/components/schemas/DisplayName'
+        locale:
+          allOf:
+            - $ref: 'common.yaml#/components/schemas/Locale'
+          default: en
+    User:
+      type: object
+      description: The caller's own profile (private view, includes the email address).
+      required: [id, username, email, displayName, locale, status, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: 'common.yaml#/components/schemas/UserId'
+        username:
+          $ref: '#/components/schemas/Username'
+        email:
+          type: string
+          format: email
+        displayName:
+          $ref: '#/components/schemas/DisplayName'
+        bio:
+          type: string
+          nullable: true
+          maxLength: 500
+        locale:
+          $ref: 'common.yaml#/components/schemas/Locale'
+        avatarAssetId:
+          type: string
+          nullable: true
+          pattern: '^ast_[0-9A-HJKMNP-TV-Z]{26}$'
+          description: Media asset linked as avatar, if any.
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Public URL of the avatar image (largest variant), null without an avatar.
+        bannerAssetId:
+          type: string
+          nullable: true
+          pattern: '^ast_[0-9A-HJKMNP-TV-Z]{26}$'
+        bannerUrl:
+          type: string
+          format: uri
+          nullable: true
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      example:
+        id: 3f2b8c1e-6a54-4c1d-9d0b-5f8d2a7e9c10
+        username: alice
+        email: alice@example.com
+        displayName: Alice Example
+        bio: null
+        locale: en
+        avatarAssetId: null
+        avatarUrl: null
+        bannerAssetId: null
+        bannerUrl: null
+        status: ACTIVE
+        createdAt: '2026-11-09T12:00:00Z'
+        updatedAt: '2026-11-09T12:00:00Z'
+    PublicUser:
+      type: object
+      description: What anybody may see of a user. Never contains the email address, locale or status.
+      required: [id, username, displayName, createdAt]
+      properties:
+        id:
+          $ref: 'common.yaml#/components/schemas/UserId'
+        username:
+          $ref: '#/components/schemas/Username'
+        displayName:
+          $ref: '#/components/schemas/DisplayName'
+        bio:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+        bannerUrl:
+          type: string
+          format: uri
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    UpdateProfileRequest:
+      type: object
+      description: Partial update. At least one field is required; `bio` may be set to null to clear it.
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        displayName:
+          $ref: '#/components/schemas/DisplayName'
+        bio:
+          type: string
+          nullable: true
+          maxLength: 500
+        locale:
+          $ref: 'common.yaml#/components/schemas/Locale'
+    SetImageRequest:
+      type: object
+      required: [assetId]
+      additionalProperties: false
+      properties:
+        assetId:
+          $ref: 'common.yaml#/components/schemas/AssetId'
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      additionalProperties: false
+      properties:
+        refreshToken:
+          type: string
+          minLength: 1
+          maxLength: 8192
+    TokenResponse:
+      type: object
+      required: [accessToken, refreshToken, tokenType, expiresIn, refreshExpiresIn]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          enum: [Bearer]
+        expiresIn:
+          type: integer
+          description: Lifetime of the access token in seconds.
+          example: 300
+        refreshExpiresIn:
+          type: integer
+          description: Lifetime of the refresh token in seconds.
+          example: 1800
+    UserPage:
+      allOf:
+        - $ref: 'common.yaml#/components/schemas/PageMeta'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'

@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "AssetRejected",
+  "namespace": "dev.wallpaperhub.media.v1",
+  "doc": "The pipeline refused the upload. reasonCode is a stable code that maps to an i18n message key for the email (for example UNSUPPORTED_FORMAT, TOO_SMALL, TOO_LARGE_PIXELS, DUPLICATE, MODERATION); detail is for logs and support, not for end users.",
+  "fields": [
+    { "name": "eventId",    "type": "string" },
+    { "name": "assetId",    "type": "string" },
+    { "name": "ownerId",    "type": "string" },
+    { "name": "purpose",    "type": "string" },
+    { "name": "reasonCode", "type": "string" },
+    { "name": "detail",     "type": ["null", "string"], "default": null },
+    { "name": "occurredAt", "type": { "type": "long", "logicalType": "timestamp-millis" } }
+  ]
+}

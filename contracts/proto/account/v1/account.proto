@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package wallpaperhub.account.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Package/namespace options so every language gets a sensible default.
+// go_package is a placeholder: change it to your Go module path.
+option java_multiple_files = true;
+option java_package = "dev.wallpaperhub.account.v1";
+option java_outer_classname = "AccountProto";
+option go_package = "wallpaperhub.dev/contracts/gen/account/v1;accountv1";
+option csharp_namespace = "WallpaperHub.Account.V1";
+
+// Internal service-to-service API (container port 9090). Not exposed through the gateway.
+//
+// Authentication: every call carries a Keycloak access token from the Client Credentials flow in the
+// `authorization: Bearer <token>` metadata entry. The server validates it like any other request and
+// requires the `internal` role (README section 7).
+//
+// Errors use the codes of the exception model (README 5.3): UNAUTHENTICATED, PERMISSION_DENIED,
+// NOT_FOUND, INVALID_ARGUMENT, UNAVAILABLE.
+//
+// A soft-deleted user (README 6.1, `deleted_at` set) is treated as not existing by every RPC below.
+service AccountService {
+  // Returns one user. NOT_FOUND if the id is unknown or the user is soft-deleted.
+  rpc GetUser(GetUserRequest) returns (User);
+
+  // Batch lookup that feeds the GraphQL DataLoader (Wallpaper.author).
+  // Unknown and soft-deleted ids are omitted from the response, not reported as errors, and the order of
+  // `users` is unspecified: callers match by `User.id`. At most 100 ids per call (INVALID_ARGUMENT above that).
+  rpc GetUsersByIds(GetUsersByIdsRequest) returns (GetUsersByIdsResponse);
+
+  // Server-streaming demo: every user with `updated_at >= since`, oldest first. Intended for resync jobs.
+  rpc ListUsersUpdatedSince(UpdatedSinceRequest) returns (stream User);
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetUsersByIdsRequest {
+  repeated string ids = 1;
+}
+
+message GetUsersByIdsResponse {
+  repeated User users = 1;
+}
+
+message UpdatedSinceRequest {
+  google.protobuf.Timestamp since = 1;
+}
+
+message User {
+  string id = 1;            // UUID, equal to the Keycloak `sub`
+  string username = 2;
+  string display_name = 3;
+  string email = 4;         // PII: only ever returned to callers holding the `internal` role
+  string locale = 5;        // "en", "de" or "es"
+  string avatar_url = 6;    // empty string when the user has no avatar
+}

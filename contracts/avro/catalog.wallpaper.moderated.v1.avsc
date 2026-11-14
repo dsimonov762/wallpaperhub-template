@@ -1,0 +1,25 @@
+{
+  "type": "record",
+  "name": "WallpaperModerated",
+  "namespace": "dev.wallpaperhub.catalog.v1",
+  "doc": "A MODERATOR acted on a wallpaper (POST /wallpapers/{id}/moderation). Notification tells the author.",
+  "fields": [
+    { "name": "eventId",     "type": "string" },
+    { "name": "wallpaperId", "type": "string" },
+    { "name": "authorId",    "type": "string" },
+    { "name": "title",       "type": "string" },
+    {
+      "name": "decision",
+      "type": {
+        "type": "enum",
+        "name": "ModerationDecision",
+        "symbols": ["UNKNOWN", "APPROVED", "REJECTED", "REMOVED"],
+        "default": "UNKNOWN",
+        "doc": "UNKNOWN is the fallback a reader uses when a newer writer adds a symbol it does not know."
+      }
+    },
+    { "name": "reason",      "type": ["null", "string"], "default": null },
+    { "name": "moderatorId", "type": "string" },
+    { "name": "occurredAt",  "type": { "type": "long", "logicalType": "timestamp-millis" } }
+  ]
+}

@@ -1,0 +1,597 @@
+// GENERATED from catalog.json by build-init.mjs. Do not edit; edit catalog.json and rebuild.
+// Run with:  mongosh "mongodb://localhost:27017" --file init.js
+// Idempotent: creates missing collections, updates validators of existing ones, creates missing indexes.
+const spec = {
+  "database": "catalog",
+  "collections": {
+    "wallpapers": {
+      "description": "Wallpaper aggregate (README 6.3). Dates are BSON dates (the README's ISO strings are the JSON form). Ids and UUIDs are strings.",
+      "validator": {
+        "$jsonSchema": {
+          "bsonType": "object",
+          "additionalProperties": false,
+          "required": [
+            "_id",
+            "title",
+            "tags",
+            "category",
+            "status",
+            "assetId",
+            "variants",
+            "palette",
+            "author",
+            "favoriteCount",
+            "createdAt",
+            "updatedAt",
+            "version"
+          ],
+          "properties": {
+            "_id": {
+              "bsonType": "string",
+              "pattern": "^wp_[0-9A-HJKMNP-TV-Z]{26}$",
+              "description": "Wallpaper id, wp_ + ULID."
+            },
+            "title": {
+              "bsonType": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "description": {
+              "bsonType": [
+                "string",
+                "null"
+              ],
+              "maxLength": 2000
+            },
+            "tags": {
+              "bsonType": "array",
+              "maxItems": 20,
+              "uniqueItems": true,
+              "items": {
+                "bsonType": "string",
+                "pattern": "^[a-z0-9-]{1,30}$"
+              }
+            },
+            "category": {
+              "bsonType": "string",
+              "enum": [
+                "NATURE",
+                "ABSTRACT",
+                "ANIMALS",
+                "ARCHITECTURE",
+                "SPACE",
+                "TECHNOLOGY",
+                "MINIMAL",
+                "OTHER"
+              ]
+            },
+            "status": {
+              "bsonType": "string",
+              "enum": [
+                "PENDING_MEDIA",
+                "PUBLISHED",
+                "REJECTED",
+                "REMOVED"
+              ]
+            },
+            "assetId": {
+              "bsonType": "string",
+              "pattern": "^ast_[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            "variants": {
+              "bsonType": "array",
+              "items": {
+                "bsonType": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "url",
+                  "width",
+                  "height"
+                ],
+                "properties": {
+                  "kind": {
+                    "bsonType": "string",
+                    "enum": [
+                      "THUMBNAIL",
+                      "PREVIEW",
+                      "FULL"
+                    ]
+                  },
+                  "url": {
+                    "bsonType": "string",
+                    "minLength": 1
+                  },
+                  "width": {
+                    "bsonType": [
+                      "int",
+                      "long"
+                    ],
+                    "minimum": 1
+                  },
+                  "height": {
+                    "bsonType": [
+                      "int",
+                      "long"
+                    ],
+                    "minimum": 1
+                  }
+                }
+              }
+            },
+            "dimensions": {
+              "bsonType": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": false,
+              "required": [
+                "width",
+                "height"
+              ],
+              "properties": {
+                "width": {
+                  "bsonType": [
+                    "int",
+                    "long"
+                  ],
+                  "minimum": 1
+                },
+                "height": {
+                  "bsonType": [
+                    "int",
+                    "long"
+                  ],
+                  "minimum": 1
+                }
+              }
+            },
+            "palette": {
+              "bsonType": "array",
+              "items": {
+                "bsonType": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              }
+            },
+            "blurhash": {
+              "bsonType": [
+                "string",
+                "null"
+              ]
+            },
+            "author": {
+              "bsonType": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "username",
+                "displayName"
+              ],
+              "description": "Denormalized snapshot of the author, refreshed from account.user.profile-updated.v1.",
+              "properties": {
+                "id": {
+                  "bsonType": "string",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                },
+                "username": {
+                  "bsonType": "string",
+                  "pattern": "^[a-z0-9_]{3,30}$"
+                },
+                "displayName": {
+                  "bsonType": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                },
+                "avatarUrl": {
+                  "bsonType": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "favoriteCount": {
+              "bsonType": [
+                "int",
+                "long"
+              ],
+              "minimum": 0
+            },
+            "viewCount": {
+              "bsonType": [
+                "int",
+                "long"
+              ],
+              "minimum": 0
+            },
+            "downloadCount": {
+              "bsonType": [
+                "int",
+                "long"
+              ],
+              "minimum": 0
+            },
+            "moderation": {
+              "bsonType": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": false,
+              "required": [
+                "decision",
+                "moderatorId",
+                "decidedAt"
+              ],
+              "properties": {
+                "decision": {
+                  "bsonType": "string",
+                  "enum": [
+                    "APPROVED",
+                    "REJECTED",
+                    "REMOVED"
+                  ]
+                },
+                "reason": {
+                  "bsonType": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 500
+                },
+                "moderatorId": {
+                  "bsonType": "string",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                },
+                "decidedAt": {
+                  "bsonType": "date"
+                }
+              }
+            },
+            "createdAt": {
+              "bsonType": "date"
+            },
+            "updatedAt": {
+              "bsonType": "date"
+            },
+            "version": {
+              "bsonType": [
+                "int",
+                "long"
+              ],
+              "minimum": 0,
+              "description": "Optimistic lock counter, exposed as the ETag."
+            }
+          }
+        },
+        "$expr": {
+          "$or": [
+            {
+              "$ne": [
+                "$status",
+                "PUBLISHED"
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "$gt": [
+                    {
+                      "$size": "$variants"
+                    },
+                    0
+                  ]
+                },
+                {
+                  "$eq": [
+                    {
+                      "$type": "$dimensions"
+                    },
+                    "object"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "indexes": [
+        {
+          "name": "status_created",
+          "key": {
+            "status": 1,
+            "createdAt": -1,
+            "_id": -1
+          }
+        },
+        {
+          "name": "status_category_created",
+          "key": {
+            "status": 1,
+            "category": 1,
+            "createdAt": -1,
+            "_id": -1
+          }
+        },
+        {
+          "name": "status_tags_created",
+          "key": {
+            "status": 1,
+            "tags": 1,
+            "createdAt": -1,
+            "_id": -1
+          }
+        },
+        {
+          "name": "author_status_created",
+          "key": {
+            "author.id": 1,
+            "status": 1,
+            "createdAt": -1,
+            "_id": -1
+          }
+        },
+        {
+          "name": "status_favorites",
+          "key": {
+            "status": 1,
+            "favoriteCount": -1,
+            "createdAt": -1,
+            "_id": -1
+          }
+        },
+        {
+          "name": "asset_uq",
+          "key": {
+            "assetId": 1
+          },
+          "unique": true
+        },
+        {
+          "name": "text_fallback",
+          "key": {
+            "title": "text",
+            "description": "text",
+            "tags": "text"
+          },
+          "weights": {
+            "title": 10,
+            "tags": 5,
+            "description": 1
+          },
+          "default_language": "none"
+        }
+      ]
+    },
+    "favorites": {
+      "description": "One document per (user, wallpaper). The unique index makes favoriting idempotent; keyset pagination walks user_created.",
+      "validator": {
+        "$jsonSchema": {
+          "bsonType": "object",
+          "additionalProperties": false,
+          "required": [
+            "_id",
+            "userId",
+            "wallpaperId",
+            "createdAt"
+          ],
+          "properties": {
+            "_id": {
+              "bsonType": "objectId"
+            },
+            "userId": {
+              "bsonType": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "wallpaperId": {
+              "bsonType": "string",
+              "pattern": "^wp_[0-9A-HJKMNP-TV-Z]{26}$",
+              "description": "Wallpaper id, wp_ + ULID."
+            },
+            "createdAt": {
+              "bsonType": "date"
+            }
+          }
+        }
+      },
+      "indexes": [
+        {
+          "name": "user_wallpaper_uq",
+          "key": {
+            "userId": 1,
+            "wallpaperId": 1
+          },
+          "unique": true
+        },
+        {
+          "name": "user_created",
+          "key": {
+            "userId": 1,
+            "createdAt": -1,
+            "_id": -1
+          }
+        },
+        {
+          "name": "wallpaper",
+          "key": {
+            "wallpaperId": 1
+          }
+        }
+      ]
+    },
+    "collections": {
+      "description": "Optional second entity (README 5.1). Private to the owner.",
+      "validator": {
+        "$jsonSchema": {
+          "bsonType": "object",
+          "additionalProperties": false,
+          "required": [
+            "_id",
+            "ownerId",
+            "title",
+            "wallpaperIds",
+            "createdAt",
+            "updatedAt",
+            "version"
+          ],
+          "properties": {
+            "_id": {
+              "bsonType": "string",
+              "pattern": "^col_[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            "ownerId": {
+              "bsonType": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "title": {
+              "bsonType": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "description": {
+              "bsonType": [
+                "string",
+                "null"
+              ],
+              "maxLength": 2000
+            },
+            "wallpaperIds": {
+              "bsonType": "array",
+              "maxItems": 200,
+              "uniqueItems": true,
+              "items": {
+                "bsonType": "string",
+                "pattern": "^wp_[0-9A-HJKMNP-TV-Z]{26}$",
+                "description": "Wallpaper id, wp_ + ULID."
+              }
+            },
+            "createdAt": {
+              "bsonType": "date"
+            },
+            "updatedAt": {
+              "bsonType": "date"
+            },
+            "version": {
+              "bsonType": [
+                "int",
+                "long"
+              ],
+              "minimum": 0,
+              "description": "Optimistic lock counter, exposed as the ETag."
+            }
+          }
+        }
+      },
+      "indexes": [
+        {
+          "name": "owner_created",
+          "key": {
+            "ownerId": 1,
+            "createdAt": -1,
+            "_id": -1
+          }
+        },
+        {
+          "name": "owner_title",
+          "key": {
+            "ownerId": 1,
+            "title": 1
+          }
+        }
+      ]
+    },
+    "audit": {
+      "description": "Application-level audit of catalog changes (README 6.3).",
+      "validator": {
+        "$jsonSchema": {
+          "bsonType": "object",
+          "additionalProperties": false,
+          "required": [
+            "_id",
+            "action",
+            "entityType",
+            "entityId",
+            "createdAt"
+          ],
+          "properties": {
+            "_id": {
+              "bsonType": "objectId"
+            },
+            "actorId": {
+              "bsonType": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "action": {
+              "bsonType": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "entityType": {
+              "bsonType": "string",
+              "minLength": 1
+            },
+            "entityId": {
+              "bsonType": "string",
+              "minLength": 1
+            },
+            "before": {
+              "bsonType": [
+                "object",
+                "null"
+              ]
+            },
+            "after": {
+              "bsonType": [
+                "object",
+                "null"
+              ]
+            },
+            "traceId": {
+              "bsonType": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[0-9a-f]{32}$"
+            },
+            "createdAt": {
+              "bsonType": "date"
+            }
+          }
+        }
+      },
+      "indexes": [
+        {
+          "name": "entity",
+          "key": {
+            "entityType": 1,
+            "entityId": 1,
+            "createdAt": -1
+          }
+        },
+        {
+          "name": "created",
+          "key": {
+            "createdAt": -1
+          }
+        }
+      ]
+    }
+  }
+};
+
+const target = db.getSiblingDB(spec.database);
+const existing = new Set(target.getCollectionNames());
+
+for (const [name, def] of Object.entries(spec.collections)) {
+  const options = { validator: def.validator, validationLevel: 'strict', validationAction: 'error' };
+  if (existing.has(name)) {
+    target.runCommand({ collMod: name, ...options });
+    print('updated validator: ' + name);
+  } else {
+    target.createCollection(name, options);
+    print('created collection: ' + name);
+  }
+  target.runCommand({ createIndexes: name, indexes: def.indexes });
+  print('indexes ensured: ' + name + ' (' + def.indexes.length + ')');
+}

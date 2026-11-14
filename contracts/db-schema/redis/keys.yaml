@@ -1,0 +1,239 @@
+# Redis key catalogue (README 6.5), machine-readable.
+#
+# `instance`: `shared` is the compose service `redis` (cache, no persistence, used by account, media, catalog and the
+# gateway); `notification` is `redis-notification` (AOF on, the primary database of notification-service).
+# Never put notification keys on the shared instance: it has no persistence.
+# `origin`: `readme` = listed in README 6.5, `added` = added by this document (see README.md of this folder for why).
+# Notation: {x} is a placeholder, ids are the public ids (`wp_...`, `ntf_...`) or Keycloak user UUIDs. TTLs with
+# jitter mean the base TTL plus or minus 20 %, so entries written together do not expire together.
+
+version: 1
+conventions:
+  separator: ":"
+  all_keys_lowercase_prefix: true
+  ttl_jitter: "±20%"
+  stampede_protection: "single-flight in process plus lock:{job}-style lock for cross-instance cases"
+
+keys:
+  # ------------------------------------------------------------------ account
+  - pattern: "cache:user:{id}"
+    owner: account
+    instance: shared
+    type: string
+    value: "JSON of the user profile (the User schema of account.yaml, plus avatarUrl/bannerUrl)"
+    ttl: "5 min, jittered"
+    invalidation: "on every profile write and on account.user.deleted.v1"
+    origin: readme
+
+  # ------------------------------------------------------------------ gateway and shared
+  - pattern: "rl:{scope}:{key}"
+    owner: gateway, all
+    instance: shared
+    type: string
+    value: "token-bucket state (counter or tokens + timestamp, implementation specific)"
+    ttl: "the rate-limit window"
+    notes: "{scope} is the limit name (registrations, auth, media, search, default); {key} is the user id or the client IP."
+    origin: readme
+
+  - pattern: "lock:{job}"
+    owner: all
+    instance: shared
+    type: string
+    value: "random token of the holder"
+    ttl: "longer than the job's normal run time (SET NX PX); the holder extends it for long jobs"
+    notes: "Job names are unique across services (outbox-relay, outbox-cleanup, purge-users, orphan-assets, trending, counter-flush, digest). Release with compare-and-delete so a slow holder cannot free someone else's lock."
+    origin: readme
+
+  - pattern: "idem:{service}:{principal}:{key}"
+    owner: account, media, catalog, notification
+    instance: shared
+    type: hash
+    fields:
+      status: "IN_PROGRESS or DONE"
+      request_hash: "SHA-256 of method, path and body; a different hash under the same key is idempotency.key-reused"
+      response_status: "HTTP status of the stored response"
+      response_headers: "JSON, only Location and ETag"
+      response_body: "JSON"
+    ttl: "24 h for DONE, 60 s for IN_PROGRESS (a crashed request must not block retries for long)"
+    notes: "README lists idem:{key}. The key a client sends is not unique across users, so the service and principal (user id, or `anon` for public endpoints) are part of the Redis key; otherwise one user could replay another user's stored response. notification-service uses its own instance."
+    origin: readme
+
+  # ------------------------------------------------------------------ media
+  - pattern: "queue:media:*"
+    owner: media
+    instance: shared
+    type: list or stream
+    notes: "Image-processing job queue; the layout is library-specific (BullMQ, Asynq, Sidekiq, Celery, RQ, ...). Failed jobs retry, then land in a dead-letter queue."
+    origin: readme
+
+  - pattern: "dedup:media:{eventId}"
+    owner: media
+    instance: shared
+    type: string
+    value: "1"
+    ttl: "7 days"
+    notes: "Consumed-event dedupe for account.user.deleted.v1 (SET NX EX)."
+    origin: added
+
+  # ------------------------------------------------------------------ catalog
+  - pattern: "cache:wallpaper:{id}"
+    owner: catalog
+    instance: shared
+    type: string
+    value: "JSON of the wallpaper without the per-user fields (favoritedByMe)"
+    ttl: "5 min, jittered"
+    invalidation: "event-driven: media.asset.processed, account.user.profile-updated, moderation, favorites and edits"
+    origin: readme
+
+  - pattern: "cnt:view:{id}"
+    owner: catalog
+    instance: shared
+    type: string
+    value: "integer, INCR"
+    ttl: none
+    notes: "Write-behind counter; the 1-minute job GETDELs it and $inc's wallpapers.viewCount in Mongo."
+    origin: readme
+
+  - pattern: "cnt:dl:{id}"
+    owner: catalog
+    instance: shared
+    type: string
+    value: "integer, INCR"
+    ttl: none
+    notes: "Same as cnt:view:{id} for downloadCount."
+    origin: readme
+
+  - pattern: "hll:views:{id}"
+    owner: catalog
+    instance: shared
+    type: hyperloglog
+    value: "PFADD with the viewer id (user id, or a hash of the client IP for anonymous views)"
+    ttl: none
+    origin: readme
+
+  - pattern: "zset:trending"
+    owner: catalog
+    instance: shared
+    type: sorted set
+    value: "member = wallpaper id, score = trending score"
+    ttl: none
+    notes: "Rebuilt every 5 minutes: write a temporary key and RENAME it over this one."
+    origin: readme
+
+  - pattern: "dedup:catalog:{eventId}"
+    owner: catalog
+    instance: shared
+    type: string
+    value: "1"
+    ttl: "7 days"
+    notes: "Consumed-event dedupe for account.user.profile-updated.v1, account.user.deleted.v1 and media.asset.processed.v1."
+    origin: added
+
+  # ------------------------------------------------------------------ notification (own instance)
+  - pattern: "inbox:{userId}"
+    owner: notification
+    instance: notification
+    type: sorted set
+    value: "member = notification id (ntf_ + ULID), score = createdAt in epoch milliseconds"
+    ttl: none
+    retention: "trimmed to the newest 500 entries on every insert (ZREMRANGEBYRANK 0 -501)"
+    notes: "GET /notifications: ZREVRANGE (desc) or ZRANGE (asc) with offset/limit; totalItems is ZCARD. Ids are ULIDs, so equal scores still order deterministically. Deleted with account.user.deleted.v1."
+    origin: readme
+
+  - pattern: "inbox:unread:{userId}"
+    owner: notification
+    instance: notification
+    type: sorted set
+    value: "same members and scores as inbox:{userId}, only the unread ones"
+    ttl: none
+    notes: "Makes `unread=true` and the unread count O(log n) instead of a scan. Removed members on POST /notifications/{id}/read (ZREM). Trimmed together with inbox:{userId}."
+    origin: added
+
+  - pattern: "notif:{id}"
+    owner: notification
+    instance: notification
+    type: hash
+    fields:
+      id: "ntf_ + ULID"
+      userId: "recipient, Keycloak sub"
+      type: "WELCOME, WALLPAPER_PUBLISHED, WALLPAPER_MODERATED, ASSET_REJECTED or TEST"
+      title: "rendered in the recipient's locale when created"
+      body: "rendered in the recipient's locale when created"
+      data: "JSON object string: wallpaperId, assetId, decision"
+      read: "0 or 1"
+      readAt: "epoch milliseconds, empty while unread"
+      createdAt: "epoch milliseconds"
+    ttl: "90 days (expiring entries leave dangling ids in the zsets; readers skip them and ZREM)"
+    origin: readme
+
+  - pattern: "prefs:{userId}"
+    owner: notification
+    instance: notification
+    type: hash
+    fields:
+      locale: "en, de or es"
+      email: "0 or 1"
+      inApp: "0 or 1"
+      digest: "0 or 1"
+      version: "integer, the ETag of PUT /notification-preferences"
+      updatedAt: "epoch milliseconds"
+    ttl: none
+    notes: "Absent key = defaults: locale from the profile (fallback en), email, inApp and digest on, version 0. Compare-and-set the version with WATCH or a Lua script for If-Match."
+    origin: readme
+
+  - pattern: "dedup:notification:{eventId}"
+    owner: notification
+    instance: notification
+    type: string
+    value: "1"
+    ttl: "7 days"
+    notes: "README lists dedup:{eventId}. Every consumer uses dedup:{service}:{eventId}: catalog and media share one Redis and both consume account.user.deleted.v1, so a single shared dedup:{eventId} would make the second consumer skip the event. Notification keeps the same shape for symmetry."
+    origin: readme
+
+  - pattern: "inbox:live:{userId}"
+    owner: notification
+    instance: notification
+    type: pub/sub channel
+    value: "JSON frame {event, id, data} as in notification.yaml WebSocketFrame"
+    notes: "Not a stored key. Every instance holding a connection of the user is subscribed and forwards."
+    origin: readme
+
+  - pattern: "stream-ticket:{ticket}"
+    owner: notification
+    instance: notification
+    type: string
+    value: "user id"
+    ttl: "30 s"
+    notes: "One-time: GETDEL when the SSE/WebSocket connection is made."
+    origin: readme
+
+  - pattern: "conn:{userId}"
+    owner: notification
+    instance: notification
+    type: sorted set
+    value: "member = connection id, score = lease expiry in epoch milliseconds"
+    ttl: "refreshed on every heartbeat; whole key EXPIRE 60 s"
+    notes: "The per-user limit of 3 connections has to hold across instances. On connect: ZREMRANGEBYSCORE for expired leases, then ZCARD < 3, then ZADD; renew the lease on each 15-second heartbeat; ZREM on close. Over the limit = 429 stream.too-many-connections."
+    origin: added
+
+  - pattern: "queue:email:*"
+    owner: notification
+    instance: notification
+    type: list or stream
+    notes: "Email delivery queue with retry and dead-letter queue; the layout is library-specific."
+    origin: readme
+
+atomic_recipes:
+  create_notification: |
+    One MULTI/EXEC (or Lua script) so a crash cannot leave half an inbox entry:
+      HSET notif:{id} ...fields...
+      EXPIRE notif:{id} 7776000
+      ZADD inbox:{userId} {createdAtMs} {id}
+      ZADD inbox:unread:{userId} {createdAtMs} {id}
+      ZREMRANGEBYRANK inbox:{userId} 0 -501
+      ZREMRANGEBYRANK inbox:unread:{userId} 0 -501
+      PUBLISH inbox:live:{userId} {frame}
+  mark_read: |
+    HSET notif:{id} read 1 readAt {nowMs}; ZREM inbox:unread:{userId} {id}. Check that notif:{id}.userId equals the caller first (404 notification.not-found otherwise).
+  delete_user: |
+    On account.user.deleted.v1: read inbox:{userId}, DEL every notif:{id} in it, then DEL inbox:{userId} inbox:unread:{userId} prefs:{userId}.

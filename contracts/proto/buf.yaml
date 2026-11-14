@@ -1,0 +1,15 @@
+# buf (https://buf.build) settings for contracts/proto. Run: make contracts-lint, make contracts-breaking
+version: v2
+lint:
+  use: [STANDARD]
+  except:
+    # README 17 puts the file at proto/account/v1/account.proto, not proto/wallpaperhub/account/v1/.
+    - PACKAGE_DIRECTORY_MATCH
+    # The README design returns `User` and streams `User` directly and names the request UpdatedSinceRequest.
+    # Wrapping them (GetUserResponse, ListUsersUpdatedSinceRequest, ...) is the buf convention and makes later
+    # additions non-breaking; drop these three lines and rename if you prefer that over the README text.
+    - RPC_REQUEST_RESPONSE_UNIQUE
+    - RPC_REQUEST_STANDARD_NAME
+    - RPC_RESPONSE_STANDARD_NAME
+breaking:
+  use: [FILE]

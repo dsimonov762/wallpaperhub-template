@@ -1,0 +1,16 @@
+[
+  { "name": "plain text is unchanged", "template": "Hello world", "args": {}, "expected": "Hello world" },
+  { "name": "one placeholder", "template": "Hello {name}", "args": { "name": "Ann" }, "expected": "Hello Ann" },
+  { "name": "repeated and several placeholders", "template": "{a}-{b}-{a}", "args": { "a": "x", "b": "y" }, "expected": "x-y-x" },
+  { "name": "numbers become plain decimal text", "template": "at most {max} tags", "args": { "max": 20 }, "expected": "at most 20 tags" },
+  { "name": "large numbers get no grouping", "template": "{n}", "args": { "n": 1000000 }, "expected": "1000000" },
+  { "name": "missing argument leaves the placeholder", "template": "Hello {name}", "args": {}, "expected": "Hello {name}" },
+  { "name": "extra arguments are ignored", "template": "Hello {name}", "args": { "name": "Ann", "other": "x" }, "expected": "Hello Ann" },
+  { "name": "doubled braces are literal braces", "template": "Use {{curly}} braces", "args": {}, "expected": "Use {curly} braces" },
+  { "name": "literal braces around a placeholder", "template": "{{{name}}}", "args": { "name": "Ann" }, "expected": "{Ann}" },
+  { "name": "a lone brace is left alone", "template": "a { b } c", "args": {}, "expected": "a { b } c" },
+  { "name": "placeholder names are case sensitive", "template": "{Name}", "args": { "name": "Ann" }, "expected": "{Name}" },
+  { "name": "values are not formatted again", "template": "{a}", "args": { "a": "{b}", "b": "x" }, "expected": "{b}" },
+  { "name": "newlines pass through", "template": "{a}\n\n{b}", "args": { "a": "1", "b": "2" }, "expected": "1\n\n2" },
+  { "name": "unicode quotes and multiplication sign", "template": "„{title}“ {w}×{h}", "args": { "title": "Nebel", "w": 3840, "h": 2160 }, "expected": "„Nebel“ 3840×2160" }
+]

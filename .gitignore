@@ -1,0 +1,23 @@
+# generated and local files
+*.log
+*.zip
+.contracts-base/
+.host
+.idea/
+.venv-validate/
+.vscode/
+__pycache__/
+bin/
+build/
+conformance/**/__pycache__/
+dist/
+e2e/.run/
+gen/
+infra/.env
+node_modules/
+obj/
+service.log
+target/
+tools/contract-tools/node_modules/
+conformance/.venv/
+conformance/.run/

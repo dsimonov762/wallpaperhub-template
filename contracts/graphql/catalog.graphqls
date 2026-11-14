@@ -1,0 +1,229 @@
+# Wallpaper Hub - catalog-service GraphQL contract (served at /graphql, reached through the gateway).
+#
+# Rules shared by every implementation
+#  - Every operation needs a valid access token (the gateway pre-checks it, the service validates it again).
+#  - Errors carry extensions.code from the exception model (README 5.3): BAD_USER_INPUT, UNAUTHENTICATED,
+#    FORBIDDEN, NOT_FOUND, CONFLICT, PAYLOAD_TOO_LARGE, UNSUPPORTED_MEDIA, RATE_LIMITED, UPSTREAM_UNAVAILABLE.
+#    Messages are localized with Accept-Language (see contracts/i18n).
+#  - Pagination is Relay-style and forward only. `first` is 1..100 (default 20), `after` is an opaque cursor.
+#    Anything else is a BAD_USER_INPUT error. Listings are newest first (createdAt desc, then id desc) so that
+#    cursors stay stable; search results are in relevance order.
+#  - Wallpaper.author is resolved through a DataLoader: one account-service GetUsersByIds call per request.
+#    When account-service is unavailable the denormalized author snapshot stored with the wallpaper is used.
+#  - The optional wallpaperPublished subscription lives in catalog-subscriptions.graphqls.
+
+"""ISO-8601 date-time in UTC, for example 2026-11-09T12:00:00Z."""
+scalar DateTime
+
+"""Read operations."""
+type Query {
+  """
+  One wallpaper by id. Returns null when it does not exist or the caller may not see it: PUBLISHED wallpapers
+  are visible to everyone, wallpapers in any other status only to their author and to MODERATORs.
+  """
+  wallpaper(id: ID!): Wallpaper
+
+  """PUBLISHED wallpapers matching the filter, newest first."""
+  wallpapers(filter: WallpaperFilter, first: Int = 20, after: String): WallpaperConnection!
+
+  """
+  Full-text search over title, description and tags (Elasticsearch, with a degraded Mongo fallback). Only
+  PUBLISHED wallpapers are returned. A cursor is only valid together with the same q and facets.
+  """
+  search(q: String!, facets: [FacetKey!], first: Int = 20, after: String): SearchResult!
+
+  """The calling user."""
+  me: Me!
+}
+
+"""Write operations."""
+type Mutation {
+  """Adds the wallpaper to the caller's favorites. Idempotent: favoriting twice changes nothing."""
+  favoriteWallpaper(id: ID!): Wallpaper!
+
+  """Removes the wallpaper from the caller's favorites. Idempotent."""
+  unfavoriteWallpaper(id: ID!): Wallpaper!
+}
+
+"""A published (or in-progress) wallpaper, backed by one media asset."""
+type Wallpaper {
+  """Opaque id, for example wp_01HX..."""
+  id: ID!
+  """Title chosen by the author."""
+  title: String!
+  """Free-text description, if the author wrote one."""
+  description: String
+  """Lower-case tags."""
+  tags: [String!]!
+  """Category chosen by the author."""
+  category: WallpaperCategory!
+  """Lifecycle state. Listings and search only ever return PUBLISHED."""
+  status: WallpaperStatus!
+  """Image renditions. Empty while the status is PENDING_MEDIA."""
+  variants: [Variant!]!
+  """Size of the full image. Null while the status is PENDING_MEDIA."""
+  dimensions: Dimensions
+  """Dominant colors as #rrggbb. Empty while the status is PENDING_MEDIA."""
+  palette: [String!]!
+  """Placeholder hash for progressive loading. Null while the status is PENDING_MEDIA."""
+  blurhash: String
+  """The author. Resolved through a DataLoader (one batched account-service call per request)."""
+  author: Author!
+  """Number of users who favorited this wallpaper."""
+  favoriteCount: Int!
+  """Whether the calling user favorited this wallpaper."""
+  favoritedByMe: Boolean!
+  """When the wallpaper was created."""
+  createdAt: DateTime!
+  """When the wallpaper last changed (including favorites, moderation and publishing)."""
+  updatedAt: DateTime!
+}
+
+"""Lifecycle of a wallpaper."""
+enum WallpaperStatus {
+  """Saved, but the media asset is still being processed."""
+  PENDING_MEDIA
+  """Visible in the catalog and searchable."""
+  PUBLISHED
+  """Rejected by a moderator."""
+  REJECTED
+  """Removed by a moderator after having been published."""
+  REMOVED
+}
+
+"""Subject of a wallpaper, chosen by the author."""
+enum WallpaperCategory {
+  NATURE
+  ABSTRACT
+  ANIMALS
+  ARCHITECTURE
+  SPACE
+  TECHNOLOGY
+  MINIMAL
+  OTHER
+}
+
+"""One image rendition of a wallpaper."""
+type Variant {
+  """Which rendition this is."""
+  kind: VariantKind!
+  """Absolute URL of the image file."""
+  url: String!
+  """Width in pixels."""
+  width: Int!
+  """Height in pixels."""
+  height: Int!
+}
+
+"""Which rendition of the image a Variant is (media pipeline, README 10)."""
+enum VariantKind {
+  THUMBNAIL
+  PREVIEW
+  FULL
+}
+
+"""Image size in pixels."""
+type Dimensions {
+  """Width in pixels."""
+  width: Int!
+  """Height in pixels."""
+  height: Int!
+}
+
+"""Public author information. Never contains email or locale."""
+type Author {
+  """The user id (the account-service user id, equal to the Keycloak sub)."""
+  id: ID!
+  """Unique handle."""
+  username: String!
+  """Name shown next to the wallpaper."""
+  displayName: String!
+  """Null when the author has no avatar."""
+  avatarUrl: String
+}
+
+"""The calling user, as far as the catalog is concerned."""
+type Me {
+  """The user id (the token's sub claim)."""
+  id: ID!
+  """Realm roles from the token, for example USER or MODERATOR."""
+  roles: [String!]!
+  """Favorited wallpapers, most recently favorited first."""
+  favorites(first: Int = 20, after: String): WallpaperConnection!
+  """Wallpapers the caller authored in every status, newest first."""
+  wallpapers(first: Int = 20, after: String): WallpaperConnection!
+}
+
+"""Narrows a wallpapers listing. All given conditions must match."""
+input WallpaperFilter {
+  """Only this category."""
+  category: WallpaperCategory
+  """Wallpapers that have all of these tags."""
+  tags: [String!]
+  """Only wallpapers by this author."""
+  authorId: ID
+  """Minimum width of the full image, in pixels."""
+  minWidth: Int
+  """Minimum height of the full image, in pixels."""
+  minHeight: Int
+}
+
+"""A page of wallpapers (Relay connection)."""
+type WallpaperConnection {
+  """The wallpapers of this page, each with its cursor."""
+  edges: [WallpaperEdge!]!
+  """Where this page sits in the result."""
+  pageInfo: PageInfo!
+  """Number of matching wallpapers over all pages."""
+  totalCount: Int!
+}
+
+"""One wallpaper of a page together with its cursor."""
+type WallpaperEdge {
+  """The wallpaper."""
+  node: Wallpaper!
+  """Opaque cursor of this edge, usable as `after`."""
+  cursor: String!
+}
+
+"""Paging state. Pagination is forward only, so hasPreviousPage is always false."""
+type PageInfo {
+  """Whether another page follows this one."""
+  hasNextPage: Boolean!
+  """Always false: pagination is forward only."""
+  hasPreviousPage: Boolean!
+  """Cursor of the first edge, null for an empty page."""
+  startCursor: String
+  """Cursor of the last edge, null for an empty page. Pass it as `after` to get the next page."""
+  endCursor: String
+}
+
+"""Result of a search: one page of wallpapers plus the requested facets."""
+type SearchResult {
+  """The matching wallpapers, best match first."""
+  wallpapers: WallpaperConnection!
+  """One entry per requested facet key, in request order. Empty when no facets were requested."""
+  facets: [Facet!]!
+}
+
+"""What to count in a search."""
+enum FacetKey {
+  CATEGORY
+  TAG
+}
+
+"""Value counts for one facet key, over all results of the query."""
+type Facet {
+  """Which facet these buckets belong to."""
+  key: FacetKey!
+  """Most frequent values first."""
+  buckets: [FacetBucket!]!
+}
+
+"""One value of a facet and how often it occurs."""
+type FacetBucket {
+  """A category name or a tag."""
+  value: String!
+  """Number of matching wallpapers with this value."""
+  count: Int!
+}

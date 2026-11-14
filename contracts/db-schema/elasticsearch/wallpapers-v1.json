@@ -1,0 +1,67 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "analysis": {
+      "filter": {
+        "autocomplete_edge_ngram": {
+          "type": "edge_ngram",
+          "min_gram": 1,
+          "max_gram": 20
+        }
+      },
+      "analyzer": {
+        "text_folded": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "asciifolding"]
+        },
+        "autocomplete_index": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "asciifolding", "autocomplete_edge_ngram"]
+        },
+        "autocomplete_search": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "asciifolding"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "title": {
+        "type": "text",
+        "analyzer": "text_folded",
+        "fields": {
+          "autocomplete": {
+            "type": "text",
+            "analyzer": "autocomplete_index",
+            "search_analyzer": "autocomplete_search"
+          }
+        }
+      },
+      "description": { "type": "text", "analyzer": "text_folded" },
+      "tags": { "type": "keyword" },
+      "category": { "type": "keyword" },
+      "status": { "type": "keyword" },
+      "authorId": { "type": "keyword" },
+      "dimensions": {
+        "properties": {
+          "width": { "type": "integer" },
+          "height": { "type": "integer" }
+        }
+      },
+      "favoriteCount": { "type": "integer" },
+      "createdAt": { "type": "date" },
+      "updatedAt": { "type": "date" }
+    }
+  },
+  "aliases": {
+    "wallpapers": {}
+  }
+}

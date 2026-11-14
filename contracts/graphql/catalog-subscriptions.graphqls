@@ -1,0 +1,10 @@
+# OPTIONAL extension of catalog.graphqls (README 5.5). An implementation may leave it out; the e2e suite does
+# not cover it. Transport: the graphql-transport-ws protocol over a WebSocket on /graphql. Browsers cannot set
+# an Authorization header on a WebSocket, so the access token travels in the connection_init payload and the
+# service validates it there (the gateway lets the upgrade request through with the token optional).
+
+"""Optional real-time extension of the catalog API (graphql-transport-ws on /graphql)."""
+type Subscription {
+  """Emits every wallpaper that becomes PUBLISHED, as it happens."""
+  wallpaperPublished: Wallpaper!
+}

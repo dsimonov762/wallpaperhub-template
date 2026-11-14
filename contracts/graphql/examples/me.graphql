@@ -1,0 +1,24 @@
+query Me {
+  me {
+    id
+    roles
+    favorites(first: 10) {
+      totalCount
+      edges {
+        node {
+          id
+          title
+        }
+      }
+    }
+    wallpapers(first: 10) {
+      edges {
+        node {
+          id
+          title
+          status
+        }
+      }
+    }
+  }
+}

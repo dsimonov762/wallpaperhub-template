@@ -1,0 +1,84 @@
+# The user flows of README 4.1 through all four real services and the gateway (make e2e-system, then make e2e).
+# Runs on `master`, every night and on request. It needs one implementation per service; choose them with repository variables
+# (Settings > Secrets and variables > Actions > Variables): ACCOUNT_DIR, MEDIA_DIR, CATALOG_DIR, NOTIFICATION_DIR, for example
+# services/account/go. Without a variable the default of the compose file is used (services/<service>/java-spring).
+# The stack with all services needs about 8 GB: set the variable CI_RUNNER_APPS to a larger runner label for private repositories.
+name: system
+
+on:
+  push:
+    branches: [master]
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: system-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: system e2e
+    runs-on: ${{ vars.CI_RUNNER_APPS || 'ubuntu-26.04' }}
+    timeout-minutes: 60
+    env:
+      ACCOUNT_DIR_VAR: ${{ vars.ACCOUNT_DIR }}
+      MEDIA_DIR_VAR: ${{ vars.MEDIA_DIR }}
+      CATALOG_DIR_VAR: ${{ vars.CATALOG_DIR }}
+      NOTIFICATION_DIR_VAR: ${{ vars.NOTIFICATION_DIR }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Is there an implementation of every service?
+        id: impl
+        run: |
+          ready=true
+          for svc in account media catalog notification; do
+            up="$(echo "$svc" | tr a-z A-Z)"; var="${up}_DIR_VAR"; dir="${!var:-services/$svc/java-spring}"
+            if [ -f "$dir/Dockerfile" ]; then
+              echo "$svc: $dir"; echo "${up}_DIR=../$dir" >> "$GITHUB_ENV"
+            else
+              echo "::notice::no $dir/Dockerfile for $svc: set the repository variable ${up}_DIR or add the implementation"; ready=false
+            fi
+          done
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+      - name: Install Hurl
+        if: steps.impl.outputs.ready == 'true'
+        run: scripts/ci/install-hurl.sh
+      - name: Hurl needs libxml2.so.2 (Ubuntu 26.04 only ships libxml2.so.16)
+        if: steps.impl.outputs.ready == 'true'
+        run: |
+          lib="/usr/lib/$(uname -m)-linux-gnu"
+          if ! ldconfig -p | grep -q 'libxml2\.so\.2 '; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends libxml2-16
+            sudo ln -sf "$lib/libxml2.so.16" "$lib/libxml2.so.2"
+            sudo ldconfig
+          fi
+          hurl --version
+      - name: Start everything
+        if: steps.impl.outputs.ready == 'true'
+        run: |
+          make env
+          make up-apps
+          bash scripts/wait-healthy.sh 900
+      - name: User flows (README 4.1), then the gateway checks
+        if: steps.impl.outputs.ready == 'true'
+        run: make e2e-all
+      - name: Collect logs
+        if: failure()
+        run: scripts/ci/collect-logs.sh ci-logs
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: system-reports
+          path: |
+            e2e/.run/
+            ci-logs/
+          if-no-files-found: ignore
+          include-hidden-files: true
+      - name: Stop
+        if: always() && steps.impl.outputs.ready == 'true'
+        run: make down

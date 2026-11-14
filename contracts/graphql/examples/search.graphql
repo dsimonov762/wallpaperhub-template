@@ -1,0 +1,33 @@
+query Search($q: String!, $facets: [FacetKey!], $first: Int = 20, $after: String) {
+  search(q: $q, facets: $facets, first: $first, after: $after) {
+    wallpapers {
+      totalCount
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      edges {
+        node {
+          id
+          title
+          tags
+          blurhash
+          variants {
+            kind
+            url
+          }
+          author {
+            username
+          }
+        }
+      }
+    }
+    facets {
+      key
+      buckets {
+        value
+        count
+      }
+    }
+  }
+}

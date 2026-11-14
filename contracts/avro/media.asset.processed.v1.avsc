@@ -1,0 +1,37 @@
+{
+  "type": "record",
+  "name": "AssetProcessed",
+  "namespace": "dev.wallpaperhub.media.v1",
+  "doc": "The image pipeline finished: the asset is READY. Only public variants are listed; the private original is never exposed. purpose is AVATAR, BANNER or WALLPAPER (a string, not an enum, so new purposes need no schema change).",
+  "fields": [
+    { "name": "eventId",    "type": "string" },
+    { "name": "assetId",    "type": "string" },
+    { "name": "ownerId",    "type": "string" },
+    { "name": "purpose",    "type": "string" },
+    { "name": "width",      "type": "int", "doc": "Pixels of the normalized full-size image" },
+    { "name": "height",     "type": "int" },
+    { "name": "blurhash",   "type": "string" },
+    { "name": "palette",    "type": { "type": "array", "items": "string" }, "default": [], "doc": "Dominant colors as #rrggbb" },
+    {
+      "name": "variants",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "AssetVariant",
+          "doc": "kind is THUMBNAIL, PREVIEW, FULL, ...; format is webp, avif, ...",
+          "fields": [
+            { "name": "kind",      "type": "string" },
+            { "name": "key",       "type": "string" },
+            { "name": "url",       "type": "string" },
+            { "name": "width",     "type": "int" },
+            { "name": "height",    "type": "int" },
+            { "name": "format",    "type": "string" },
+            { "name": "sizeBytes", "type": "long" }
+          ]
+        }
+      }
+    },
+    { "name": "occurredAt", "type": { "type": "long", "logicalType": "timestamp-millis" } }
+  ]
+}

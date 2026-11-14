@@ -1,0 +1,876 @@
+# Wallpaper Hub - local stack
+#
+# Profiles:
+#   infra          databases, Kafka, Schema Registry, Keycloak, Elasticsearch, S3 (Silo), Mailpit
+#   schemas        one-shot jobs that create the canonical DB schema (Postgres migrations, Mongo collections and
+#                  indexes, Elasticsearch index). Run them after "infra" is healthy: make schemas
+#   observability  Alloy, Loki, Tempo, Prometheus, Grafana
+#   apps           the 4 domain services + gateway (built from ../services/<name>/<impl>)
+#   mocks          the 4 domain services as Prism mocks of their OpenAPI contract + the gateway, for working on the
+#                  gateway, Keycloak and the e2e suite before the real services exist. Do not combine with "apps".
+#
+# Usage (run from the infra/ folder; "apps", "mocks" and "schemas" need "infra" in the same command):
+#   docker compose --profile infra up -d
+#   docker compose --profile infra --profile schemas up account-db-migrate media-db-migrate catalog-db-init catalog-search-init
+#   docker compose --profile infra --profile observability up -d
+#   docker compose --profile infra --profile observability --profile apps up -d --build
+#   docker compose --profile infra --profile mocks up -d --build gateway
+#   # or: set COMPOSE_PROFILES=infra,observability in .env.   The Makefile in the repo root wraps all of this.
+#
+# Pick the implementation of each service with ACCOUNT_DIR / MEDIA_DIR / CATALOG_DIR /
+# NOTIFICATION_DIR / GATEWAY_DIR (see .env.example).
+
+name: wallpaperhub
+
+# ---------------------------------------------------------------------------
+# Shared fragments
+# ---------------------------------------------------------------------------
+x-otel-env: &otel-env
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4317
+  OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+  OTEL_METRIC_EXPORT_INTERVAL: "15000"
+  OTEL_RESOURCE_ATTRIBUTES: deployment.environment=local
+
+# Backing-service wiring. Language-agnostic names; each implementation maps them
+# into its own typed config (config/ package in the service template).
+x-common-env: &common-env
+  APP_PROFILE: local
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  # Keycloak: tokens are issued for http://localhost:8180 (what the browser/host sees),
+  # but services inside the network fetch keys from keycloak:8080.
+  OIDC_ISSUER_URI: http://localhost:8180/realms/wallpaperhub
+  OIDC_JWKS_URI: http://keycloak:8080/realms/wallpaperhub/protocol/openid-connect/certs
+  OIDC_TOKEN_URI: http://keycloak:8080/realms/wallpaperhub/protocol/openid-connect/token
+  KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+  SCHEMA_REGISTRY_URL: http://schema-registry:8081
+  # JVM implementations only (ignored by other runtimes). The JVM default max heap is 25% of the
+  # container limit, which is only ~160 MB at mem_limit 640m. 65% gives ~416 MB of heap and leaves
+  # room for metaspace, threads and direct buffers.
+  JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=65
+
+x-app: &app
+  profiles: [apps]
+  restart: unless-stopped
+  # Without a limit each JVM sees the whole Docker VM and can grow to ~25% of it (about 2.4 GiB at a
+  # 10 GB .wslconfig cap), starving Kafka/ES/Keycloak. Raise per service if one is OOMKilled
+  # (check: docker ps -a, docker stats --no-stream).
+  mem_limit: 640m
+
+# Host mode (make host SVC=<name>): a forwarder that takes over the network name of a service whose container is
+# stopped and passes its three ports to the process on the developer's machine, so the gateway and the other
+# services reach it as <name>:8080 exactly as before. The host process uses the ports published for the container
+# (PORT_<SVC>_HTTP / _MGMT / _GRPC) and must listen on all interfaces, not only on 127.0.0.1.
+x-host-proxy: &host-proxy
+  build:
+    context: ./host-proxy
+  image: wallpaperhub/host-proxy:local
+  restart: unless-stopped
+  mem_limit: 16m
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+# Prism mock of one service, generated from ../contracts/openapi/<SPEC>.yaml (see ../services/_mock/mock.js).
+# The network alias makes the gateway reach it under the real service name (account:8080, ...).
+x-mock: &mock
+  profiles: [mocks]
+  build:
+    context: ../services/_mock
+  image: wallpaperhub/mock:local
+  restart: unless-stopped
+  mem_limit: 192m
+  volumes:
+    - ../contracts:/contracts:ro
+  healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/health/ready"]
+    interval: 5s
+    timeout: 3s
+    retries: 30
+
+# ---------------------------------------------------------------------------
+# PROFILE: infra
+# ---------------------------------------------------------------------------
+services:
+  postgres-account:
+    image: postgres:18.6-trixie
+    profiles: [infra]
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      POSTGRES_DB: account
+      POSTGRES_USER: account
+      POSTGRES_PASSWORD: ${PG_ACCOUNT_PASSWORD:-account}
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_POSTGRES_ACCOUNT:-5432}:5432"
+    volumes:
+      # PostgreSQL 18+ images keep PGDATA in a versioned subfolder of /var/lib/postgresql
+      - pg-account:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U account -d account"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  postgres-media:
+    image: postgres:18.6-trixie
+    profiles: [infra]
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      POSTGRES_DB: media
+      POSTGRES_USER: media
+      POSTGRES_PASSWORD: ${PG_MEDIA_PASSWORD:-media}
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_POSTGRES_MEDIA:-5433}:5432"
+    volumes:
+      - pg-media:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U media -d media"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  postgres-keycloak:
+    image: postgres:18.6-trixie
+    profiles: [infra]
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${PG_KEYCLOAK_PASSWORD:-keycloak}
+    volumes:
+      - pg-keycloak:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mongo:
+    image: mongo:9.0.4
+    profiles: [infra]
+    restart: unless-stopped
+    mem_limit: 512m
+    command: ["mongod", "--wiredTigerCacheSizeGB", "0.25"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-root}
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_MONGO:-27017}:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  # Cache, counters, locks, rate limits, idempotency keys, media job queue.
+  # Ephemeral on purpose: losing it only costs cache warmth.
+  redis:
+    image: redis:8.10.3-trixie
+    profiles: [infra]
+    restart: unless-stopped
+    mem_limit: 128m
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "96mb", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_REDIS:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # notification-service uses Redis as its PRIMARY database, so it gets AOF persistence.
+  redis-notification:
+    image: redis:8.10.3-trixie
+    profiles: [infra]
+    restart: unless-stopped
+    mem_limit: 128m
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--maxmemory", "96mb", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_REDIS_NOTIFICATION:-6380}:6379"
+    volumes:
+      - redis-notification-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Single-node KRaft (no ZooKeeper).
+  #   kafka:29092      inside the compose network
+  #   localhost:9092   from the host (IDE / services run outside Docker)
+  kafka:
+    image: confluentinc/cp-kafka:8.4.0
+    profiles: [infra]
+    restart: unless-stopped
+    hostname: kafka
+    mem_limit: 768m
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_KAFKA:-9092}:9092"
+    environment:
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # Topics are created explicitly by kafka-init so typos fail loudly
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server kafka:29092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
+
+  # (Init jobs strip CRs from their script first, so a Windows checkout with CRLF line endings still works.)
+  # Creates every topic from README 5.6 plus <topic>.retry.1, .retry.2 and <topic>.dlq
+  kafka-init:
+    image: confluentinc/cp-kafka:8.4.0
+    profiles: [infra]
+    restart: "no"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/create-topics.sh > /tmp/create-topics.sh && sh /tmp/create-topics.sh"]
+    environment:
+      KAFKA_BOOTSTRAP: kafka:29092
+      PARTITIONS: "3"
+    volumes:
+      - ./kafka-init/create-topics.sh:/scripts/create-topics.sh:ro
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:8.4.0
+    profiles: [infra]
+    restart: unless-stopped
+    hostname: schema-registry
+    mem_limit: 384m
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_SCHEMA_REGISTRY:-8081}:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+      # README 5.6: BACKWARD compatibility, TopicNameStrategy (client-side default)
+      SCHEMA_REGISTRY_SCHEMA_COMPATIBILITY_LEVEL: backward
+      SCHEMA_REGISTRY_HEAP_OPTS: -Xms128m -Xmx256m
+    healthcheck:
+      # The image has no curl; probe GET /subjects with bash /dev/tcp and require HTTP 200
+      test:
+        - CMD
+        - bash
+        - -c
+        - |
+          exec 3<>/dev/tcp/127.0.0.1/8081
+          printf 'GET /subjects HTTP/1.0\r\n\r\n' >&3
+          head -n1 <&3 | grep -q ' 200 '
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  # Registers contracts/avro/<topic>.avsc as subject <topic>-value
+  schema-registry-init:
+    image: alpine:3.24.4
+    profiles: [infra]
+    restart: "no"
+    depends_on:
+      schema-registry:
+        condition: service_healthy
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/register-schemas.sh > /tmp/register-schemas.sh && sh /tmp/register-schemas.sh"]
+    environment:
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      AVRO_DIR: /contracts/avro
+    volumes:
+      - ./schema-registry-init/register-schemas.sh:/scripts/register-schemas.sh:ro
+      - ../contracts/avro:/contracts/avro:ro
+
+  # Imports every realm file found in ./keycloak (put realm-export.json there).
+  # Import only creates a realm that does not exist yet; to re-import after edits:
+  #   docker compose down keycloak && docker volume rm wallpaperhub_pg-keycloak
+  keycloak:
+    image: keycloak/keycloak:26.8.2-0
+    profiles: [infra]
+    restart: unless-stopped
+    mem_limit: 768m
+    command: ["start-dev", "--import-realm"]
+    depends_on:
+      postgres-keycloak:
+        condition: service_healthy
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_KEYCLOAK:-8180}:8080"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${PG_KEYCLOAK_PASSWORD:-keycloak}
+      # Fixed public URL = stable "iss" claim; backchannel (JWKS, token) stays reachable as keycloak:8080
+      KC_HOSTNAME: http://localhost:8180
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      JAVA_OPTS_KC_HEAP: -Xms256m -Xmx512m
+      # Client secrets: substituted into the ${...} placeholders of keycloak/realm-export.json,
+      # so Keycloak and the services always read the same value from .env
+      ACCOUNT_SVC_SECRET: ${ACCOUNT_SVC_SECRET:-account-svc-dev-secret}
+      MEDIA_SVC_SECRET: ${MEDIA_SVC_SECRET:-media-svc-dev-secret}
+      CATALOG_SVC_SECRET: ${CATALOG_SVC_SECRET:-catalog-svc-dev-secret}
+      NOTIFICATION_SVC_SECRET: ${NOTIFICATION_SVC_SECRET:-notification-svc-dev-secret}
+      GATEWAY_SVC_SECRET: ${GATEWAY_SVC_SECRET:-gateway-svc-dev-secret}
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      # The image has no curl; probe the management port (9000) with bash /dev/tcp
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          grep -q '"status": "UP"' <&3
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+
+  elasticsearch:
+    image: elasticsearch:9.5.5
+    profiles: [infra]
+    restart: unless-stopped
+    mem_limit: 1g
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_ELASTICSEARCH:-9200}:9200"
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.ml.enabled: "false"
+      cluster.routing.allocation.disk.threshold_enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' > /dev/null"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  # S3-compatible object storage: PGSTY Silo (MinIO fork; keeps MINIO_* env vars and the S3 API)
+  # Good S3-compatible alternatives are: `dxflrs/garage`, `chrislusf/seaweedfs` or `rustfs/rustfs`
+  #   API      http://localhost:9000
+  #   Console  http://localhost:9001
+  s3:
+    image: pgsty/silo:RELEASE.2026-10-26T00-00-00Z
+    profiles: [infra]
+    restart: unless-stopped
+    mem_limit: 384m
+    command: ["server", "/data", "--console-address", ":9001"]
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_S3_API:-9000}:9000"
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_S3_CONSOLE:-9001}:9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ROOT_USER:-silo-admin}
+      MINIO_ROOT_PASSWORD: ${S3_ROOT_PASSWORD:-silo-admin-secret}
+    volumes:
+      - s3-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  # Buckets, anonymous read on the public one, and a least-privilege-ish service user for media-service.
+  # Uses the mcli client bundled in the (non-distroless) silo image.
+  s3-init:
+    image: pgsty/silo:RELEASE.2026-10-26T00-00-00Z
+    profiles: [infra]
+    restart: "no"
+    depends_on:
+      s3:
+        condition: service_started
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/init.sh > /tmp/init.sh && sh /tmp/init.sh"]
+    environment:
+      S3_ENDPOINT: http://s3:9000
+      S3_ROOT_USER: ${S3_ROOT_USER:-silo-admin}
+      S3_ROOT_PASSWORD: ${S3_ROOT_PASSWORD:-silo-admin-secret}
+      S3_BUCKET_ORIGINALS: ${S3_BUCKET_ORIGINALS:-wallpaperhub-originals}
+      S3_BUCKET_PUBLIC: ${S3_BUCKET_PUBLIC:-wallpaperhub-media}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-media-svc}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-media-svc-secret}
+    volumes:
+      - ./minio-init/init.sh:/scripts/init.sh:ro
+
+  # Catches every email. SMTP on 1025, web UI on 8025.
+  mailpit:
+    image: axllent/mailpit:v1.33.1
+    profiles: [infra]
+    restart: unless-stopped
+    mem_limit: 128m
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_MAILPIT_SMTP:-1025}:1025"
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_MAILPIT_UI:-8025}:8025"
+    environment:
+      MP_MAX_MESSAGES: "500"
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+  # -------------------------------------------------------------------------
+  # PROFILE: observability
+  # -------------------------------------------------------------------------
+  # Services push OTLP here (4317 gRPC / 4318 HTTP); Alloy fans out to Loki, Tempo, Prometheus.
+  alloy:
+    image: grafana/alloy:v1.21.3
+    profiles: [observability]
+    restart: unless-stopped
+    mem_limit: 256m
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    depends_on:
+      - loki
+      - tempo
+      - prometheus
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_ALLOY_OTLP_GRPC:-4317}:4317"
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_ALLOY_OTLP_HTTP:-4318}:4318"
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_ALLOY_UI:-12345}:12345"
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy/data
+
+  loki:
+    image: grafana/loki:3.7.9
+    profiles: [observability]
+    restart: unless-stopped
+    mem_limit: 256m
+    command: ["-config.file=/etc/loki/loki-config.yaml"]
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_LOKI:-3100}:3100"
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki-data:/loki
+
+  # Monolithic mode (target: all). Tempo 3.x only needs Kafka in microservices mode.
+  tempo:
+    image: grafana/tempo:3.1.1
+    profiles: [observability]
+    restart: unless-stopped
+    mem_limit: 256m
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_TEMPO:-3200}:3200"
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo-data:/var/tempo
+
+  prometheus:
+    image: prom/prometheus:v3.16.0
+    profiles: [observability]
+    restart: unless-stopped
+    mem_limit: 384m
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=3d
+      # Alloy pushes OTLP metrics to /api/v1/otlp/v1/metrics
+      - --web.enable-otlp-receiver
+      # Exemplars link metrics to traces in Grafana
+      - --enable-feature=exemplar-storage
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_PROMETHEUS:-9090}:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+
+  grafana:
+    image: grafana/grafana:13.3.0
+    profiles: [observability]
+    restart: unless-stopped
+    mem_limit: 384m
+    depends_on:
+      - loki
+      - tempo
+      - prometheus
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_GRAFANA:-3000}:3000"
+    environment:
+      # Local development only: anonymous admin, no login screen
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+
+  # -------------------------------------------------------------------------
+  # PROFILE: schemas
+  # Creates the canonical schemas of ../contracts/db-schema (tables, collections, indexes, search index) so the
+  # stores are ready before any service implementation exists, and for tests and demos. All jobs are idempotent.
+  # Drop this profile once your services run their own migrations (their V1 would find the tables already there).
+  # Needs "infra" in the same command (it provides the databases).
+  # -------------------------------------------------------------------------
+  account-db-migrate:
+    image: postgres:18.6-trixie
+    profiles: [schemas]
+    restart: "no"
+    depends_on:
+      postgres-account:
+        condition: service_healthy
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/pg-migrate.sh > /tmp/pg-migrate.sh && sh /tmp/pg-migrate.sh"]
+    environment:
+      PGHOST: postgres-account
+      PGPORT: "5432"
+      PGUSER: account
+      PGPASSWORD: ${PG_ACCOUNT_PASSWORD:-account}
+      PGDATABASE: account
+      MIGRATIONS_DIR: /migrations
+    volumes:
+      - ./db-init/pg-migrate.sh:/scripts/pg-migrate.sh:ro
+      - ../contracts/db-schema/postgres/account:/migrations:ro
+
+  media-db-migrate:
+    image: postgres:18.6-trixie
+    profiles: [schemas]
+    restart: "no"
+    depends_on:
+      postgres-media:
+        condition: service_healthy
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/pg-migrate.sh > /tmp/pg-migrate.sh && sh /tmp/pg-migrate.sh"]
+    environment:
+      PGHOST: postgres-media
+      PGPORT: "5432"
+      PGUSER: media
+      PGPASSWORD: ${PG_MEDIA_PASSWORD:-media}
+      PGDATABASE: media
+      MIGRATIONS_DIR: /migrations
+    volumes:
+      - ./db-init/pg-migrate.sh:/scripts/pg-migrate.sh:ro
+      - ../contracts/db-schema/postgres/media:/migrations:ro
+
+  # MongoDB: catalog collections with their $jsonSchema validators and indexes
+  catalog-db-init:
+    image: mongo:9.0.4
+    profiles: [schemas]
+    restart: "no"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/mongo-init.sh > /tmp/mongo-init.sh && sh /tmp/mongo-init.sh"]
+    environment:
+      MONGO_URI: mongodb://root:${MONGO_PASSWORD:-root}@mongo:27017/?authSource=admin
+      INIT_JS: /db-schema/mongo/init.js
+    volumes:
+      - ./db-init/mongo-init.sh:/scripts/mongo-init.sh:ro
+      - ../contracts/db-schema:/db-schema:ro
+
+  # Elasticsearch: index wallpapers-v1 + alias wallpapers
+  catalog-search-init:
+    image: elasticsearch:9.5.5
+    profiles: [schemas]
+    restart: "no"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/es-init.sh > /tmp/es-init.sh && sh /tmp/es-init.sh"]
+    environment:
+      ES_URL: http://elasticsearch:9200
+    volumes:
+      - ./db-init/es-init.sh:/scripts/es-init.sh:ro
+      - ../contracts/db-schema:/db-schema:ro
+
+  # -------------------------------------------------------------------------
+  # PROFILE: apps (only the gateway is meant to be used by clients)
+  # Host port plan: gateway 8080/8190 | account 8101/9101/8191 | media 8102/8192
+  #                 catalog 8103/8193 | notification 8104/8194  (http / grpc / management)
+  # -------------------------------------------------------------------------
+  account:
+    <<: *app
+    build:
+      context: ${ACCOUNT_DIR:-../services/account/java-spring}
+    image: wallpaperhub/account:local
+    depends_on:
+      postgres-account: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+      kafka-init: { condition: service_completed_successfully }
+      schema-registry-init: { condition: service_completed_successfully }
+      account-db-migrate: { condition: service_completed_successfully, required: false }
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_ACCOUNT_HTTP:-8101}:8080"
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_ACCOUNT_GRPC:-9101}:9090"
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_ACCOUNT_MGMT:-8191}:8081"
+    environment:
+      <<: [*common-env, *otel-env]
+      OTEL_SERVICE_NAME: account-service
+      DB_HOST: postgres-account
+      DB_PORT: "5432"
+      DB_NAME: account
+      DB_USER: account
+      DB_PASSWORD: ${PG_ACCOUNT_PASSWORD:-account}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_REALM: wallpaperhub
+      MEDIA_BASE_URL: http://media:8080
+      OIDC_CLIENT_ID: account-svc
+      OIDC_CLIENT_SECRET: ${ACCOUNT_SVC_SECRET:-account-svc-dev-secret}
+      OUTBOX_RELAY_ENABLED: "true"
+
+  media:
+    <<: *app
+    build:
+      context: ${MEDIA_DIR:-../services/media/java-spring}
+    image: wallpaperhub/media:local
+    depends_on:
+      postgres-media: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+      kafka-init: { condition: service_completed_successfully }
+      schema-registry-init: { condition: service_completed_successfully }
+      s3-init: { condition: service_completed_successfully }
+      media-db-migrate: { condition: service_completed_successfully, required: false }
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_MEDIA_HTTP:-8102}:8080"
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_MEDIA_MGMT:-8192}:8081"
+    environment:
+      <<: [*common-env, *otel-env]
+      OTEL_SERVICE_NAME: media-service
+      DB_HOST: postgres-media
+      DB_PORT: "5432"
+      DB_NAME: media
+      DB_USER: media
+      DB_PASSWORD: ${PG_MEDIA_PASSWORD:-media}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      S3_ENDPOINT: http://s3:9000
+      S3_REGION: us-east-1
+      S3_PATH_STYLE: "true"
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-media-svc}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-media-svc-secret}
+      S3_BUCKET_ORIGINALS: ${S3_BUCKET_ORIGINALS:-wallpaperhub-originals}
+      S3_BUCKET_PUBLIC: ${S3_BUCKET_PUBLIC:-wallpaperhub-media}
+      S3_PUBLIC_BASE_URL: http://localhost:9000/${S3_BUCKET_PUBLIC:-wallpaperhub-media}
+      OIDC_CLIENT_ID: media-svc
+      OIDC_CLIENT_SECRET: ${MEDIA_SVC_SECRET:-media-svc-dev-secret}
+
+  catalog:
+    <<: *app
+    build:
+      context: ${CATALOG_DIR:-../services/catalog/java-spring}
+    image: wallpaperhub/catalog:local
+    depends_on:
+      mongo: { condition: service_healthy }
+      elasticsearch: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+      kafka-init: { condition: service_completed_successfully }
+      schema-registry-init: { condition: service_completed_successfully }
+      catalog-db-init: { condition: service_completed_successfully, required: false }
+      catalog-search-init: { condition: service_completed_successfully, required: false }
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_CATALOG_HTTP:-8103}:8080"
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_CATALOG_MGMT:-8193}:8081"
+    environment:
+      <<: [*common-env, *otel-env]
+      OTEL_SERVICE_NAME: catalog-service
+      MONGO_URI: mongodb://root:${MONGO_PASSWORD:-root}@mongo:27017/catalog?authSource=admin
+      MONGO_DATABASE: catalog
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      ACCOUNT_GRPC_ADDR: account:9090
+      MEDIA_BASE_URL: http://media:8080
+      OIDC_CLIENT_ID: catalog-svc
+      OIDC_CLIENT_SECRET: ${CATALOG_SVC_SECRET:-catalog-svc-dev-secret}
+
+  notification:
+    <<: *app
+    build:
+      context: ${NOTIFICATION_DIR:-../services/notification/java-spring}
+    image: wallpaperhub/notification:local
+    depends_on:
+      redis-notification: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+      mailpit: { condition: service_healthy }
+      kafka-init: { condition: service_completed_successfully }
+      schema-registry-init: { condition: service_completed_successfully }
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_NOTIFICATION_HTTP:-8104}:8080"
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_NOTIFICATION_MGMT:-8194}:8081"
+    environment:
+      <<: [*common-env, *otel-env]
+      OTEL_SERVICE_NAME: notification-service
+      REDIS_HOST: redis-notification
+      REDIS_PORT: "6379"
+      MAIL_PROVIDER: smtp
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      MAIL_FROM: no-reply@wallpaperhub.local
+      ACCOUNT_GRPC_ADDR: account:9090
+      CATALOG_BASE_URL: http://catalog:8080
+      OIDC_CLIENT_ID: notification-svc
+      OIDC_CLIENT_SECRET: ${NOTIFICATION_SVC_SECRET:-notification-svc-dev-secret}
+
+  # Off-the-shelf gateway (Envoy, see ../services/gateway/envoy) or your hand-written one:
+  # whatever GATEWAY_DIR points at. The Envoy config hard-codes upstream hosts and the Keycloak URLs,
+  # so the OIDC_* / *_URL / REDIS_* variables below only matter for a hand-written gateway.
+  gateway:
+    <<: *app
+    profiles: [apps, mocks]
+    mem_limit: 384m   # overrides the 640m from the app anchor; headroom for 35 MiB buffered uploads (see envoy.yaml)
+    build:
+      context: ${GATEWAY_DIR:-../services/gateway/envoy}
+    image: wallpaperhub/gateway:local
+    # Healthy only once port 8080 accepts connections. Without it "docker compose up -d" returns as soon as the
+    # container starts and a client that connects right away (make e2e in CI) gets "connection reset" while Envoy is
+    # still opening its listener. Tries bash (the Envoy image has no curl or wget), then wget, then curl, so a
+    # hand-written gateway image only needs one of the three.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080' 2>/dev/null || wget -qO /dev/null http://127.0.0.1:8080/health 2>/dev/null || curl -sf -o /dev/null http://127.0.0.1:8080/health"
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    depends_on:
+      redis: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+      account: { condition: service_started, required: false }
+      account-mock: { condition: service_healthy, required: false }
+      media: { condition: service_started, required: false }
+      media-mock: { condition: service_healthy, required: false }
+      catalog: { condition: service_started, required: false }
+      catalog-mock: { condition: service_healthy, required: false }
+      notification: { condition: service_started, required: false }
+      notification-mock: { condition: service_healthy, required: false }
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_GATEWAY:-8080}:8080"
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_GATEWAY_MGMT:-8190}:8081"
+    environment:
+      <<: [*common-env, *otel-env]
+      OTEL_SERVICE_NAME: api-gateway
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      OIDC_CLIENT_ID: gateway
+      OIDC_CLIENT_SECRET: ${GATEWAY_SVC_SECRET:-gateway-svc-dev-secret}
+      ACCOUNT_URL: http://account:8080
+      MEDIA_URL: http://media:8080
+      CATALOG_URL: http://catalog:8080
+      NOTIFICATION_URL: http://notification:8080
+
+  # -------------------------------------------------------------------------
+  # PROFILE: mocks (contract-driven stand-ins for the four services)
+  # -------------------------------------------------------------------------
+  account-mock:
+    <<: *mock
+    environment:
+      SPEC: account
+    networks:
+      default:
+        aliases: [account]
+  media-mock:
+    <<: *mock
+    environment:
+      SPEC: media
+    networks:
+      default:
+        aliases: [media]
+  catalog-mock:
+    <<: *mock
+    environment:
+      SPEC: catalog
+    networks:
+      default:
+        aliases: [catalog]
+  notification-mock:
+    <<: *mock
+    environment:
+      SPEC: notification
+    networks:
+      default:
+        aliases: [notification]
+
+  # -------------------------------------------------------------------------
+  # PROFILES host-<svc>: stand-in for a service that runs on the host (started by make host, never by hand)
+  # -------------------------------------------------------------------------
+  account-host:
+    <<: *host-proxy
+    profiles: [host-account]
+    environment:
+      PORTS: "8080=${PORT_ACCOUNT_HTTP:-8101} 8081=${PORT_ACCOUNT_MGMT:-8191} 9090=${PORT_ACCOUNT_GRPC:-9101}"
+    networks:
+      default:
+        aliases: [account]
+  media-host:
+    <<: *host-proxy
+    profiles: [host-media]
+    environment:
+      PORTS: "8080=${PORT_MEDIA_HTTP:-8102} 8081=${PORT_MEDIA_MGMT:-8192}"
+    networks:
+      default:
+        aliases: [media]
+  catalog-host:
+    <<: *host-proxy
+    profiles: [host-catalog]
+    environment:
+      PORTS: "8080=${PORT_CATALOG_HTTP:-8103} 8081=${PORT_CATALOG_MGMT:-8193}"
+    networks:
+      default:
+        aliases: [catalog]
+  notification-host:
+    <<: *host-proxy
+    profiles: [host-notification]
+    environment:
+      PORTS: "8080=${PORT_NOTIFICATION_HTTP:-8104} 8081=${PORT_NOTIFICATION_MGMT:-8194}"
+    networks:
+      default:
+        aliases: [notification]
+
+volumes:
+  pg-account:
+  pg-media:
+  pg-keycloak:
+  mongo-data:
+  redis-notification-data:
+  kafka-data:
+  es-data:
+  s3-data:
+  alloy-data:
+  loki-data:
+  tempo-data:
+  prometheus-data:
+  grafana-data:

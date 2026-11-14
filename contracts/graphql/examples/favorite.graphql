@@ -1,0 +1,15 @@
+mutation Favorite($id: ID!) {
+  favoriteWallpaper(id: $id) {
+    id
+    favoriteCount
+    favoritedByMe
+  }
+}
+
+mutation Unfavorite($id: ID!) {
+  unfavoriteWallpaper(id: $id) {
+    id
+    favoriteCount
+    favoritedByMe
+  }
+}

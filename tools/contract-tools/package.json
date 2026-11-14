@@ -1,0 +1,11 @@
+{
+  "name": "wallpaperhub-contract-tools",
+  "private": true,
+  "description": "Pinned linters and generators for contracts/ (make contracts-lint, make codegen). Run through scripts/ct.sh",
+  "dependencies": {
+    "@bufbuild/buf": "1.75.0",
+    "@stoplight/spectral-cli": "6.17.1",
+    "openapi-typescript": "7.10.1",
+    "typescript": "5.9.3"
+  }
+}
