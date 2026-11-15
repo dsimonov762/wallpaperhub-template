@@ -9,8 +9,9 @@ JOBS    := account-db-migrate media-db-migrate catalog-db-init catalog-search-in
 # per-target profile sets
 INFRA   := --profile infra
 OBS     := --profile observability
+TOOLS   := kafka-ui adminer mongo-ui
 APPS    := --profile apps
-ALLP    := --profile infra --profile schemas --profile data --profile observability --profile apps --profile mocks \
+ALLP    := --profile infra --profile schemas --profile data --profile tools --profile observability --profile apps --profile mocks \
            --profile host-account --profile host-media --profile host-catalog --profile host-notification
 SERVICES := account media catalog notification
 
@@ -43,6 +44,11 @@ schemas: ## (re)apply the canonical DB schema: Postgres migrations, Mongo collec
 
 up-apps: env ## infra + schemas + the real services and gateway (needs services/<name>/<impl> to exist)
 	$(COMPOSE) $(INFRA) $(APPS) --profile schemas up -d --build $$(for s in $$(cat .host 2>/dev/null); do printf -- '--scale %s=0 ' $$s; done)
+
+up-tools: env ## web UIs: Kafka UI, Adminer (Postgres), Mongoku (MongoDB); starts only the stores they show; one UI: make up-tools T=adminer - ~0.9 GB
+	$(COMPOSE) $(INFRA) --profile tools up -d $(or $(T),$(TOOLS))
+	@bash scripts/wait-healthy.sh 600
+	@bash scripts/tools-info.sh $(or $(T),$(TOOLS))
 
 up-mocks: env ## only what the gateway needs (Keycloak, Redis) + gateway + 4 Prism mocks - ~2 GB, the light way to work
 	$(COMPOSE) $(INFRA) --profile mocks up -d --build gateway
@@ -136,7 +142,7 @@ seed-test-sql: ## load the seed SQL twice into a throw-away Postgres (docker) on
 
 # ---- static checks (no containers needed) ----------------------------------------------------------------------------
 lint: ## compose config for every profile combination, shell syntax, Hurl formatting
-	@for p in "$(INFRA)" "$(INFRA) --profile schemas" "$(INFRA) --profile data" "$(INFRA) $(OBS) $(APPS) --profile schemas" "$(INFRA) --profile mocks" "--profile host-account --profile host-media --profile host-catalog --profile host-notification"; do \
+	@for p in "$(INFRA)" "$(INFRA) --profile schemas" "$(INFRA) --profile data" "$(INFRA) --profile tools" "$(INFRA) $(OBS) $(APPS) --profile schemas" "$(INFRA) --profile mocks" "--profile host-account --profile host-media --profile host-catalog --profile host-notification"; do \
 	  $(COMPOSE) $$p config -q && echo "  ok  compose $$p" || exit 1; done
 	@for f in infra/db-init/*.sh infra/data/*.sh; do bash -n $$f && echo "  ok  sh -n $$f" || exit 1; done
 	@for f in e2e/run.sh scripts/*.sh scripts/ci/*.sh conformance/run.sh conformance/selftest.sh conformance/checks/*.sh infra/host-proxy/forward.sh; do bash -n $$f && echo "  ok  bash -n $$f" || exit 1; done
@@ -150,4 +156,4 @@ check-contracts: ## cross-check OpenAPI, GraphQL, Avro, proto, i18n and the gate
 	.venv-validate/bin/python scripts/validate/validate_contracts2.py
 	.venv-validate/bin/python scripts/validate/validate_host_env.py
 
-.PHONY: help doctor env up up-obs schemas seed reset reseed seed-build seed-check seed-test-sql up-apps up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen
+.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql up-apps up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen

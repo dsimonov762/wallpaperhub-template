@@ -59,7 +59,7 @@ docker_host_ports() {
 published="$(docker_host_ports)"
 busy=0
 for pair in GATEWAY:8080 KEYCLOAK:8180 POSTGRES_ACCOUNT:5432 POSTGRES_MEDIA:5433 MONGO:27017 REDIS:6379 REDIS_NOTIFICATION:6380 \
-            KAFKA:9092 SCHEMA_REGISTRY:8081 ELASTICSEARCH:9200 S3_API:9000 S3_CONSOLE:9001 MAILPIT_UI:8025 MAILPIT_SMTP:1025 GRAFANA:3000 PROMETHEUS:9090 \
+            KAFKA:9092 SCHEMA_REGISTRY:8081 KAFKA_UI:8082 ADMINER:8083 MONGO_UI:8084 ELASTICSEARCH:9200 S3_API:9000 S3_CONSOLE:9001 MAILPIT_UI:8025 MAILPIT_SMTP:1025 GRAFANA:3000 PROMETHEUS:9090 \
             LOKI:3100 TEMPO:3200 ALLOY_UI:12345 ALLOY_OTLP_GRPC:4317 ALLOY_OTLP_HTTP:4318; do
   name="PORT_${pair%%:*}"; port="${!name:-${pair##*:}}"
   if (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then
@@ -80,8 +80,13 @@ fi
 
 echo "Images (pulled on first start when missing)"
 if docker info >/dev/null 2>&1; then
-  for img in $(grep -hoE '^\s+image: [^ ]+' infra/docker-compose.yml | awk '{print $2}' | grep -v 'wallpaperhub/' | sort -u); do
-    docker image inspect "$img" >/dev/null 2>&1 || warn "missing locally: $img"
+  # ${VAR:-default} in an image line: check the default. Images of the tools profile are optional, so they are only a note.
+  for img in $(grep -hoE '^\s+image: [^ ]+' infra/docker-compose.yml | awk '{print $2}' | grep -v 'wallpaperhub/' | sed -E 's/^\$\{[A-Z_]+:-(.*)\}$/\1/' | sort -u); do
+    docker image inspect "$img" >/dev/null 2>&1 && continue
+    case "$img" in
+      *kafka-ui*|adminer:*|*mongoku*) echo "  note  $img is pulled by make up-tools" ;;
+      *) warn "missing locally: $img" ;;
+    esac
   done
   ok "image check done"
 fi

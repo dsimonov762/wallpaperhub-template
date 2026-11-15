@@ -5,6 +5,7 @@
 #   schemas        one-shot jobs that create the canonical DB schema (Postgres migrations, Mongo collections and
 #                  indexes, Elasticsearch index). Run them after "infra" is healthy: make schemas
 #   observability  Alloy, Loki, Tempo, Prometheus, Grafana
+#   tools          web UIs: Kafka UI, Adminer (Postgres), Mongoku (MongoDB) (make up-tools)
 #   data           one-shot jobs: seed the stores with the development dataset / empty them (make seed, make reset)
 #   apps           the 4 domain services + gateway (built from ../services/<name>/<impl>)
 #   mocks          the 4 domain services as Prism mocks of their OpenAPI contract + the gateway, for working on the
@@ -612,6 +613,66 @@ services:
     volumes:
       - ./db-init/es-init.sh:/scripts/es-init.sh:ro
       - ../contracts/db-schema:/db-schema:ro
+
+  # -------------------------------------------------------------------------
+  # PROFILE: tools  (make up-tools)
+  # Web UIs for the stores, all on the loopback address, all with admin rights and no login: do not set BIND_ADDRESS=0.0.0.0
+  # while they run. No healthchecks on purpose: a UI that does not start must not fail `make up-tools` or wait-healthy.sh.
+  # Each depends only on the store it shows, so `make up-tools T=adminer` starts nothing else than Adminer and its databases.
+  # Images are overridable (KAFKA_UI_IMAGE, ADMINER_IMAGE, MONGO_UI_IMAGE in infra/.env) in case a tag is not available to you.
+  # TOOLS_READONLY=true makes Kafka UI and Mongoku refuse writes (Adminer has no such switch).
+  # -------------------------------------------------------------------------
+  # Topics, messages (Avro decoded through the Schema Registry), consumer groups, schemas.
+  kafka-ui:
+    image: ${KAFKA_UI_IMAGE:-ghcr.io/kafbat/kafka-ui:v1.5.0}
+    profiles: [tools]
+    restart: unless-stopped
+    mem_limit: 512m
+    depends_on:
+      kafka: { condition: service_healthy }
+      schema-registry: { condition: service_healthy }
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_KAFKA_UI:-8082}:8080"
+    environment:
+      DYNAMIC_CONFIG_ENABLED: "false"
+      KAFKA_CLUSTERS_0_NAME: wallpaperhub
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+      KAFKA_CLUSTERS_0_READONLY: ${TOOLS_READONLY:-false}
+      JAVA_OPTS: -Xms128m -Xmx320m
+
+  # The three Postgres databases (account, media, keycloak). Log in with System = PostgreSQL: make up-tools prints links with
+  # the server, user and database filled in; the password is the one of infra/.env (default: same as the user name).
+  adminer:
+    image: ${ADMINER_IMAGE:-adminer:6.3.0}
+    profiles: [tools]
+    restart: unless-stopped
+    mem_limit: 96m
+    depends_on:
+      postgres-account: { condition: service_healthy }
+      postgres-media: { condition: service_healthy }
+      postgres-keycloak: { condition: service_healthy }
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_ADMINER:-8083}:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres-account
+      ADMINER_DESIGN: nette
+
+  # MongoDB: collections, documents, indexes, validators. Mongoku rather than mongo-express: the Docker official mongo-express
+  # image is deprecated (no release since April 2024) and its driver is older than the Mongo 9 server of this stack.
+  mongo-ui:
+    image: ${MONGO_UI_IMAGE:-huggingface/mongoku:2.11.5}
+    profiles: [tools]
+    restart: unless-stopped
+    mem_limit: 256m
+    depends_on:
+      mongo: { condition: service_healthy }
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_MONGO_UI:-8084}:3100"
+    environment:
+      MONGOKU_SERVER_PORT: "3100"
+      MONGOKU_DEFAULT_HOST: mongodb://root:${MONGO_PASSWORD:-root}@mongo:27017/?authSource=admin
+      MONGOKU_READ_ONLY_MODE: ${TOOLS_READONLY:-false}
 
   # -------------------------------------------------------------------------
   # PROFILE: data  (make seed / make reset / make reseed; DATA_MODE=seed|reset)

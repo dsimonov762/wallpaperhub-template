@@ -48,6 +48,7 @@ Nothing exists behind the gateway until services are implemented. Two ways to ge
 | `make up-mocks` | Keycloak + its Postgres, Redis, gateway, 4 mocks | about 2 GB |
 | `make up` | all infra: Postgres x3, Mongo, Redis x2, Kafka, Schema Registry, Keycloak, Elasticsearch, S3, Mailpit | about 5 GB |
 | `make up-obs` | `up` + Grafana, Loki, Tempo, Prometheus, Alloy | about 6.5 GB |
+| `make up-tools` | the web UIs of section 3 and only the stores they show (Kafka UI needs Kafka and the Schema Registry, Adminer the three Postgres, Mongoku Mongo); `T=adminer` for one | about 0.9 GB for the UIs, plus what they pull in |
 | `make up-apps` | `up` + your four services (640 MB each) + gateway (384 MB) | about 8 GB |
 | `make up-obs` + `up-apps` together | everything | about 9.3 GB |
 
@@ -66,6 +67,9 @@ Elasticsearch (1 GB), Kafka and Keycloak (768 MB each) are the big ones; add the
 | http://localhost:9200 | Elasticsearch | no auth in dev |
 | http://localhost:3000 | Grafana (observability profile) | anonymous admin |
 | http://localhost:8081 | Schema Registry | - |
+| http://localhost:8082 | Kafka UI (tools profile) | no login |
+| http://localhost:8083 | Adminer, Postgres (tools profile) | System PostgreSQL, user = database name, password as in `infra/.env` (default = user name); `make up-tools` prints ready-filled links |
+| http://localhost:8084 | Mongoku, MongoDB (tools profile) | no login, connected as root |
 
 Get a token for manual calls:
 
@@ -85,7 +89,11 @@ curl -s -d grant_type=password -d client_id=e2e-tests -d username=alice -d passw
 
 ### Development data
 
-`make seed` fills every store with a consistent dataset (12 users, 30 wallpapers in every state, favorites, collections, inboxes, images in S3; all users have the password `password`), `make reset` deletes all data again (schemas stay, asks first), `make reseed` does both. What is in it and why: [seed/README.md](../seed/README.md), the ids: [seed/CATALOG.md](../seed/CATALOG.md). `make seed-check` verifies the dataset against the DB contracts without a database.
+`make seed` fills every store with a consistent dataset (12 users, 30 wallpapers in every state, favorites, collections, inboxes, images in S3; all users have the password `password`), `make reset` deletes all data again (schemas stay, asks first), `make reseed` does both. What is in it and why: [seed/README.md](../seed/README.md), the ids: [seed/CATALOG.md](../seed/CATALOG.md). `make seed-check` verifies the dataset against the DB contracts without a database. To look at the result: `make up-tools`.
+
+### Web UIs for the stores
+
+`make up-tools` starts **Kafka UI** (topics, Avro messages decoded through the Schema Registry, consumer groups), **Adminer** (the three Postgres databases) and **Mongoku** (MongoDB, database `catalog`), each with the connection already set up; it prints the links. `make up-tools T=kafka-ui` starts one of them. They run with full rights and no login on the loopback address (do not set `BIND_ADDRESS=0.0.0.0` while they run); `TOOLS_READONLY=true` in `infra/.env` makes Kafka UI and Mongoku refuse writes. Mongoku instead of mongo-express because the Docker official mongo-express image is deprecated (no release since April 2024). There is no UI yet for Redis and Elasticsearch: `docker compose exec redis redis-cli` and `curl localhost:9200/_cat/indices` do the job, or add one to the profile.
 
 ### Contract tooling
 
@@ -117,10 +125,13 @@ Verified with the real binaries in a Linux sandbox (no Docker daemon was availab
 - **Contract tooling:** Spectral, buf and the Avro/GraphQL checks run for real on the contracts (lint is clean after fixing 8 real findings: five missing operation descriptions, a missing Avro record doc and GraphQL type description, one POST without `Idempotency-Key`, which now carries `x-idempotency: not-applicable`). Each Spectral rule fires on a deliberate violation; `buf breaking`, Avro BACKWARD/FULL and GraphQL breaking detection fire on removed/retyped/required-added fields and removed enum values, and pass on additive changes. The TypeScript generation compiles and rejects wrong use.
 - **CI:** the three workflows pass a workflow-schema validator (`action-validator`); the commands of the `static` job ran in a fresh copy of the repo without any cached tools; `detect-services.sh` selects the right implementations in a scratch git repo (all, only the changed one, none, FORCE_ALL); `install-hurl.sh` installs from the release tarball layout and degrades to the container when the download fails; `make conformance-selftest` (21 s) passes against the real Keycloak.
 - **Host mode:** the forwarder script with real `socat`; real Envoy health-checks and routes through it to a process on the host.
+- **Seed data:** the SQL loads twice into PostgreSQL 16 on top of the canonical schema (second load adds nothing); the Redis files into real Redis; the Keycloak partial import and `infra/data/keycloak.sh` (seed, repeat, reset) against Keycloak 26.8.2 incl. fixed user ids and logins; the Elasticsearch loader against a mock; `catalog.js` under Node with a stub driver; `seed-check` catches six deliberate corruptions.
 
 Not verified (needs your Docker): image behavior of Kafka/Schema Registry/Elasticsearch/MongoDB/Silo, `kafka-init`, `schema-registry-init`, `s3-init`, `catalog-db-init`
 (mongosh), `catalog-search-init`, the Alloy pipeline at runtime, the mock `Dockerfile`, the Hurl container fallback, `make` targets that call the daemon,
 **oasdiff** (`make contracts-breaking` only exercised its call plumbing with a stand-in, the real tool could not be downloaded here, image `tufin/oasdiff:v1.33.0`), the tools image build (`tools/contract-tools/Dockerfile`: buf's binary on Alpine), `TARGET=openapi` (image `openapitools/openapi-generator-cli:v7.10.0`) and `TARGET=proto` (buf plugins need network access), **the workflows on GitHub itself** (never run: action versions, runner memory, the Docker steps, `make up-mocks` and `make e2e` in the runner, artifact upload), the host-mode forwarder image build, `docker compose` `--scale <hosted service>=0`, whether Docker Desktop reaches a host process through `host.docker.internal` on your machine (bind `0.0.0.0`; allow the Windows firewall prompt), the Docker modes of `conformance/checks/lifecycle.sh` (`CONTAINER=`), the container fallback of `conformance/run.sh` when Hurl is not installed, and **all `system/*.hurl` assertions** - they describe the contract and have never run against an implementation. Expect to adjust them with the first real service.
+
+Also not verified: the **`data` jobs and `make seed`/`reset`** against Docker (the scripts were exercised one by one, `scripts/data.sh` with a fake `docker`), the Mongo upserts against a real MongoDB with the validators, `mcli mirror --attr` and `mcli rm` in the Silo image, and the **`tools` profile**: nothing of it was started. The tags `ghcr.io/kafbat/kafka-ui:v1.5.0` (taken from the release list, not confirmed on the registry), `adminer:5.5.1` and `huggingface/mongoku:2.11.5` (seen on Docker Hub), the Kafka UI variable names (`KAFKA_CLUSTERS_0_*`, from its documentation as I remember it) and Adminer's pre-filled `?pgsql=...` links are the likely places for a first-start surprise. A wrong tag shows up as a pull error: set `KAFKA_UI_IMAGE`, `ADMINER_IMAGE` or `MONGO_UI_IMAGE` in `infra/.env`.
 
 ## 6. Troubleshooting
 
@@ -134,6 +145,9 @@ Not verified (needs your Docker): image behavior of Kafka/Schema Registry/Elasti
 | Keycloak unhealthy for a few minutes | first start imports the realm and builds the DB; give it 2-3 minutes. `make logs S=keycloak` |
 | `depends_on ... required` is invalid | Compose older than 2.20. Update Docker Desktop |
 | e2e: `429` on `POST /registrations` | the gateway test `99-rate-limit` empties the 10/min bucket of your IP; wait a minute (or use `./e2e/run.sh all`, which runs it last) |
+| Kafka UI lists no topics, or says the cluster is offline | `make up-tools` alone starts Kafka but not `kafka-init`: run `make up` once (creates the topics). Offline: `make logs S=kafka-ui`, the broker must be healthy (`make ps`) |
+| Adminer: "No driver" / cannot log in | choose System = PostgreSQL (the links from `make up-tools` do), server is the compose name (`postgres-account`), not `localhost` |
+| `make up-tools`: pull access denied / manifest unknown | the pinned tag does not exist for you: set `KAFKA_UI_IMAGE`, `ADMINER_IMAGE` or `MONGO_UI_IMAGE` in `infra/.env` (for example `ghcr.io/kafbat/kafka-ui:latest`) |
 | System e2e: upload rejected as `DUPLICATE` | media rejects duplicates by SHA-256 and perceptual hash; `run.sh` generates a new random picture per run, which needs `python3` |
 
 ## 7. Repository layout
