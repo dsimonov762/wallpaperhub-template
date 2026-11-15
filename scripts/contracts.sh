@@ -4,7 +4,7 @@
 #   scripts/contracts.sh lint                 Spectral (OpenAPI), buf lint (proto), Avro and GraphQL conventions
 #   scripts/contracts.sh breaking [BASE]      compare contracts/ with the same folder at BASE and fail on breaking changes:
 #                                               oasdiff (OpenAPI), buf breaking (proto), Avro compatibility, GraphQL breaking changes
-#                                             BASE is a git ref (default origin/master, else master, else HEAD~1) or a folder that contains contracts/
+#                                             BASE is a git ref (default origin/master or origin/main, else master/main, else HEAD~1) or a folder that contains contracts/
 #
 # Environment:  CONTRACT_TOOLS=native      use Node on this machine instead of the tools image (scripts/ct.sh)
 #               OASDIFF=<command>          oasdiff binary to use instead of the container (default: oasdiff on PATH, else docker)
@@ -41,8 +41,8 @@ resolve_base() {  # prints the folder that contains the base contracts/, empty w
   if [ -n "$base" ] && [ -d "$base/contracts" ]; then cp -r "$base/contracts" "$tmp/contracts"; echo "$tmp"; return; fi
   command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1 || { echo "not a git repository: pass BASE=<folder containing contracts/>" >&2; return 2; }
   if [ -z "$base" ]; then
-    for c in origin/master master HEAD~1; do git -C "$ROOT" rev-parse --verify -q "$c^{commit}" >/dev/null && { base="$c"; break; }; done
-    [ -n "$base" ] || { echo "no base revision found (origin/master, master, HEAD~1); pass BASE=<git ref>" >&2; return 2; }
+    for c in origin/master origin/main master main HEAD~1; do git -C "$ROOT" rev-parse --verify -q "$c^{commit}" >/dev/null && { base="$c"; break; }; done
+    [ -n "$base" ] || { echo "no base revision found (origin/master, origin/main, master, main, HEAD~1); pass BASE=<git ref>" >&2; return 2; }
   fi
   git -C "$ROOT" rev-parse --verify -q "$base^{commit}" >/dev/null || { echo "unknown git ref: $base" >&2; return 2; }
   echo "base: $base ($(git -C "$ROOT" rev-parse --short "$base"))" >&2
@@ -50,9 +50,9 @@ resolve_base() {  # prints the folder that contains the base contracts/, empty w
   [ -d "$tmp/contracts" ] && echo "$tmp" || echo ""
 }
 
-run_oasdiff() {  # run_oasdiff <args>: paths are relative to the repo root
+run_oasdiff() {  # run_oasdiff <args> (not named oasdiff: the function would call itself instead of the binary): paths are relative to the repo root
   if [ -n "${OASDIFF:-}" ]; then "$OASDIFF" "$@"
-  elif command -v oasdiff >/dev/null 2>&1; then oasdiff "$@"
+  elif command -v oasdiff >/dev/null 2>&1; then command oasdiff "$@"
   elif command -v docker >/dev/null 2>&1; then
     docker run --rm -v "$ROOT:/repo" -w /repo "${OASDIFF_IMAGE:-tufin/oasdiff:v1.33.0}" "$@"
   else echo "need oasdiff or docker" >&2; return 2; fi

@@ -59,7 +59,7 @@ jobs:
 
   seed:
     name: seed data loads into Postgres
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     services:
       postgres:
@@ -70,7 +70,7 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 3s --health-retries 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Canonical schema, then the seed SQL twice (constraints hold, the second load changes nothing)
         env:
           PGHOST: 127.0.0.1
@@ -183,7 +183,7 @@ jobs:
   ok:
     name: ok
     if: always()
-    needs: [static, breaking, gateway, detect, services]
+    needs: [static, seed, breaking, gateway, detect, services]
     runs-on: ubuntu-26.04
     steps:
       - name: Every job succeeded or was skipped

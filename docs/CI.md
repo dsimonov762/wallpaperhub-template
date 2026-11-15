@@ -59,3 +59,8 @@ On a private repository use a larger runner for those: set `runner:` in the `ser
 - Building and pushing images to a registry, deployments: they depend on where you run the services. Add them as further jobs that `needs` the jobs above.
 - Another CI system: the workflows are thin wrappers around `make`; a GitLab or Jenkins pipeline calls the same targets (`make lint check-contracts contracts-lint`, `make contracts-breaking BASE=...`, `make up-mocks e2e conformance-selftest`, `make conformance SVC=...`).
 - Caching of Docker layers and images: the first run of a job pulls about 3 GB of images. Add a registry mirror or `docker/setup-buildx-action` with the GitHub cache when pull time hurts.
+
+## Runner image and Hurl
+
+The workflows run on `ubuntu-26.04` and Python 3.15.2 / Node 24. The Hurl binary needs `libxml2.so.2`, which Ubuntu 26.04 no longer ships (only `libxml2.so.16`),
+so every job that installs Hurl has a step that installs `libxml2-16` and links it under the old name when it is missing. The default branch is `master`.

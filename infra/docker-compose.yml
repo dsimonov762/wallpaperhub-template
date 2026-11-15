@@ -885,17 +885,6 @@ services:
     build:
       context: ${GATEWAY_DIR:-../services/gateway/envoy}
     image: wallpaperhub/gateway:local
-    # Healthy only once port 8080 accepts connections. Without it "docker compose up -d" returns as soon as the
-    # container starts and a client that connects right away (make e2e in CI) gets "connection reset" while Envoy is
-    # still opening its listener. Tries bash (the Envoy image has no curl or wget), then wget, then curl, so a
-    # hand-written gateway image only needs one of the three.
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080' 2>/dev/null || wget -qO /dev/null http://127.0.0.1:8080/health 2>/dev/null || curl -sf -o /dev/null http://127.0.0.1:8080/health"
-      interval: 2s
-      timeout: 3s
-      retries: 30
     depends_on:
       redis: { condition: service_healthy }
       keycloak: { condition: service_healthy }
@@ -921,6 +910,13 @@ services:
       MEDIA_URL: http://media:8080
       CATALOG_URL: http://catalog:8080
       NOTIFICATION_URL: http://notification:8080
+    healthcheck:   # the envoy image may lack curl or wget: try a TCP connect first, then the two HTTP clients
+      test:
+        - CMD-SHELL
+        - "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080' 2>/dev/null || wget -qO /dev/null http://127.0.0.1:8080/health 2>/dev/null || curl -sf -o /dev/null http://127.0.0.1:8080/health"
+      interval: 2s
+      timeout: 3s
+      retries: 30
 
   # -------------------------------------------------------------------------
   # PROFILE: mocks (contract-driven stand-ins for the four services)
