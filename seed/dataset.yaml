@@ -1,0 +1,86 @@
+# Wallpaper Hub seed dataset: the single source of truth for `make seed`.
+# `python seed/build.py` turns it into seed/out/ (SQL, Mongo, Elasticsearch, Redis, Keycloak, images). The generated files
+# are committed, so `make seed` needs nothing but the images the stack already pulled. Edit this file, run
+# `make seed-build`, commit both. Ids of every store are derived from the keys below (deterministic, see seed/CATALOG.md).
+#
+# Conventions: dates are fixed (anchor minus N days) so the output is stable and diff-able; change `anchor` to move
+# everything. Passwords of all seeded users are `password` (like alice, mod and admin of the realm export).
+
+anchor: "2026-11-01T09:00:00Z"
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Users. The first three exist in infra/keycloak/realm-export.json with the same UUIDs; the others are created in Keycloak
+# by the seed job (Admin API partial import) with the UUIDs below, so token `sub` == users.id == wallpapers.author.id.
+# status SUSPENDED also disables the Keycloak user. `deleted: N` = soft-deleted N days before the anchor (no Keycloak user,
+# no wallpapers, no notifications: the purge job removes the row 30 days after deletion).
+users:
+  alice: {n: 1,  name: "Alice Example",   locale: en, joined: 120, avatar: true,  banner: true,  roles: [USER],      bio: "Landscape and space wallpapers. Most of my work is procedural, a few layers and a lot of fog." }
+  mod:   {n: 2,  name: "Mona Moderator",  locale: de, joined: 200, avatar: true,  roles: [MODERATOR], bio: "Ich prüfe neue Wallpaper und halte den Katalog sauber." }
+  admin: {n: 3,  name: "Adam Admin",      locale: es, joined: 300, avatar: false, roles: [ADMIN],     bio: "Administración de Wallpaper Hub." }
+  bob:   {n: 4,  name: "Bob Builder",     locale: en, joined: 90,  avatar: true,  roles: [USER],      bio: "Desk setups, neon and city lights." }
+  carol: {n: 5,  name: "Carola Schmidt",  locale: de, joined: 75,  avatar: true,  banner: true, roles: [USER], bio: "Herbst, Nebel und Eulen. Wallpaper aus Berlin." }
+  dave:  {n: 6,  name: "Dave Lopez",      locale: en, joined: 60,  avatar: true,  roles: [USER],      bio: "Learning generative art. Not every upload makes it through moderation." }
+  erin:  {n: 7,  name: "Erín Castillo",   locale: es, joined: 45,  avatar: true,  roles: [USER],      bio: "Desierto, estrellas y mucho minimalismo." }
+  frank: {n: 8,  name: "Frank Weber",     locale: en, joined: 40,  avatar: false, roles: [USER],      status: SUSPENDED, bio: "Suspended account: its published wallpaper stays visible, new uploads are blocked." }
+  grace: {n: 9,  name: "Grace Müller",    locale: de, joined: 30,  avatar: true,  roles: [USER],      bio: "Meer, Beton, Stille." }
+  heidi: {n: 10, name: "Heidi Novak",     locale: en, joined: 20,  avatar: true,  roles: [USER],      bio: "Circuit boards and coastlines." }
+  ivan:  {n: 11, name: "Ivan Petrov",     locale: es, joined: 150, avatar: false, roles: [USER],      deleted: 20, bio: null }
+  judy:  {n: 12, name: "Judy Newcomer",   locale: en, joined: 1,   avatar: false, roles: [USER],      bio: null }
+
+# Notification preferences that differ from the defaults (absent prefs:{user} key = defaults, README 6.5)
+prefs:
+  bob:   {locale: en, email: 0, inApp: 1, digest: 1, version: 1}
+  carol: {locale: de, email: 1, inApp: 1, digest: 0, version: 2}
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Wallpapers. m = motif of the generated picture (hills waves blobs stars city grid minimal critter), p = three colours
+# (top, bottom, accent), size = full variant, ago = days before the anchor, pop 1..5 drives views/downloads.
+# status: PUBLISHED (default) | PENDING_MEDIA (asset still PROCESSING) | REJECTED | REMOVED
+# `mod` = moderation decision {d: APPROVED|REJECTED|REMOVED, reason, ago}; `asset_reject` = the media pipeline rejected it.
+wallpapers:
+  w01: {a: alice, t: "Misty Pines",              c: NATURE,       m: hills,   p: ["#9fb4c7","#2e4a3b","#e8eef2"], size: [2560,1440], ago: 40, pop: 5, tags: [forest, fog, pine, mountains], d: "Rows of pines fading into morning fog. Cool greens, soft light." }
+  w02: {a: alice, t: "Golden Ridge at Dawn",     c: NATURE,       m: hills,   p: ["#f6c177","#3b2f4a","#fff1c9"], size: [2560,1440], ago: 33, pop: 4, tags: [sunrise, mountains, golden, ridge], d: "First light on a layered mountain ridge." }
+  w03: {a: bob,   t: "Quiet Tide",               c: NATURE,       m: waves,   p: ["#cfe8f3","#0d3b5c","#ffffff"], size: [1920,1080], ago: 29, pop: 3, tags: [ocean, calm, blue, waves], d: "Long slow waves under a pale sky." }
+  w04: {a: carol, t: "Herbstnebel im Wald",      c: NATURE,       m: hills,   p: ["#c9b79c","#5a3d2b","#f3e9d8"], size: [1920,1080], ago: 27, pop: 3, tags: [autumn, fog, forest, herbst], d: "Ein nebliger Herbstmorgen, die Bäume nur als Silhouetten." }
+  w05: {a: erin,  t: "Desierto Rojo al Atardecer", c: NATURE,     m: hills,   p: ["#f4a259","#6b1f2a","#ffd6a5"], size: [1920,1080], ago: 25, pop: 4, tags: [desert, sunset, red, desierto], d: "Dunas rojas bajo un cielo naranja.", mod: {d: APPROVED, ago: 24} }
+  w06: {a: alice, t: "Northern Ridge",           c: NATURE,       m: hills,   p: ["#0b132b","#1c6e6e","#7ae7c7"], size: [1920,1200], ago: 22, pop: 3, tags: [mountains, night, teal, aurora], d: "A dark ridge line with a green glow behind it." }
+  w07: {a: grace, t: "Blaue Stunde über dem Meer", c: NATURE,     m: waves,   p: ["#3a4a8c","#0b1a3a","#9ab3ff"], size: [1920,1080], ago: 18, pop: 2, tags: [meer, dusk, ocean, blue], d: "Das Meer kurz nach Sonnenuntergang." }
+  w08: {a: dave,  t: "Alpine Layers",            c: NATURE,       m: hills,   p: ["#b8d4e3","#264653","#ffffff"], size: [1920,1080], ago: 15, pop: 2, tags: [alps, layers, mountains], d: "Five ridges, five shades of blue." }
+  w09: {a: heidi, t: "Cold Coast",               c: NATURE,       m: waves,   p: ["#dfe7ea","#2a4d5a","#f5fbff"], size: [1920,1080], ago: 9,  pop: 2, tags: [coast, ocean, grey, waves], d: "Grey water, grey sky, a thin line of light." }
+  w10: {a: alice, t: "Soft Gradient Bloom",      c: ABSTRACT,     m: blobs,   p: ["#1b1030","#3a1c71","#ffaf7b"], size: [1920,1080], ago: 38, pop: 4, tags: [gradient, bloom, purple, soft], d: "Blurred colour fields that glow from the inside." }
+  w11: {a: bob,   t: "Neon Haze",                c: ABSTRACT,     m: blobs,   p: ["#0a0a1f","#ff2e93","#2ee6d6"], size: [1920,1080], ago: 21, pop: 3, tags: [neon, haze, pink, cyan], d: "Pink and cyan light bleeding into the dark." }
+  w12: {a: carol, t: "Farbfluss",                c: ABSTRACT,     m: blobs,   p: ["#fdf6e3","#ef476f","#118ab2"], size: [1920,1080], ago: 14, pop: 2, tags: [colour, flow, abstract, farbe], d: "Weiche Farbflächen auf hellem Grund." }
+  w13: {a: dave,  t: "Magma Flow",               c: ABSTRACT,     m: blobs,   p: ["#1a0000","#d62828","#fcbf49"], size: [1920,1080], ago: 12, pop: 1, tags: [magma, red, flow], d: "Hot red shapes on black.", status: REJECTED, mod: {d: REJECTED, reason: "Contains a third-party watermark.", ago: 11} }
+  w14: {a: mod,   t: "Calm Pastel",              c: ABSTRACT,     m: blobs,   p: ["#fff1e6","#bde0fe","#ffc8dd"], size: [1920,1080], ago: 60, pop: 2, tags: [pastel, calm, soft], d: "Pastel circles, the reference wallpaper for the moderation guide." }
+  w15: {a: alice, t: "Ringed Giant",             c: SPACE,        m: stars,   p: ["#05050f","#1b2a49","#e9c46a"], size: [2560,1440], ago: 36, pop: 5, tags: [space, planet, rings, saturn], d: "A ringed gas giant over a quiet star field.", orig: webp }
+  w16: {a: bob,   t: "Deep Field",               c: SPACE,        m: stars,   p: ["#000000","#0b132b","#cdd7ff"], size: [1920,1080], ago: 31, pop: 4, tags: [space, stars, deep-field, dark], d: "Thousands of faint stars, no planet in sight.", mod: {d: APPROVED, ago: 30} }
+  w17: {a: erin,  t: "Deriva de Nebulosa",       c: SPACE,        m: stars,   p: ["#12002b","#4a1a6b","#ff7eb6"], size: [1920,1080], ago: 19, pop: 2, tags: [nebulosa, space, purple, estrellas], d: "Una nebulosa violeta a la deriva." }
+  w18: {a: alice, t: "Lunar Horizon",            c: SPACE,        m: stars,   p: ["#0a0f1f","#3d4a66","#f1f1f1"], size: [1920,1080], ago: 16, pop: 3, tags: [moon, horizon, space, grey], d: "A grey moon rising over a star field." }
+  w19: {a: frank, t: "Binary Dawn",              c: SPACE,        m: stars,   p: ["#10002b","#240046","#ff9e00"], size: [1920,1080], ago: 35, pop: 2, tags: [space, binary, sun, orange], d: "Two suns over an empty planet." }
+  w20: {a: carol, t: "Dusk Skyline",             c: ARCHITECTURE, m: city,    p: ["#f4a261","#264653","#ffe8a3"], size: [3440,1440], ago: 26, pop: 3, tags: [city, skyline, dusk, ultrawide], d: "Ultrawide skyline at dusk with the first lights on." }
+  w21: {a: bob,   t: "Neon Blocks",              c: ARCHITECTURE, m: city,    p: ["#240046","#10002b","#00f5d4"], size: [1920,1080], ago: 17, pop: 4, tags: [city, neon, night, blocks], d: "Dark towers with teal windows." }
+  w22: {a: grace, t: "Beton und Stille",         c: ARCHITECTURE, m: city,    p: ["#d9d9d9","#6c757d","#ffffff"], size: [1920,1080], ago: 8,  pop: 1, tags: [beton, minimal, grey, architektur], d: "Graue Fassaden, kein Mensch, kein Lärm." }
+  w23: {a: alice, t: "Circuit Bloom",            c: TECHNOLOGY,   m: grid,    p: ["#021a1a","#053f3f","#39ffb6"], size: [1920,1080], ago: 3,  pop: 3, tags: [circuit, tech, green, grid], d: "Right-angled traces glowing on a dark board." }
+  w24: {a: dave,  t: "Data Lattice",             c: TECHNOLOGY,   m: grid,    p: ["#0b0b2a","#1d1d5e","#6c8cff"], size: [1280,720],  ago: 5,  pop: 1, tags: [data, lattice, blue], d: "A blue lattice. Uploaded too small on purpose.", status: REJECTED, asset_reject: TOO_SMALL }
+  w25: {a: heidi, t: "Signal Trace",             c: TECHNOLOGY,   m: grid,    p: ["#1a1a1a","#2b2b2b","#ff6b35"], size: [1920,1080], ago: 7,  pop: 2, tags: [signal, tech, orange, trace], d: "An orange trace running over a graphite grid." }
+  w26: {a: erin,  t: "Un Solo Sol",              c: MINIMAL,      m: minimal, p: ["#f7f3e8","#f7f3e8","#e63946"], size: [1920,1080], ago: 0,  pop: 1, tags: [minimal, sol, red], d: "Un círculo rojo sobre papel.", status: PENDING_MEDIA }
+  w27: {a: bob,   t: "Paper Horizon",            c: MINIMAL,      m: minimal, p: ["#eae0d5","#c6ac8f","#0a0908"], size: [1920,1080], ago: 0,  pop: 1, tags: [minimal, paper, horizon], d: "One line, two warm tones.", status: PENDING_MEDIA }
+  w28: {a: alice, t: "Monochrome Arc",           c: MINIMAL,      m: minimal, p: ["#111111","#111111","#f5f5f5"], size: [1920,1080], ago: 28, pop: 2, tags: [minimal, monochrome, arc], d: "A white arc on black.", status: REMOVED, mod: {d: REMOVED, reason: "Copyright complaint received.", ago: 2} }
+  w29: {a: alice, t: "Geometric Fox",            c: ANIMALS,      m: critter, p: ["#2b2d42","#8d99ae","#ef8354"], size: [1920,1080], ago: 23, pop: 4, tags: [fox, geometric, animal, orange], d: "A fox head made of six polygons." }
+  w30: {a: carol, t: "Eulenblick",               c: ANIMALS,      m: critter, p: ["#1d3557","#457b9d","#f1faee"], size: [1920,1080], ago: 13, pop: 2, tags: [eule, owl, geometric, animal], d: "Eine Eule, gezeichnet aus Dreiecken." }
+
+# Extra media-service assets that back no wallpaper
+extra_assets:
+  stuck: {owner: heidi, purpose: WALLPAPER, status: PROCESSING, minutes_ago: 180}   # PROCESSING for 3 h: the orphan-assets job's work item
+
+# Private collections {owner, title, items}
+collections:
+  c1: {owner: alice, title: "Forest moods",      d: "Fog, pines and quiet light.", items: [w01, w04, w08, w06]}
+  c2: {owner: alice, title: "Space",              d: null,                          items: [w15, w16, w17, w18]}
+  c3: {owner: bob,   title: "Desk wallpapers",    d: "What I rotate on my monitors.", items: [w21, w23, w25, w11]}
+  c4: {owner: carol, title: "Herbst und Nebel",   d: null,                          items: [w04, w01]}
+  c5: {owner: mod,   title: "Reference examples", d: "Good examples for the moderation guide.", items: [w14, w19]}
+
+# Favorites: every ACTIVE or SUSPENDED user (not judy) favourites `fav_count` published wallpapers of other authors, picked by a
+# stable hash, with the first wallpapers of the list slightly preferred.
+fav_count: {alice: 7, mod: 4, admin: 3, bob: 8, carol: 6, dave: 4, erin: 5, frank: 2, grace: 5, heidi: 4}

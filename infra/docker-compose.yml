@@ -5,6 +5,7 @@
 #   schemas        one-shot jobs that create the canonical DB schema (Postgres migrations, Mongo collections and
 #                  indexes, Elasticsearch index). Run them after "infra" is healthy: make schemas
 #   observability  Alloy, Loki, Tempo, Prometheus, Grafana
+#   data           one-shot jobs: seed the stores with the development dataset / empty them (make seed, make reset)
 #   apps           the 4 domain services + gateway (built from ../services/<name>/<impl>)
 #   mocks          the 4 domain services as Prism mocks of their OpenAPI contract + the gateway, for working on the
 #                  gateway, Keycloak and the e2e suite before the real services exist. Do not combine with "apps".
@@ -611,6 +612,135 @@ services:
     volumes:
       - ./db-init/es-init.sh:/scripts/es-init.sh:ro
       - ../contracts/db-schema:/db-schema:ro
+
+  # -------------------------------------------------------------------------
+  # PROFILE: data  (make seed / make reset / make reseed; DATA_MODE=seed|reset)
+  # One-shot jobs that put the development dataset of ../seed into every store, or empty the stores again. Needs
+  # "infra" in the same command and an existing schema (make schemas, or the services' own migrations).
+  # -------------------------------------------------------------------------
+  data-keycloak:
+    image: keycloak/keycloak:26.8.2-0
+    profiles: [data]
+    restart: "no"
+    depends_on:
+      keycloak: { condition: service_healthy }
+    entrypoint: ["bash", "-c", "tr -d '\\r' < /scripts/keycloak.sh > /tmp/keycloak.sh && bash /tmp/keycloak.sh"]
+    environment:
+      MODE: ${DATA_MODE:-seed}
+      KC_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      REALM: wallpaperhub
+      KEEP_USER_IDS: "00000000-0000-4000-8000-000000000001 00000000-0000-4000-8000-000000000002 00000000-0000-4000-8000-000000000003"
+    volumes:
+      - ./data/keycloak.sh:/scripts/keycloak.sh:ro
+      - ../seed/out:/seed/out:ro
+
+  data-account-db:
+    image: postgres:18.6-trixie
+    profiles: [data]
+    restart: "no"
+    depends_on:
+      postgres-account: { condition: service_healthy }
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/postgres.sh > /tmp/postgres.sh && sh /tmp/postgres.sh"]
+    environment:
+      MODE: ${DATA_MODE:-seed}
+      PGHOST: postgres-account
+      PGPORT: "5432"
+      PGUSER: account
+      PGPASSWORD: ${PG_ACCOUNT_PASSWORD:-account}
+      PGDATABASE: account
+      PROBE_TABLE: users
+      SQL_FILE: /seed/out/account.sql
+    volumes:
+      - ./data/postgres.sh:/scripts/postgres.sh:ro
+      - ../seed/out:/seed/out:ro
+
+  data-media-db:
+    image: postgres:18.6-trixie
+    profiles: [data]
+    restart: "no"
+    depends_on:
+      postgres-media: { condition: service_healthy }
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/postgres.sh > /tmp/postgres.sh && sh /tmp/postgres.sh"]
+    environment:
+      MODE: ${DATA_MODE:-seed}
+      PGHOST: postgres-media
+      PGPORT: "5432"
+      PGUSER: media
+      PGPASSWORD: ${PG_MEDIA_PASSWORD:-media}
+      PGDATABASE: media
+      PROBE_TABLE: media_asset
+      SQL_FILE: /seed/out/media.sql
+    volumes:
+      - ./data/postgres.sh:/scripts/postgres.sh:ro
+      - ../seed/out:/seed/out:ro
+
+  data-catalog-db:
+    image: mongo:9.0.4
+    profiles: [data]
+    restart: "no"
+    depends_on:
+      mongo: { condition: service_healthy }
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/mongo.sh > /tmp/mongo.sh && sh /tmp/mongo.sh"]
+    environment:
+      MODE: ${DATA_MODE:-seed}
+      MONGO_URI: mongodb://root:${MONGO_PASSWORD:-root}@mongo:27017/?authSource=admin
+      S3_PUBLIC_BASE_URL: http://localhost:${PORT_S3_API:-9000}/${S3_BUCKET_PUBLIC:-wallpaperhub-media}
+      SEED_JS: /seed/out/catalog.js
+    volumes:
+      - ./data/mongo.sh:/scripts/mongo.sh:ro
+      - ../seed/out:/seed/out:ro
+
+  data-catalog-search:
+    image: elasticsearch:9.5.5
+    profiles: [data]
+    restart: "no"
+    depends_on:
+      elasticsearch: { condition: service_healthy }
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/search.sh > /tmp/search.sh && sh /tmp/search.sh"]
+    environment:
+      MODE: ${DATA_MODE:-seed}
+      ES_URL: http://elasticsearch:9200
+      BULK: /seed/out/catalog.es.ndjson
+    volumes:
+      - ./data/search.sh:/scripts/search.sh:ro
+      - ../seed/out:/seed/out:ro
+
+  data-redis:
+    image: redis:8.10.3-trixie
+    profiles: [data]
+    restart: "no"
+    depends_on:
+      redis: { condition: service_healthy }
+      redis-notification: { condition: service_healthy }
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/redis.sh > /tmp/redis.sh && sh /tmp/redis.sh"]
+    environment:
+      MODE: ${DATA_MODE:-seed}
+      REDIS_SHARED_HOST: redis
+      REDIS_NOTIFICATION_HOST: redis-notification
+    volumes:
+      - ./data/redis.sh:/scripts/redis.sh:ro
+      - ../seed/out:/seed/out:ro
+
+  data-s3:
+    image: pgsty/silo:RELEASE.2026-10-26T00-00-00Z
+    profiles: [data]
+    restart: "no"
+    depends_on:
+      s3: { condition: service_started }
+      s3-init: { condition: service_completed_successfully }
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/s3.sh > /tmp/s3.sh && sh /tmp/s3.sh"]
+    environment:
+      MODE: ${DATA_MODE:-seed}
+      S3_ENDPOINT: http://s3:9000
+      S3_ROOT_USER: ${S3_ROOT_USER:-silo-admin}
+      S3_ROOT_PASSWORD: ${S3_ROOT_PASSWORD:-silo-admin-secret}
+      S3_BUCKET_ORIGINALS: ${S3_BUCKET_ORIGINALS:-wallpaperhub-originals}
+      S3_BUCKET_PUBLIC: ${S3_BUCKET_PUBLIC:-wallpaperhub-media}
+    volumes:
+      - ./data/s3.sh:/scripts/s3.sh:ro
+      - ../seed/s3:/seed/s3:ro
 
   # -------------------------------------------------------------------------
   # PROFILE: apps (only the gateway is meant to be used by clients)

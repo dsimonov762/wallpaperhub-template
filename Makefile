@@ -10,7 +10,7 @@ JOBS    := account-db-migrate media-db-migrate catalog-db-init catalog-search-in
 INFRA   := --profile infra
 OBS     := --profile observability
 APPS    := --profile apps
-ALLP    := --profile infra --profile schemas --profile observability --profile apps --profile mocks \
+ALLP    := --profile infra --profile schemas --profile data --profile observability --profile apps --profile mocks \
            --profile host-account --profile host-media --profile host-catalog --profile host-notification
 SERVICES := account media catalog notification
 
@@ -112,11 +112,33 @@ e2e-system: ## README 4.1 user flows through all services (needs the real implem
 e2e-all: ## system flows, then gateway checks
 	./e2e/run.sh all
 
+# ---- development data -------------------------------------------------------------------------------------------------
+seed: ## fill every store with the development dataset (12 users, 30 wallpapers, favorites, inboxes ...; see seed/CATALOG.md); safe to repeat
+	@bash scripts/data.sh seed
+
+reset: ## DELETE all data in every store (schemas stay; asks first, YES=1 skips the question)
+	@bash scripts/data.sh reset
+
+reseed: ## reset, then seed: the same known state every time
+	@bash scripts/data.sh reseed
+
+seed-build: ## regenerate seed/out and the images from seed/dataset.yaml (python3 + seed/requirements.txt, or Docker)
+	@bash scripts/seed-build.sh
+
+seed-check: ## fail when seed/out or the images are out of date, and validate the seed data against the DB schemas of contracts/
+	@[ -d .venv-validate ] || python3 -m venv .venv-validate
+	@.venv-validate/bin/pip install -q -r scripts/validate/requirements.txt
+	.venv-validate/bin/python seed/build.py --check
+	.venv-validate/bin/python scripts/validate/validate_seed.py
+
+seed-test-sql: ## load the seed SQL twice into a throw-away Postgres (docker) on top of the canonical schema: proves constraints and idempotency
+	@bash scripts/ci/seed-sql-test.sh
+
 # ---- static checks (no containers needed) ----------------------------------------------------------------------------
 lint: ## compose config for every profile combination, shell syntax, Hurl formatting
-	@for p in "$(INFRA)" "$(INFRA) --profile schemas" "$(INFRA) $(OBS) $(APPS) --profile schemas" "$(INFRA) --profile mocks" "--profile host-account --profile host-media --profile host-catalog --profile host-notification"; do \
+	@for p in "$(INFRA)" "$(INFRA) --profile schemas" "$(INFRA) --profile data" "$(INFRA) $(OBS) $(APPS) --profile schemas" "$(INFRA) --profile mocks" "--profile host-account --profile host-media --profile host-catalog --profile host-notification"; do \
 	  $(COMPOSE) $$p config -q && echo "  ok  compose $$p" || exit 1; done
-	@for f in infra/db-init/*.sh; do sh -n $$f && echo "  ok  sh -n $$f" || exit 1; done
+	@for f in infra/db-init/*.sh infra/data/*.sh; do bash -n $$f && echo "  ok  sh -n $$f" || exit 1; done
 	@for f in e2e/run.sh scripts/*.sh scripts/ci/*.sh conformance/run.sh conformance/selftest.sh conformance/checks/*.sh infra/host-proxy/forward.sh; do bash -n $$f && echo "  ok  bash -n $$f" || exit 1; done
 	@python3 scripts/gen-gateway-errors.py --check
 	@command -v hurlfmt >/dev/null && hurlfmt --check e2e/gateway/*.hurl e2e/system/*.hurl conformance/http/*.hurl && echo "  ok  hurlfmt" || echo "  skip hurlfmt (not installed)"
@@ -128,4 +150,4 @@ check-contracts: ## cross-check OpenAPI, GraphQL, Avro, proto, i18n and the gate
 	.venv-validate/bin/python scripts/validate/validate_contracts2.py
 	.venv-validate/bin/python scripts/validate/validate_host_env.py
 
-.PHONY: help doctor env up up-obs schemas up-apps up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen
+.PHONY: help doctor env up up-obs schemas seed reset reseed seed-build seed-check seed-test-sql up-apps up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen

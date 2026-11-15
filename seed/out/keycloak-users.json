@@ -1,0 +1,205 @@
+{
+  "ifResourceExists": "SKIP",
+  "users": [
+    {
+      "id": "00000000-0000-4000-8000-000000000004",
+      "username": "bob",
+      "email": "bob@wallpaperhub.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Bob",
+      "lastName": "Builder",
+      "attributes": {
+        "locale": [
+          "en"
+        ]
+      },
+      "realmRoles": [
+        "default-roles-wallpaperhub",
+        "USER"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000005",
+      "username": "carol",
+      "email": "carol@wallpaperhub.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Carola",
+      "lastName": "Schmidt",
+      "attributes": {
+        "locale": [
+          "de"
+        ]
+      },
+      "realmRoles": [
+        "default-roles-wallpaperhub",
+        "USER"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000006",
+      "username": "dave",
+      "email": "dave@wallpaperhub.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Dave",
+      "lastName": "Lopez",
+      "attributes": {
+        "locale": [
+          "en"
+        ]
+      },
+      "realmRoles": [
+        "default-roles-wallpaperhub",
+        "USER"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000007",
+      "username": "erin",
+      "email": "erin@wallpaperhub.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Erín",
+      "lastName": "Castillo",
+      "attributes": {
+        "locale": [
+          "es"
+        ]
+      },
+      "realmRoles": [
+        "default-roles-wallpaperhub",
+        "USER"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000008",
+      "username": "frank",
+      "email": "frank@wallpaperhub.local",
+      "emailVerified": true,
+      "enabled": false,
+      "firstName": "Frank",
+      "lastName": "Weber",
+      "attributes": {
+        "locale": [
+          "en"
+        ]
+      },
+      "realmRoles": [
+        "default-roles-wallpaperhub",
+        "USER"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000009",
+      "username": "grace",
+      "email": "grace@wallpaperhub.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Grace",
+      "lastName": "Müller",
+      "attributes": {
+        "locale": [
+          "de"
+        ]
+      },
+      "realmRoles": [
+        "default-roles-wallpaperhub",
+        "USER"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000010",
+      "username": "heidi",
+      "email": "heidi@wallpaperhub.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Heidi",
+      "lastName": "Novak",
+      "attributes": {
+        "locale": [
+          "en"
+        ]
+      },
+      "realmRoles": [
+        "default-roles-wallpaperhub",
+        "USER"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000012",
+      "username": "judy",
+      "email": "judy@wallpaperhub.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Judy",
+      "lastName": "Newcomer",
+      "attributes": {
+        "locale": [
+          "en"
+        ]
+      },
+      "realmRoles": [
+        "default-roles-wallpaperhub",
+        "USER"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

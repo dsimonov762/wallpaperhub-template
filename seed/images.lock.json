@@ -1,0 +1,494 @@
+{
+ "avatar/2026/04/ast_01KP79SS30EW9PDE3A5CG4XPGX": {
+  "params": "a31f86cb9ff8616d",
+  "phash": "1111111111101111100101111001011010010110100011111111111111111111",
+  "blurhash": "LID2.c?=D~th?=t5j[kB9ra{-qoM",
+  "palette": [
+   "#59ad52",
+   "#6aba57",
+   "#429d4c",
+   "#79c55b",
+   "#b4e09d"
+  ]
+ },
+ "avatar/2026/07/ast_01KWP0WGR0BVNKE6VGBVQBM5GG": {
+  "params": "49ebc497281bc5f6",
+  "phash": "1111111111111111111011111100110111001101110101111110111111111111",
+  "blurhash": "LMIh[Q~9M_xr~9xFj@oLROjsxvj[",
+  "palette": [
+   "#90a141",
+   "#b5b052",
+   "#a4a94a",
+   "#779736",
+   "#d1c77f"
+  ]
+ },
+ "avatar/2026/08/ast_01KZ2J1AE0TSHJQBYCZ7YYBW2D": {
+  "params": "6cf96a9b8ad9892b",
+  "phash": "1111111111111111110011111100110111010111110011111111111111111111",
+  "blurhash": "LKA2=Vy?E2b_y?kpfkkCELbG-ooe",
+  "palette": [
+   "#4277ad",
+   "#4b8eb9",
+   "#365a9e",
+   "#54a2c4",
+   "#8cc8db"
+  ]
+ },
+ "avatar/2026/08/ast_01M0A1F0E05WPYXACPPDGTQB8E": {
+  "params": "d121f1d514d9325e",
+  "phash": "1111111111110011110011011001011110010111110011011111101111111111",
+  "blurhash": "LJCiI|pMIValp3f,fRj]IWWCx[t6",
+  "palette": [
+   "#6545ac",
+   "#6359c3",
+   "#6450b8",
+   "#67389d",
+   "#8582d5"
+  ]
+ },
+ "avatar/2026/09/ast_01M1G92960Q7YWQDD8G2Q9BW71": {
+  "params": "ffa6eacbc8cf35ac",
+  "phash": "1111111111110011110011011101011111010111110011011111101111111111",
+  "blurhash": "LMI_?s-aIVwi-aoNfRj]Mya#x[j[",
+  "palette": [
+   "#9d4195",
+   "#a952b7",
+   "#a34aa7",
+   "#95367d",
+   "#c384d2"
+  ]
+ },
+ "avatar/2026/09/ast_01M2Q8W3308Z1VM9X97PY428MY": {
+  "params": "67e67e88b117968c",
+  "phash": "1111111111111011110011111100111111011111110011111111111111111111",
+  "blurhash": "LJK@-k}cMewM}csqjuoMR6afx]oz",
+  "palette": [
+   "#ac4d5b",
+   "#c3577e",
+   "#b9526e",
+   "#9d4544",
+   "#d681a4"
+  ]
+ },
+ "avatar/2026/10/ast_01M3XX9GV0595BJSDT04VS34JJ": {
+  "params": "430b5ebbb80d1ee6",
+  "phash": "1111111111111111110011111101011110010111110011111111111111111111",
+  "blurhash": "LMH3#:~SM_x=~SxYj[oKM_f6xvj]",
+  "palette": [
+   "#7fac41",
+   "#a9c352",
+   "#95b84a",
+   "#619d36",
+   "#cbd883"
+  ]
+ },
+ "avatar/2026/10/ast_01M4QPDAQ07ZCG32TKMFEZKW32": {
+  "params": "950ce9ace4d265fb",
+  "phash": "1111111111111111110101111101011111010111110101111110111111111111",
+  "blurhash": "LIA;1B*DImpF*CoxfikAEJa{%3j[",
+  "palette": [
+   "#4aac60",
+   "#56b961",
+   "#60c361",
+   "#3a9d60",
+   "#8ed889"
+  ]
+ },
+ "banner/2026/07/ast_01KWP4ACC05X04TH4Q88NX4RDG": {
+  "params": "ab8ae6608cf36839",
+  "phash": "0000000010010001011001100111011011011101110011011100110111001001",
+  "blurhash": "L,Kn@8t6oLtP~nj[f6fjo3ayfjay",
+  "palette": [
+   "#e0e89f",
+   "#97a262",
+   "#5d5f2e",
+   "#daed9c",
+   "#d0d992"
+  ]
+ },
+ "banner/2026/08/ast_01M0A4WW20QSTVXDBNGPV37529": {
+  "params": "bb200c85f2e698f8",
+  "phash": "0000000001000101000100000010110111010101100111100100110001001100",
+  "blurhash": "L-Lxm4s:bHbI}^oLfkj]f+fQayoL",
+  "palette": [
+   "#e99eda",
+   "#9b5c8e",
+   "#5c2b57",
+   "#e6a0de",
+   "#da8bc0"
+  ]
+ },
+ "wallpaper/2026/09/ast_01M1GKK6E08HTHJMCYWGMWRS26": {
+  "params": "40c70dc7910ad9a5",
+  "phash": "0000011000000110000001000000100111000101111011010110110000001100",
+  "blurhash": "LMP?zZ-:3q=|GcNLN{S~TbS#v~ni",
+  "palette": [
+   "#c7e2f9",
+   "#fad1e0",
+   "#ece9ec",
+   "#dfdbed",
+   "#cce3f8"
+  ]
+ },
+ "wallpaper/2026/09/ast_01M339AYG0P9GWYY5EXKZ89SGZ": {
+  "params": "36884cc50764d3b6",
+  "phash": "1000010000111011110000111110011000110110010111001101101110010010",
+  "blurhash": "LqG0IWflayxu?wa#ayofWBf6j[WB",
+  "palette": [
+   "#a7bacb",
+   "#728888",
+   "#3a5549",
+   "#9eb2bf",
+   "#bdcbd8"
+  ]
+ },
+ "wallpaper/2026/09/ast_01M38N98Q03G21M5YC2RVJJ044": {
+  "params": "ef342c66d193ffcb",
+  "phash": "0011000110000001101010011101000111100010011001011110000011000000",
+  "blurhash": "LMD*hnWH};=]oO5AoIR*s+EMR,Nb",
+  "palette": [
+   "#65424a",
+   "#331964",
+   "#b07764",
+   "#4b2d56",
+   "#29154d"
+  ]
+ },
+ "wallpaper/2026/09/ast_01M3DMPJX0126E54PPB0ZAVY9N": {
+  "params": "f4c038569c84d8d3",
+  "phash": "0011100110110110011001110100011111100111011110000110001001100000",
+  "blurhash": "L46axFxu9d~S-1M}E3xY4?-n^h9w",
+  "palette": [
+   "#151e33",
+   "#3a3836",
+   "#0a0d1b",
+   "#252a36",
+   "#6d644c"
+  ]
+ },
+ "wallpaper/2026/09/ast_01M3H08Z50QYHP3YQ9RRCMB95R": {
+  "params": "7b39b93a37af9230",
+  "phash": "1110000001100100101100011011011001110110011110000111010001110000",
+  "blurhash": "L5671%}k$ea$bUoeWXR,I[S4s,oJ",
+  "palette": [
+   "#140030",
+   "#532928",
+   "#210042",
+   "#1b003a",
+   "#311132"
+  ]
+ },
+ "wallpaper/2026/09/ast_01M3NKSDV012DK5ZDS5NFCGA89": {
+  "params": "9b3a10ab36a40db6",
+  "phash": "0000101111000011001100110101100101001100001100111001101110011001",
+  "blurhash": "L~MZ8Ln$jtof~9jYfQofnij[ayjs",
+  "palette": [
+   "#f6c681",
+   "#9f8470",
+   "#4e3f50",
+   "#e5b97f",
+   "#fadba4"
+  ]
+ },
+ "wallpaper/2026/09/ast_01M3T9Y3V0RDF5QGSD6381A8XZ": {
+  "params": "34764336f4822a53",
+  "phash": "1000111110001111100000110100001100100111000001100000000010000000",
+  "blurhash": "L12Yt?M^9D%O-.RiI9t8f5t8WCM_",
+  "palette": [
+   "#0b1125",
+   "#070c1c",
+   "#03050b",
+   "#2d303e",
+   "#202430"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M40FGR20PCM5F0VZKPXJ4ZZB": {
+  "params": "e73584b6bfe1a4a8",
+  "phash": "0000000000010000000011001100000101110001001101101000001100010000",
+  "blurhash": "L~Hfetofa|of_NkCazkCt7j[jsj@",
+  "palette": [
+   "#d9ecf5",
+   "#0d3b5c",
+   "#3c6580",
+   "#b6d1df",
+   "#0e3b5c"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M425Y2Q0VWYXQPE87CS3B0TW": {
+  "params": "6b10adc672ff4818",
+  "phash": "0010100001001101100101101011001000000000000000000000000000000000",
+  "blurhash": "L34o1dof4nWB_3of9FWBfQfQM{WB",
+  "palette": [
+   "#111111",
+   "#ededed",
+   "#191919",
+   "#b1b1b1",
+   "#505050"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M45EFDG0X5APNN9QS10W3TRH": {
+  "params": "52dc446d9e27560b",
+  "phash": "0101100010001100010110010011010000110110001100100110100101001100",
+  "blurhash": "LlKKG=s:aeV@~oofWBjsWBj[ayof",
+  "palette": [
+   "#cebda4",
+   "#9c8672",
+   "#694d3a",
+   "#c6b49b",
+   "#ded0bb"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M47SFXX0QP1ZCSMJWMWNB08M": {
+  "params": "04bd4fab0e130c2e",
+  "phash": "0000000010100000010001100100010100001101001011010100011001001010",
+  "blurhash": "LEB3+zofR,t6}=oLj@oLI=jts.az",
+  "palette": [
+   "#284753",
+   "#686457",
+   "#465757",
+   "#877159",
+   "#7d6c58"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M4AQZ060R6Q0QDXW1A9CHSW9": {
+  "params": "0b4e08715b34c28c",
+  "phash": "0110000001100010011001001100110110011011100110011001100010011001",
+  "blurhash": "L:NkOut6bHn%~8ofj[s.j?azj[ay",
+  "palette": [
+   "#f5a863",
+   "#b56e51",
+   "#7b2f31",
+   "#f9bc80",
+   "#e89c5f"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M4F8X250NKGWGWBHGYGA8T1Y": {
+  "params": "747c6328bafa9eee",
+  "phash": "0100110010000110100011101001011000001111100011101001011001001100",
+  "blurhash": "LQEy0?s;0~W=DhayS2WV9_WV=woe",
+  "palette": [
+   "#878a9b",
+   "#6a626e",
+   "#3c3f54",
+   "#8e7d83",
+   "#a9a1a9"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M4JD52D07TB5MR7A82H837MH": {
+  "params": "a88bde5e14f55348",
+  "phash": "0000111100000111001110110011001100110010001100111000010010011100",
+  "blurhash": "L75aCCo}L$Vt#8oyM0aeRPaLVsoz",
+  "palette": [
+   "#277170",
+   "#225d61",
+   "#173242",
+   "#3d8680",
+   "#519b8f"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M4MXTVK016Z3RR03BA2SDAZ8": {
+  "params": "4c4f4facd0a07d12",
+  "phash": "1100111111000100111000011110000111000001010010000100100110001001",
+  "blurhash": "LJC}*X53B+-Ci]XSKNs;[bbcAU#T",
+  "palette": [
+   "#361135",
+   "#294356",
+   "#7e7098",
+   "#87719b",
+   "#983977"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M4SKZHK0F7QH2PG0NN4YMAWZ": {
+  "params": "3cf78308117e1d7d",
+  "phash": "0000010100010000001001110010011101001011000000110000000000100000",
+  "blurhash": "L87vNnEeJ6$l5yxHWVWUNaj[$kNa",
+  "palette": [
+   "#180332",
+   "#280a44",
+   "#40165b",
+   "#592465",
+   "#6e2f71"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M4VSJ3K01ZZ0DY9K31WVVEKD": {
+  "params": "2e973089fdbaaf0b",
+  "phash": "0000010000100000010011000100110000110001000110010010000000000000",
+  "blurhash": "LU5=rAj]WAj]x|j]axj[a#fQj]fk",
+  "palette": [
+   "#0b1a3a",
+   "#4f61a5",
+   "#364684",
+   "#15254d",
+   "#0b1a3b"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M4YK7C00ZJ5CBN5S62RS1TK4": {
+  "params": "868bab071f9e4af6",
+  "phash": "0000000000000000000000000000010001001001110001010111000101101010",
+  "blurhash": "L02X|boiX4oj+UjajajFSaj]n-jc",
+  "palette": [
+   "#190037",
+   "#150031",
+   "#10002c",
+   "#101038",
+   "#170034"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M51MKTJ0KTJD437DCGDVG9C4": {
+  "params": "ebd7c478129ef682",
+  "phash": "0011000000111100011011100000111010001110100011101001111000011110",
+  "blurhash": "LD8}78-;4oD%00NG?a%M-:xuM}IU",
+  "palette": [
+   "#3a4256",
+   "#2c354a",
+   "#161d2f",
+   "#4d5464",
+   "#9d9e9e"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M5488TM08SM9R1HPJFXESVMC": {
+  "params": "24acadb3ead10e71",
+  "phash": "1001000110011000000100110011001110010111110110010001001100110110",
+  "blurhash": "L,IFxlt7R*Wr_Ns:WVR+fRjtfQWC",
+  "palette": [
+   "#c1d9e6",
+   "#79939f",
+   "#345460",
+   "#b2cad7",
+   "#e3eef4"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M564JRE0N4F4EAMB57PPAJDM": {
+  "params": "55af2399141b020b",
+  "phash": "0101101110111011011100011110001011110000011000010111000101110001",
+  "blurhash": "LgKLm$-o^i-:~A-naKkC-Ut7NHR+",
+  "palette": [
+   "#afc9cd",
+   "#4398b7",
+   "#faeede",
+   "#96b4c0",
+   "#e3d9d2"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M58P0BB0KVFSHC0MS48AGZ2S": {
+  "params": "b58af32a37cd2c7f",
+  "phash": "0100110010010110100011101000111000001111100011101000111001001101",
+  "blurhash": "LNAxJ:oz01R+Z#f6V@ax9FWC?aof",
+  "palette": [
+   "#447292",
+   "#244162",
+   "#365d7e",
+   "#4f7e9c",
+   "#becccd"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M5BT2VT0QS56QPYV61EPZZ8N": {
+  "params": "aee066af4d49eb59",
+  "phash": "0110001101101011011000110110001101110011011000110110001101100011",
+  "blurhash": "LOF|#K};^N^gNuR+NIR+WCxYs.WW",
+  "palette": [
+   "#693e18",
+   "#c48b35",
+   "#643d17",
+   "#7d4f1e",
+   "#592511"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M5K58G40H881RZV42QERP70Y": {
+  "params": "3714538ae5684d4d",
+  "phash": "0000000000100000010011100001100001110011011001101000110001000010",
+  "blurhash": "L{I=x:offQof~qofayoft7jtfQj[",
+  "palette": [
+   "#2a4d5a",
+   "#e0e8eb",
+   "#e3ebee",
+   "#56727d",
+   "#bac8cd"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M5P7EK00M4RQB3T5DWHXPP33": {
+  "params": "c0f0cf88f4b20040",
+  "phash": "0000000000100000000001101001011110011011100111010011010000100000",
+  "blurhash": "LEFsACxuWBt8~qj[ayofM{ayoffQ",
+  "palette": [
+   "#6e777f",
+   "#7f878e",
+   "#8e949a",
+   "#9fa4a8",
+   "#999ea3"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M5RQ72P0G42C0DSE4MDT3TQY": {
+  "params": "68fb4f5e91de9e0d",
+  "phash": "0010110000101100010001100100010001000100000101010010010011100110",
+  "blurhash": "L15qkkogoKog57NbsnNbR+j@J8WV",
+  "palette": [
+   "#2b2827",
+   "#4a3026",
+   "#1d1c1c",
+   "#252323",
+   "#222020"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M5XZ1J50K7J9MVP40EQJBB1D": {
+  "params": "215cbe413f89bf5b",
+  "phash": "1000100101001100001100011001100100011001000010011100111010001110",
+  "blurhash": "L73S9|j^V=adRdawohfkadadfRj^",
+  "palette": [
+   "#1c1e59",
+   "#0e0f34",
+   "#2c3579",
+   "#16164a",
+   "#121340"
+  ]
+ },
+ "wallpaper/2026/10/ast_01M635YR40BZBMVHJA8M2EW7VK": {
+  "params": "9988f37400f91bbf",
+  "phash": "0000100001001010100100010011011001000100011001110100100100100101",
+  "blurhash": "L30xQLaLa1kpUcaLkVaLaLkVkWf6",
+  "palette": [
+   "#053a38",
+   "#02201f",
+   "#0d584b",
+   "#03302f",
+   "#032928"
+  ]
+ },
+ "wallpaper/2026/11/ast_01M6AV2ZR090Q2DHK7J8RAEYYN": {
+  "params": "2bd654365f1e270e",
+  "phash": "1001100010011110100110010001100010001110110011010110110101100100",
+  "blurhash": "LmIrW}t7WENL~qoeR+R-a}j@a#of",
+  "palette": [
+   "#bfc8d6",
+   "#8791a1",
+   "#4f5d76",
+   "#d7d7d3",
+   "#b4bccb"
+  ]
+ },
+ "wallpaper/2026/11/ast_01M6B2PGQ0MB5V7HB2VBQZSX6A": {
+  "params": "f9dc0dbe7a094447",
+  "phash": "0001000000001100001100101011001010110010001100100000110000010000",
+  "blurhash": "LFSP5_?ay=?u?aj[kCj[uhkCQSaK",
+  "palette": [
+   "#f7f3e8",
+   "#e63946",
+   "#e95b64",
+   "#f2bfbb",
+   "#f7f0e5"
+  ]
+ },
+ "wallpaper/2026/11/ast_01M6B4ZRF03JTPVKKFK8GH6RM6": {
+  "params": "4416d4e695d1016a",
+  "phash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "blurhash": "LiPPibxafQxa_4kCfQkCRPayfQay",
+  "palette": [
+   "#eae0d5",
+   "#c6ac8f",
+   "#96897a",
+   "#c4aa8d",
+   "#e6dcd1"
+  ]
+ }
+}

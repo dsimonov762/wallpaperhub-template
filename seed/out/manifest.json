@@ -1,0 +1,3281 @@
+{
+ "anchor": "2026-11-01T09:00:00Z",
+ "users": [
+  {
+   "id": "00000000-0000-4000-8000-000000000001",
+   "username": "alice",
+   "email": "alice@wallpaperhub.local",
+   "display_name": "Alice Example",
+   "locale": "en",
+   "status": "ACTIVE",
+   "roles": [
+    "USER"
+   ],
+   "created": "2026-07-04T06:36:00Z",
+   "deleted": null,
+   "in_keycloak": false,
+   "avatarAssetId": "ast_01KWP0WGR0BVNKE6VGBVQBM5GG",
+   "bannerAssetId": "ast_01KWP4ACC05X04TH4Q88NX4RDG"
+  },
+  {
+   "id": "00000000-0000-4000-8000-000000000002",
+   "username": "mod",
+   "email": "mod@wallpaperhub.local",
+   "display_name": "Mona Moderator",
+   "locale": "de",
+   "status": "ACTIVE",
+   "roles": [
+    "MODERATOR"
+   ],
+   "created": "2026-04-14T23:49:00Z",
+   "deleted": null,
+   "in_keycloak": false,
+   "avatarAssetId": "ast_01KP79SS30EW9PDE3A5CG4XPGX",
+   "bannerAssetId": null
+  },
+  {
+   "id": "00000000-0000-4000-8000-000000000003",
+   "username": "admin",
+   "email": "admin@wallpaperhub.local",
+   "display_name": "Adam Admin",
+   "locale": "es",
+   "status": "ACTIVE",
+   "roles": [
+    "ADMIN"
+   ],
+   "created": "2026-01-05T04:16:00Z",
+   "deleted": null,
+   "in_keycloak": false,
+   "avatarAssetId": null,
+   "bannerAssetId": null
+  },
+  {
+   "id": "00000000-0000-4000-8000-000000000004",
+   "username": "bob",
+   "email": "bob@wallpaperhub.local",
+   "display_name": "Bob Builder",
+   "locale": "en",
+   "status": "ACTIVE",
+   "roles": [
+    "USER"
+   ],
+   "created": "2026-08-02T23:58:00Z",
+   "deleted": null,
+   "in_keycloak": true,
+   "avatarAssetId": "ast_01KZ2J1AE0TSHJQBYCZ7YYBW2D",
+   "bannerAssetId": null
+  },
+  {
+   "id": "00000000-0000-4000-8000-000000000005",
+   "username": "carol",
+   "email": "carol@wallpaperhub.local",
+   "display_name": "Carola Schmidt",
+   "locale": "de",
+   "status": "ACTIVE",
+   "roles": [
+    "USER"
+   ],
+   "created": "2026-08-18T07:58:00Z",
+   "deleted": null,
+   "in_keycloak": true,
+   "avatarAssetId": "ast_01M0A1F0E05WPYXACPPDGTQB8E",
+   "bannerAssetId": "ast_01M0A4WW20QSTVXDBNGPV37529"
+  },
+  {
+   "id": "00000000-0000-4000-8000-000000000006",
+   "username": "dave",
+   "email": "dave@wallpaperhub.local",
+   "display_name": "Dave Lopez",
+   "locale": "en",
+   "status": "ACTIVE",
+   "roles": [
+    "USER"
+   ],
+   "created": "2026-09-02T04:22:00Z",
+   "deleted": null,
+   "in_keycloak": true,
+   "avatarAssetId": "ast_01M1G92960Q7YWQDD8G2Q9BW71",
+   "bannerAssetId": null
+  },
+  {
+   "id": "00000000-0000-4000-8000-000000000007",
+   "username": "erin",
+   "email": "erin@wallpaperhub.local",
+   "display_name": "Erín Castillo",
+   "locale": "es",
+   "status": "ACTIVE",
+   "roles": [
+    "USER"
+   ],
+   "created": "2026-09-17T07:49:00Z",
+   "deleted": null,
+   "in_keycloak": true,
+   "avatarAssetId": "ast_01M2Q8W3308Z1VM9X97PY428MY",
+   "bannerAssetId": null
+  },
+  {
+   "id": "00000000-0000-4000-8000-000000000008",
+   "username": "frank",
+   "email": "frank@wallpaperhub.local",
+   "display_name": "Frank Weber",
+   "locale": "en",
+   "status": "SUSPENDED",
+   "roles": [
+    "USER"
+   ],
+   "created": "2026-09-21T23:54:00Z",
+   "deleted": null,
+   "in_keycloak": true,
+   "avatarAssetId": null,
+   "bannerAssetId": null
+  },
+  {
+   "id": "00000000-0000-4000-8000-000000000009",
+   "username": "grace",
+   "email": "grace@wallpaperhub.local",
+   "display_name": "Grace Müller",
+   "locale": "de",
+   "status": "ACTIVE",
+   "roles": [
+    "USER"
+   ],
+   "created": "2026-10-02T07:57:00Z",
+   "deleted": null,
+   "in_keycloak": true,
+   "avatarAssetId": "ast_01M3XX9GV0595BJSDT04VS34JJ",
+   "bannerAssetId": null
+  },
+  {
+   "id": "00000000-0000-4000-8000-000000000010",
+   "username": "heidi",
+   "email": "heidi@wallpaperhub.local",
+   "display_name": "Heidi Novak",
+   "locale": "en",
+   "status": "ACTIVE",
+   "roles": [
+    "USER"
+   ],
+   "created": "2026-10-12T08:17:00Z",
+   "deleted": null,
+   "in_keycloak": true,
+   "avatarAssetId": "ast_01M4QPDAQ07ZCG32TKMFEZKW32",
+   "bannerAssetId": null
+  },
+  {
+   "id": "00000000-0000-4000-8000-000000000011",
+   "username": "ivan",
+   "email": "ivan@wallpaperhub.local",
+   "display_name": "Ivan Petrov",
+   "locale": "es",
+   "status": "ACTIVE",
+   "roles": [
+    "USER"
+   ],
+   "created": "2026-06-03T23:39:00Z",
+   "deleted": "2026-10-12T09:00:00Z",
+   "in_keycloak": false,
+   "avatarAssetId": null,
+   "bannerAssetId": null
+  },
+  {
+   "id": "00000000-0000-4000-8000-000000000012",
+   "username": "judy",
+   "email": "judy@wallpaperhub.local",
+   "display_name": "Judy Newcomer",
+   "locale": "en",
+   "status": "ACTIVE",
+   "roles": [
+    "USER"
+   ],
+   "created": "2026-10-31T02:31:00Z",
+   "deleted": null,
+   "in_keycloak": true,
+   "avatarAssetId": null,
+   "bannerAssetId": null
+  }
+ ],
+ "assets": [
+  {
+   "id": "ast_01KWP0WGR0BVNKE6VGBVQBM5GG",
+   "owner": "00000000-0000-4000-8000-000000000001",
+   "purpose": "AVATAR",
+   "status": "READY",
+   "original_key": "avatar/2026/07/ast_01KWP0WGR0BVNKE6VGBVQBM5GG/original.png",
+   "content_type": "image/png",
+   "size_bytes": 11299,
+   "width": 512,
+   "height": 512,
+   "sha256": "c04461321e4b1403622c5df4b4f49b23283a238f26770e087018e642ac18d37a",
+   "phash": "1111111111111111111011111100110111001101110101111110111111111111",
+   "blurhash": "LMIh[Q~9M_xr~9xFj@oLROjsxvj[",
+   "palette": [
+    "#90a141",
+    "#b5b052",
+    "#a4a94a",
+    "#779736",
+    "#d1c77f"
+   ],
+   "reject_reason": null,
+   "created": "2026-07-04T07:36:00Z",
+   "variants": [
+    {
+     "kind": "AVATAR_512",
+     "key": "avatar/2026/07/ast_01KWP0WGR0BVNKE6VGBVQBM5GG/avatar_512.webp",
+     "width": 512,
+     "height": 512,
+     "format": "webp",
+     "size_bytes": 3068
+    },
+    {
+     "kind": "AVATAR_128",
+     "key": "avatar/2026/07/ast_01KWP0WGR0BVNKE6VGBVQBM5GG/avatar_128.webp",
+     "width": 128,
+     "height": 128,
+     "format": "webp",
+     "size_bytes": 682
+    },
+    {
+     "kind": "AVATAR_48",
+     "key": "avatar/2026/07/ast_01KWP0WGR0BVNKE6VGBVQBM5GG/avatar_48.webp",
+     "width": 48,
+     "height": 48,
+     "format": "webp",
+     "size_bytes": 278
+    }
+   ]
+  },
+  {
+   "id": "ast_01KWP4ACC05X04TH4Q88NX4RDG",
+   "owner": "00000000-0000-4000-8000-000000000001",
+   "purpose": "BANNER",
+   "status": "READY",
+   "original_key": "banner/2026/07/ast_01KWP4ACC05X04TH4Q88NX4RDG/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 31813,
+   "width": 1500,
+   "height": 500,
+   "sha256": "36befada1c40e2d40d8781aca01f04b2bc5fd0cad4afc5e74f0e8b056040919d",
+   "phash": "0000000010010001011001100111011011011101110011011100110111001001",
+   "blurhash": "L,Kn@8t6oLtP~nj[f6fjo3ayfjay",
+   "palette": [
+    "#e0e89f",
+    "#97a262",
+    "#5d5f2e",
+    "#daed9c",
+    "#d0d992"
+   ],
+   "reject_reason": null,
+   "created": "2026-07-04T08:36:00Z",
+   "variants": [
+    {
+     "kind": "BANNER_1500",
+     "key": "banner/2026/07/ast_01KWP4ACC05X04TH4Q88NX4RDG/banner_1500.webp",
+     "width": 1500,
+     "height": 500,
+     "format": "webp",
+     "size_bytes": 11648
+    },
+    {
+     "kind": "BANNER_750",
+     "key": "banner/2026/07/ast_01KWP4ACC05X04TH4Q88NX4RDG/banner_750.webp",
+     "width": 750,
+     "height": 250,
+     "format": "webp",
+     "size_bytes": 4582
+    }
+   ]
+  },
+  {
+   "id": "ast_01KP79SS30EW9PDE3A5CG4XPGX",
+   "owner": "00000000-0000-4000-8000-000000000002",
+   "purpose": "AVATAR",
+   "status": "READY",
+   "original_key": "avatar/2026/04/ast_01KP79SS30EW9PDE3A5CG4XPGX/original.png",
+   "content_type": "image/png",
+   "size_bytes": 11356,
+   "width": 512,
+   "height": 512,
+   "sha256": "bf5f371f4a662a920c69c5f5f0a3dee2d26e4a215431d791de1b48aa004be979",
+   "phash": "1111111111101111100101111001011010010110100011111111111111111111",
+   "blurhash": "LID2.c?=D~th?=t5j[kB9ra{-qoM",
+   "palette": [
+    "#59ad52",
+    "#6aba57",
+    "#429d4c",
+    "#79c55b",
+    "#b4e09d"
+   ],
+   "reject_reason": null,
+   "created": "2026-04-15T00:49:00Z",
+   "variants": [
+    {
+     "kind": "AVATAR_512",
+     "key": "avatar/2026/04/ast_01KP79SS30EW9PDE3A5CG4XPGX/avatar_512.webp",
+     "width": 512,
+     "height": 512,
+     "format": "webp",
+     "size_bytes": 3532
+    },
+    {
+     "kind": "AVATAR_128",
+     "key": "avatar/2026/04/ast_01KP79SS30EW9PDE3A5CG4XPGX/avatar_128.webp",
+     "width": 128,
+     "height": 128,
+     "format": "webp",
+     "size_bytes": 784
+    },
+    {
+     "kind": "AVATAR_48",
+     "key": "avatar/2026/04/ast_01KP79SS30EW9PDE3A5CG4XPGX/avatar_48.webp",
+     "width": 48,
+     "height": 48,
+     "format": "webp",
+     "size_bytes": 322
+    }
+   ]
+  },
+  {
+   "id": "ast_01KZ2J1AE0TSHJQBYCZ7YYBW2D",
+   "owner": "00000000-0000-4000-8000-000000000004",
+   "purpose": "AVATAR",
+   "status": "READY",
+   "original_key": "avatar/2026/08/ast_01KZ2J1AE0TSHJQBYCZ7YYBW2D/original.png",
+   "content_type": "image/png",
+   "size_bytes": 10833,
+   "width": 512,
+   "height": 512,
+   "sha256": "311dda658ec3973af068f51446e8ce2202b00d14a15c69da89ccc6d0329a3322",
+   "phash": "1111111111111111110011111100110111010111110011111111111111111111",
+   "blurhash": "LKA2=Vy?E2b_y?kpfkkCELbG-ooe",
+   "palette": [
+    "#4277ad",
+    "#4b8eb9",
+    "#365a9e",
+    "#54a2c4",
+    "#8cc8db"
+   ],
+   "reject_reason": null,
+   "created": "2026-08-03T00:58:00Z",
+   "variants": [
+    {
+     "kind": "AVATAR_512",
+     "key": "avatar/2026/08/ast_01KZ2J1AE0TSHJQBYCZ7YYBW2D/avatar_512.webp",
+     "width": 512,
+     "height": 512,
+     "format": "webp",
+     "size_bytes": 3338
+    },
+    {
+     "kind": "AVATAR_128",
+     "key": "avatar/2026/08/ast_01KZ2J1AE0TSHJQBYCZ7YYBW2D/avatar_128.webp",
+     "width": 128,
+     "height": 128,
+     "format": "webp",
+     "size_bytes": 710
+    },
+    {
+     "kind": "AVATAR_48",
+     "key": "avatar/2026/08/ast_01KZ2J1AE0TSHJQBYCZ7YYBW2D/avatar_48.webp",
+     "width": 48,
+     "height": 48,
+     "format": "webp",
+     "size_bytes": 326
+    }
+   ]
+  },
+  {
+   "id": "ast_01M0A1F0E05WPYXACPPDGTQB8E",
+   "owner": "00000000-0000-4000-8000-000000000005",
+   "purpose": "AVATAR",
+   "status": "READY",
+   "original_key": "avatar/2026/08/ast_01M0A1F0E05WPYXACPPDGTQB8E/original.png",
+   "content_type": "image/png",
+   "size_bytes": 12493,
+   "width": 512,
+   "height": 512,
+   "sha256": "b81cbe639aae9fd741d3b4b3a1ea1bb6c283828b7b1c2554488c14fdd638adfb",
+   "phash": "1111111111110011110011011001011110010111110011011111101111111111",
+   "blurhash": "LJCiI|pMIValp3f,fRj]IWWCx[t6",
+   "palette": [
+    "#6545ac",
+    "#6359c3",
+    "#6450b8",
+    "#67389d",
+    "#8582d5"
+   ],
+   "reject_reason": null,
+   "created": "2026-08-18T08:58:00Z",
+   "variants": [
+    {
+     "kind": "AVATAR_512",
+     "key": "avatar/2026/08/ast_01M0A1F0E05WPYXACPPDGTQB8E/avatar_512.webp",
+     "width": 512,
+     "height": 512,
+     "format": "webp",
+     "size_bytes": 3498
+    },
+    {
+     "kind": "AVATAR_128",
+     "key": "avatar/2026/08/ast_01M0A1F0E05WPYXACPPDGTQB8E/avatar_128.webp",
+     "width": 128,
+     "height": 128,
+     "format": "webp",
+     "size_bytes": 786
+    },
+    {
+     "kind": "AVATAR_48",
+     "key": "avatar/2026/08/ast_01M0A1F0E05WPYXACPPDGTQB8E/avatar_48.webp",
+     "width": 48,
+     "height": 48,
+     "format": "webp",
+     "size_bytes": 286
+    }
+   ]
+  },
+  {
+   "id": "ast_01M0A4WW20QSTVXDBNGPV37529",
+   "owner": "00000000-0000-4000-8000-000000000005",
+   "purpose": "BANNER",
+   "status": "READY",
+   "original_key": "banner/2026/08/ast_01M0A4WW20QSTVXDBNGPV37529/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 29740,
+   "width": 1500,
+   "height": 500,
+   "sha256": "757bdf548b6d7cdec09d79466b1fbacab9c54cff6bc1ec88d7c4a367d03b6684",
+   "phash": "0000000001000101000100000010110111010101100111100100110001001100",
+   "blurhash": "L-Lxm4s:bHbI}^oLfkj]f+fQayoL",
+   "palette": [
+    "#e99eda",
+    "#9b5c8e",
+    "#5c2b57",
+    "#e6a0de",
+    "#da8bc0"
+   ],
+   "reject_reason": null,
+   "created": "2026-08-18T09:58:00Z",
+   "variants": [
+    {
+     "kind": "BANNER_1500",
+     "key": "banner/2026/08/ast_01M0A4WW20QSTVXDBNGPV37529/banner_1500.webp",
+     "width": 1500,
+     "height": 500,
+     "format": "webp",
+     "size_bytes": 10982
+    },
+    {
+     "kind": "BANNER_750",
+     "key": "banner/2026/08/ast_01M0A4WW20QSTVXDBNGPV37529/banner_750.webp",
+     "width": 750,
+     "height": 250,
+     "format": "webp",
+     "size_bytes": 4214
+    }
+   ]
+  },
+  {
+   "id": "ast_01M1G92960Q7YWQDD8G2Q9BW71",
+   "owner": "00000000-0000-4000-8000-000000000006",
+   "purpose": "AVATAR",
+   "status": "READY",
+   "original_key": "avatar/2026/09/ast_01M1G92960Q7YWQDD8G2Q9BW71/original.png",
+   "content_type": "image/png",
+   "size_bytes": 10428,
+   "width": 512,
+   "height": 512,
+   "sha256": "c8aa281c57f5d782f621e2cfab04087ffc09958b7a9d681add14756eadbdbcdb",
+   "phash": "1111111111110011110011011101011111010111110011011111101111111111",
+   "blurhash": "LMI_?s-aIVwi-aoNfRj]Mya#x[j[",
+   "palette": [
+    "#9d4195",
+    "#a952b7",
+    "#a34aa7",
+    "#95367d",
+    "#c384d2"
+   ],
+   "reject_reason": null,
+   "created": "2026-09-02T05:22:00Z",
+   "variants": [
+    {
+     "kind": "AVATAR_512",
+     "key": "avatar/2026/09/ast_01M1G92960Q7YWQDD8G2Q9BW71/avatar_512.webp",
+     "width": 512,
+     "height": 512,
+     "format": "webp",
+     "size_bytes": 2938
+    },
+    {
+     "kind": "AVATAR_128",
+     "key": "avatar/2026/09/ast_01M1G92960Q7YWQDD8G2Q9BW71/avatar_128.webp",
+     "width": 128,
+     "height": 128,
+     "format": "webp",
+     "size_bytes": 674
+    },
+    {
+     "kind": "AVATAR_48",
+     "key": "avatar/2026/09/ast_01M1G92960Q7YWQDD8G2Q9BW71/avatar_48.webp",
+     "width": 48,
+     "height": 48,
+     "format": "webp",
+     "size_bytes": 280
+    }
+   ]
+  },
+  {
+   "id": "ast_01M2Q8W3308Z1VM9X97PY428MY",
+   "owner": "00000000-0000-4000-8000-000000000007",
+   "purpose": "AVATAR",
+   "status": "READY",
+   "original_key": "avatar/2026/09/ast_01M2Q8W3308Z1VM9X97PY428MY/original.png",
+   "content_type": "image/png",
+   "size_bytes": 6754,
+   "width": 512,
+   "height": 512,
+   "sha256": "a29fd9663930c0056afcbae4e42ff8768f0dfc5b2bfcb1041d126bd3bf79c507",
+   "phash": "1111111111111011110011111100111111011111110011111111111111111111",
+   "blurhash": "LJK@-k}cMewM}csqjuoMR6afx]oz",
+   "palette": [
+    "#ac4d5b",
+    "#c3577e",
+    "#b9526e",
+    "#9d4544",
+    "#d681a4"
+   ],
+   "reject_reason": null,
+   "created": "2026-09-17T08:49:00Z",
+   "variants": [
+    {
+     "kind": "AVATAR_512",
+     "key": "avatar/2026/09/ast_01M2Q8W3308Z1VM9X97PY428MY/avatar_512.webp",
+     "width": 512,
+     "height": 512,
+     "format": "webp",
+     "size_bytes": 1954
+    },
+    {
+     "kind": "AVATAR_128",
+     "key": "avatar/2026/09/ast_01M2Q8W3308Z1VM9X97PY428MY/avatar_128.webp",
+     "width": 128,
+     "height": 128,
+     "format": "webp",
+     "size_bytes": 480
+    },
+    {
+     "kind": "AVATAR_48",
+     "key": "avatar/2026/09/ast_01M2Q8W3308Z1VM9X97PY428MY/avatar_48.webp",
+     "width": 48,
+     "height": 48,
+     "format": "webp",
+     "size_bytes": 256
+    }
+   ]
+  },
+  {
+   "id": "ast_01M3XX9GV0595BJSDT04VS34JJ",
+   "owner": "00000000-0000-4000-8000-000000000009",
+   "purpose": "AVATAR",
+   "status": "READY",
+   "original_key": "avatar/2026/10/ast_01M3XX9GV0595BJSDT04VS34JJ/original.png",
+   "content_type": "image/png",
+   "size_bytes": 12423,
+   "width": 512,
+   "height": 512,
+   "sha256": "971e1177bb8868d712d1a51d17b56daaee056963fff35b0e976f1dd2fdbec8a2",
+   "phash": "1111111111111111110011111101011110010111110011111111111111111111",
+   "blurhash": "LMH3#:~SM_x=~SxYj[oKM_f6xvj]",
+   "palette": [
+    "#7fac41",
+    "#a9c352",
+    "#95b84a",
+    "#619d36",
+    "#cbd883"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-02T08:57:00Z",
+   "variants": [
+    {
+     "kind": "AVATAR_512",
+     "key": "avatar/2026/10/ast_01M3XX9GV0595BJSDT04VS34JJ/avatar_512.webp",
+     "width": 512,
+     "height": 512,
+     "format": "webp",
+     "size_bytes": 3790
+    },
+    {
+     "kind": "AVATAR_128",
+     "key": "avatar/2026/10/ast_01M3XX9GV0595BJSDT04VS34JJ/avatar_128.webp",
+     "width": 128,
+     "height": 128,
+     "format": "webp",
+     "size_bytes": 792
+    },
+    {
+     "kind": "AVATAR_48",
+     "key": "avatar/2026/10/ast_01M3XX9GV0595BJSDT04VS34JJ/avatar_48.webp",
+     "width": 48,
+     "height": 48,
+     "format": "webp",
+     "size_bytes": 292
+    }
+   ]
+  },
+  {
+   "id": "ast_01M4QPDAQ07ZCG32TKMFEZKW32",
+   "owner": "00000000-0000-4000-8000-000000000010",
+   "purpose": "AVATAR",
+   "status": "READY",
+   "original_key": "avatar/2026/10/ast_01M4QPDAQ07ZCG32TKMFEZKW32/original.png",
+   "content_type": "image/png",
+   "size_bytes": 6779,
+   "width": 512,
+   "height": 512,
+   "sha256": "926b72bd57c733e142babedf6cd9649b7b7e9e03968aaf9360c6832637214512",
+   "phash": "1111111111111111110101111101011111010111110101111110111111111111",
+   "blurhash": "LIA;1B*DImpF*CoxfikAEJa{%3j[",
+   "palette": [
+    "#4aac60",
+    "#56b961",
+    "#60c361",
+    "#3a9d60",
+    "#8ed889"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-12T09:17:00Z",
+   "variants": [
+    {
+     "kind": "AVATAR_512",
+     "key": "avatar/2026/10/ast_01M4QPDAQ07ZCG32TKMFEZKW32/avatar_512.webp",
+     "width": 512,
+     "height": 512,
+     "format": "webp",
+     "size_bytes": 1956
+    },
+    {
+     "kind": "AVATAR_128",
+     "key": "avatar/2026/10/ast_01M4QPDAQ07ZCG32TKMFEZKW32/avatar_128.webp",
+     "width": 128,
+     "height": 128,
+     "format": "webp",
+     "size_bytes": 550
+    },
+    {
+     "kind": "AVATAR_48",
+     "key": "avatar/2026/10/ast_01M4QPDAQ07ZCG32TKMFEZKW32/avatar_48.webp",
+     "width": 48,
+     "height": 48,
+     "format": "webp",
+     "size_bytes": 242
+    }
+   ]
+  },
+  {
+   "id": "ast_01M339AYG0P9GWYY5EXKZ89SGZ",
+   "owner": "00000000-0000-4000-8000-000000000001",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/09/ast_01M339AYG0P9GWYY5EXKZ89SGZ/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 88853,
+   "width": 2560,
+   "height": 1440,
+   "sha256": "24f2978bc4e841191bf2ddcd9384cae4330d085c0a2de421b7425d46dcba875f",
+   "phash": "1000010000111011110000111110011000110110010111001101101110010010",
+   "blurhash": "LqG0IWflayxu?wa#ayofWBf6j[WB",
+   "palette": [
+    "#a7bacb",
+    "#728888",
+    "#3a5549",
+    "#9eb2bf",
+    "#bdcbd8"
+   ],
+   "reject_reason": null,
+   "created": "2026-09-22T00:48:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/09/ast_01M339AYG0P9GWYY5EXKZ89SGZ/full.webp",
+     "width": 2560,
+     "height": 1440,
+     "format": "webp",
+     "size_bytes": 27716
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/09/ast_01M339AYG0P9GWYY5EXKZ89SGZ/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 10628
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/09/ast_01M339AYG0P9GWYY5EXKZ89SGZ/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 2304
+    }
+   ]
+  },
+  {
+   "id": "ast_01M3NKSDV012DK5ZDS5NFCGA89",
+   "owner": "00000000-0000-4000-8000-000000000001",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/09/ast_01M3NKSDV012DK5ZDS5NFCGA89/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 92905,
+   "width": 2560,
+   "height": 1440,
+   "sha256": "9f465c9a7aa1ebe26bb1b87bde6c09cc3ef4fc51638258388ba7caa39238b75b",
+   "phash": "0000101111000011001100110101100101001100001100111001101110011001",
+   "blurhash": "L~MZ8Ln$jtof~9jYfQofnij[ayjs",
+   "palette": [
+    "#f6c681",
+    "#9f8470",
+    "#4e3f50",
+    "#e5b97f",
+    "#fadba4"
+   ],
+   "reject_reason": null,
+   "created": "2026-09-29T03:37:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/09/ast_01M3NKSDV012DK5ZDS5NFCGA89/full.webp",
+     "width": 2560,
+     "height": 1440,
+     "format": "webp",
+     "size_bytes": 31260
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/09/ast_01M3NKSDV012DK5ZDS5NFCGA89/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 12292
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/09/ast_01M3NKSDV012DK5ZDS5NFCGA89/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 2686
+    }
+   ]
+  },
+  {
+   "id": "ast_01M40FGR20PCM5F0VZKPXJ4ZZB",
+   "owner": "00000000-0000-4000-8000-000000000004",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M40FGR20PCM5F0VZKPXJ4ZZB/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 30881,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "782b9f9d9c2de028867859df005868e52ca34b46e452f9ab80497450bfa8ea98",
+   "phash": "0000000000010000000011001100000101110001001101101000001100010000",
+   "blurhash": "L~Hfetofa|of_NkCazkCt7j[jsj@",
+   "palette": [
+    "#d9ecf5",
+    "#0d3b5c",
+    "#3c6580",
+    "#b6d1df",
+    "#0e3b5c"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-03T08:54:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M40FGR20PCM5F0VZKPXJ4ZZB/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 10202
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M40FGR20PCM5F0VZKPXJ4ZZB/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 5628
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M40FGR20PCM5F0VZKPXJ4ZZB/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 1024
+    }
+   ]
+  },
+  {
+   "id": "ast_01M45EFDG0X5APNN9QS10W3TRH",
+   "owner": "00000000-0000-4000-8000-000000000005",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M45EFDG0X5APNN9QS10W3TRH/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 58409,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "adaa13f6d320dae7cb972989c0047cbfc304a992aba83f948eafd5ec45e3cd94",
+   "phash": "0101100010001100010110010011010000110110001100100110100101001100",
+   "blurhash": "LlKKG=s:aeV@~oofWBjsWBj[ayof",
+   "palette": [
+    "#cebda4",
+    "#9c8672",
+    "#694d3a",
+    "#c6b49b",
+    "#ded0bb"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-05T07:12:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M45EFDG0X5APNN9QS10W3TRH/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 18894
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M45EFDG0X5APNN9QS10W3TRH/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 10146
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M45EFDG0X5APNN9QS10W3TRH/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 2146
+    }
+   ]
+  },
+  {
+   "id": "ast_01M4AQZ060R6Q0QDXW1A9CHSW9",
+   "owner": "00000000-0000-4000-8000-000000000007",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M4AQZ060R6Q0QDXW1A9CHSW9/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 60648,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "5c73c2642d36184f4c75d9e28789af7148056d34ab94e3d150dbe960706645bf",
+   "phash": "0110000001100010011001001100110110011011100110011001100010011001",
+   "blurhash": "L:NkOut6bHn%~8ofj[s.j?azj[ay",
+   "palette": [
+    "#f5a863",
+    "#b56e51",
+    "#7b2f31",
+    "#f9bc80",
+    "#e89c5f"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-07T08:34:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M4AQZ060R6Q0QDXW1A9CHSW9/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 21098
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M4AQZ060R6Q0QDXW1A9CHSW9/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 11786
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M4AQZ060R6Q0QDXW1A9CHSW9/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 2482
+    }
+   ]
+  },
+  {
+   "id": "ast_01M4JD52D07TB5MR7A82H837MH",
+   "owner": "00000000-0000-4000-8000-000000000001",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M4JD52D07TB5MR7A82H837MH/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 62559,
+   "width": 1920,
+   "height": 1200,
+   "sha256": "1e0cce356ba53165da01db694d860b7b342f5c74433969017764f42d9ad316a6",
+   "phash": "0000111100000111001110110011001100110010001100111000010010011100",
+   "blurhash": "L75aCCo}L$Vt#8oyM0aeRPaLVsoz",
+   "palette": [
+    "#277170",
+    "#225d61",
+    "#173242",
+    "#3d8680",
+    "#519b8f"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-10T07:59:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M4JD52D07TB5MR7A82H837MH/full.webp",
+     "width": 1920,
+     "height": 1200,
+     "format": "webp",
+     "size_bytes": 20002
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M4JD52D07TB5MR7A82H837MH/preview.webp",
+     "width": 1280,
+     "height": 800,
+     "format": "webp",
+     "size_bytes": 10670
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M4JD52D07TB5MR7A82H837MH/thumbnail.webp",
+     "width": 320,
+     "height": 200,
+     "format": "webp",
+     "size_bytes": 2204
+    }
+   ]
+  },
+  {
+   "id": "ast_01M4VSJ3K01ZZ0DY9K31WVVEKD",
+   "owner": "00000000-0000-4000-8000-000000000009",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M4VSJ3K01ZZ0DY9K31WVVEKD/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 27514,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "ccd2028a93d4981483d958946bee74a8eee5ef24636ae00626ee03c84055bb40",
+   "phash": "0000010000100000010011000100110000110001000110010010000000000000",
+   "blurhash": "LU5=rAj]WAj]x|j]axj[a#fQj]fk",
+   "palette": [
+    "#0b1a3a",
+    "#4f61a5",
+    "#364684",
+    "#15254d",
+    "#0b1a3b"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-13T23:29:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M4VSJ3K01ZZ0DY9K31WVVEKD/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 8008
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M4VSJ3K01ZZ0DY9K31WVVEKD/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 4202
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M4VSJ3K01ZZ0DY9K31WVVEKD/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 796
+    }
+   ]
+  },
+  {
+   "id": "ast_01M5488TM08SM9R1HPJFXESVMC",
+   "owner": "00000000-0000-4000-8000-000000000006",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M5488TM08SM9R1HPJFXESVMC/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 62915,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "e51291da549c8fef2ce818207c13b39d03dba7dd07c7956ac876e0bbb97f4dac",
+   "phash": "1001000110011000000100110011001110010111110110010001001100110110",
+   "blurhash": "L,IFxlt7R*Wr_Ns:WVR+fRjtfQWC",
+   "palette": [
+    "#c1d9e6",
+    "#79939f",
+    "#345460",
+    "#b2cad7",
+    "#e3eef4"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-17T06:20:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M5488TM08SM9R1HPJFXESVMC/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 20934
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M5488TM08SM9R1HPJFXESVMC/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 11566
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M5488TM08SM9R1HPJFXESVMC/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 2454
+    }
+   ]
+  },
+  {
+   "id": "ast_01M5K58G40H881RZV42QERP70Y",
+   "owner": "00000000-0000-4000-8000-000000000010",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M5K58G40H881RZV42QERP70Y/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 30097,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "2b337bdad66a45caca7d0890b86576fc31ff23d92164d80f69160253c94f38b2",
+   "phash": "0000000000100000010011100001100001110011011001101000110001000010",
+   "blurhash": "L{I=x:offQof~qofayoft7jtfQj[",
+   "palette": [
+    "#2a4d5a",
+    "#e0e8eb",
+    "#e3ebee",
+    "#56727d",
+    "#bac8cd"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-23T01:16:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M5K58G40H881RZV42QERP70Y/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 9892
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M5K58G40H881RZV42QERP70Y/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 5480
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M5K58G40H881RZV42QERP70Y/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 952
+    }
+   ]
+  },
+  {
+   "id": "ast_01M38N98Q03G21M5YC2RVJJ044",
+   "owner": "00000000-0000-4000-8000-000000000001",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/09/ast_01M38N98Q03G21M5YC2RVJJ044/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 33966,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "9558591d888aff16a24af89a173499036266be92a6e6911cd68375fb1d42414f",
+   "phash": "0011000110000001101010011101000111100010011001011110000011000000",
+   "blurhash": "LMD*hnWH};=]oO5AoIR*s+EMR,Nb",
+   "palette": [
+    "#65424a",
+    "#331964",
+    "#b07764",
+    "#4b2d56",
+    "#29154d"
+   ],
+   "reject_reason": null,
+   "created": "2026-09-24T02:53:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/09/ast_01M38N98Q03G21M5YC2RVJJ044/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 11406
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/09/ast_01M38N98Q03G21M5YC2RVJJ044/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 5874
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/09/ast_01M38N98Q03G21M5YC2RVJJ044/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 1066
+    }
+   ]
+  },
+  {
+   "id": "ast_01M4MXTVK016Z3RR03BA2SDAZ8",
+   "owner": "00000000-0000-4000-8000-000000000004",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M4MXTVK016Z3RR03BA2SDAZ8/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 36407,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "f1e86998daa33926207539cb114b769ac33a75ae4a50fbf0e483c44827f231d7",
+   "phash": "1100111111000100111000011110000111000001010010000100100110001001",
+   "blurhash": "LJC}*X53B+-Ci]XSKNs;[bbcAU#T",
+   "palette": [
+    "#361135",
+    "#294356",
+    "#7e7098",
+    "#87719b",
+    "#983977"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-11T07:29:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M4MXTVK016Z3RR03BA2SDAZ8/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 12138
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M4MXTVK016Z3RR03BA2SDAZ8/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 6458
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M4MXTVK016Z3RR03BA2SDAZ8/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 1188
+    }
+   ]
+  },
+  {
+   "id": "ast_01M564JRE0N4F4EAMB57PPAJDM",
+   "owner": "00000000-0000-4000-8000-000000000005",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M564JRE0N4F4EAMB57PPAJDM/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 41620,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "c4495726d30808e7a9042608cff440529b51efb073e43474d1a71e7c74c81645",
+   "phash": "0101101110111011011100011110001011110000011000010111000101110001",
+   "blurhash": "LgKLm$-o^i-:~A-naKkC-Ut7NHR+",
+   "palette": [
+    "#afc9cd",
+    "#4398b7",
+    "#faeede",
+    "#96b4c0",
+    "#e3d9d2"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-17T23:54:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M564JRE0N4F4EAMB57PPAJDM/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 11992
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M564JRE0N4F4EAMB57PPAJDM/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 6506
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M564JRE0N4F4EAMB57PPAJDM/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 1284
+    }
+   ]
+  },
+  {
+   "id": "ast_01M5BT2VT0QS56QPYV61EPZZ8N",
+   "owner": "00000000-0000-4000-8000-000000000006",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M5BT2VT0QS56QPYV61EPZZ8N/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 43066,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "c67bef977262d45c0ebfbc5df46f674f3509c1ff9b4bd5f95286c379009cfb80",
+   "phash": "0110001101101011011000110110001101110011011000110110001101100011",
+   "blurhash": "LOF|#K};^N^gNuR+NIR+WCxYs.WW",
+   "palette": [
+    "#693e18",
+    "#c48b35",
+    "#643d17",
+    "#7d4f1e",
+    "#592511"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-20T04:46:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M5BT2VT0QS56QPYV61EPZZ8N/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 12502
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M5BT2VT0QS56QPYV61EPZZ8N/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 6596
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M5BT2VT0QS56QPYV61EPZZ8N/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 1296
+    }
+   ]
+  },
+  {
+   "id": "ast_01M1GKK6E08HTHJMCYWGMWRS26",
+   "owner": "00000000-0000-4000-8000-000000000002",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/09/ast_01M1GKK6E08HTHJMCYWGMWRS26/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 24725,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "701a23e3bbd570e415166b888983c4edcd0be110718a966cefeb3d40cbe6bafa",
+   "phash": "0000011000000110000001000000100111000101111011010110110000001100",
+   "blurhash": "LMP?zZ-:3q=|GcNLN{S~TbS#v~ni",
+   "palette": [
+    "#c7e2f9",
+    "#fad1e0",
+    "#ece9ec",
+    "#dfdbed",
+    "#cce3f8"
+   ],
+   "reject_reason": null,
+   "created": "2026-09-02T08:26:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/09/ast_01M1GKK6E08HTHJMCYWGMWRS26/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 9346
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/09/ast_01M1GKK6E08HTHJMCYWGMWRS26/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 4714
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/09/ast_01M1GKK6E08HTHJMCYWGMWRS26/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 718
+    }
+   ]
+  },
+  {
+   "id": "ast_01M3DMPJX0126E54PPB0ZAVY9N",
+   "owner": "00000000-0000-4000-8000-000000000001",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/09/ast_01M3DMPJX0126E54PPB0ZAVY9N/original.webp",
+   "content_type": "image/webp",
+   "size_bytes": 44648,
+   "width": 2560,
+   "height": 1440,
+   "sha256": "8b1942e244dca76557e61a2391ff33d17fd3d51e4c49d04811c874a8988f43ed",
+   "phash": "0011100110110110011001110100011111100111011110000110001001100000",
+   "blurhash": "L46axFxu9d~S-1M}E3xY4?-n^h9w",
+   "palette": [
+    "#151e33",
+    "#3a3836",
+    "#0a0d1b",
+    "#252a36",
+    "#6d644c"
+   ],
+   "reject_reason": null,
+   "created": "2026-09-26T01:19:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/09/ast_01M3DMPJX0126E54PPB0ZAVY9N/full.webp",
+     "width": 2560,
+     "height": 1440,
+     "format": "webp",
+     "size_bytes": 35826
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/09/ast_01M3DMPJX0126E54PPB0ZAVY9N/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 15316
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/09/ast_01M3DMPJX0126E54PPB0ZAVY9N/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 2094
+    }
+   ]
+  },
+  {
+   "id": "ast_01M3T9Y3V0RDF5QGSD6381A8XZ",
+   "owner": "00000000-0000-4000-8000-000000000004",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/09/ast_01M3T9Y3V0RDF5QGSD6381A8XZ/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 45079,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "ff60739a79298d856e00fc81d5facedd2019697c5f8e1113f9f4ee3ad3f77f1a",
+   "phash": "1000111110001111100000110100001100100111000001100000000010000000",
+   "blurhash": "L12Yt?M^9D%O-.RiI9t8f5t8WCM_",
+   "palette": [
+    "#0b1125",
+    "#070c1c",
+    "#03050b",
+    "#2d303e",
+    "#202430"
+   ],
+   "reject_reason": null,
+   "created": "2026-09-30T23:21:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/09/ast_01M3T9Y3V0RDF5QGSD6381A8XZ/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 13504
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/09/ast_01M3T9Y3V0RDF5QGSD6381A8XZ/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 8150
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/09/ast_01M3T9Y3V0RDF5QGSD6381A8XZ/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 716
+    }
+   ]
+  },
+  {
+   "id": "ast_01M4SKZHK0F7QH2PG0NN4YMAWZ",
+   "owner": "00000000-0000-4000-8000-000000000007",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M4SKZHK0F7QH2PG0NN4YMAWZ/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 49430,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "8468716b29036289ac5444aa93a42bc936114c55904ac529d6ba6dc4b31cbf68",
+   "phash": "0000010100010000001001110010011101001011000000110000000000100000",
+   "blurhash": "L87vNnEeJ6$l5yxHWVWUNaj[$kNa",
+   "palette": [
+    "#180332",
+    "#280a44",
+    "#40165b",
+    "#592465",
+    "#6e2f71"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-13T03:13:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M4SKZHK0F7QH2PG0NN4YMAWZ/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 14898
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M4SKZHK0F7QH2PG0NN4YMAWZ/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 8684
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M4SKZHK0F7QH2PG0NN4YMAWZ/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 928
+    }
+   ]
+  },
+  {
+   "id": "ast_01M51MKTJ0KTJD437DCGDVG9C4",
+   "owner": "00000000-0000-4000-8000-000000000001",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M51MKTJ0KTJD437DCGDVG9C4/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 53110,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "a9686d6f13964678166d0dfec4dd41fd391beed987bafa29ff1d826603d799b4",
+   "phash": "0011000000111100011011100000111010001110100011101001111000011110",
+   "blurhash": "LD8}78-;4oD%00NG?a%M-:xuM}IU",
+   "palette": [
+    "#3a4256",
+    "#2c354a",
+    "#161d2f",
+    "#4d5464",
+    "#9d9e9e"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-16T05:58:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M51MKTJ0KTJD437DCGDVG9C4/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 15668
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M51MKTJ0KTJD437DCGDVG9C4/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 8750
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M51MKTJ0KTJD437DCGDVG9C4/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 1052
+    }
+   ]
+  },
+  {
+   "id": "ast_01M3H08Z50QYHP3YQ9RRCMB95R",
+   "owner": "00000000-0000-4000-8000-000000000008",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/09/ast_01M3H08Z50QYHP3YQ9RRCMB95R/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 49526,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "938afd8128386c5c83bbc74d035ff889267df8bfac157cc85bd1570c8b9f7340",
+   "phash": "1110000001100100101100011011011001110110011110000111010001110000",
+   "blurhash": "L5671%}k$ea$bUoeWXR,I[S4s,oJ",
+   "palette": [
+    "#140030",
+    "#532928",
+    "#210042",
+    "#1b003a",
+    "#311132"
+   ],
+   "reject_reason": null,
+   "created": "2026-09-27T08:39:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/09/ast_01M3H08Z50QYHP3YQ9RRCMB95R/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 16388
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/09/ast_01M3H08Z50QYHP3YQ9RRCMB95R/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 9816
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/09/ast_01M3H08Z50QYHP3YQ9RRCMB95R/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 1064
+    }
+   ]
+  },
+  {
+   "id": "ast_01M47SFXX0QP1ZCSMJWMWNB08M",
+   "owner": "00000000-0000-4000-8000-000000000005",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M47SFXX0QP1ZCSMJWMWNB08M/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 153251,
+   "width": 3440,
+   "height": 1440,
+   "sha256": "8d5896280423a9991a5337bae0e80576aefbf9de1859b3c343b8927b6f5196dd",
+   "phash": "0000000010100000010001100100010100001101001011010100011001001010",
+   "blurhash": "LEB3+zofR,t6}=oLj@oLI=jts.az",
+   "palette": [
+    "#284753",
+    "#686457",
+    "#465757",
+    "#877159",
+    "#7d6c58"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-06T05:03:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M47SFXX0QP1ZCSMJWMWNB08M/full.webp",
+     "width": 3440,
+     "height": 1440,
+     "format": "webp",
+     "size_bytes": 42658
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M47SFXX0QP1ZCSMJWMWNB08M/preview.webp",
+     "width": 1280,
+     "height": 536,
+     "format": "webp",
+     "size_bytes": 19796
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M47SFXX0QP1ZCSMJWMWNB08M/thumbnail.webp",
+     "width": 320,
+     "height": 134,
+     "format": "webp",
+     "size_bytes": 5438
+    }
+   ]
+  },
+  {
+   "id": "ast_01M4YK7C00ZJ5CBN5S62RS1TK4",
+   "owner": "00000000-0000-4000-8000-000000000004",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M4YK7C00ZJ5CBN5S62RS1TK4/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 79990,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "609690fa8e8a7912d7c9ffecd6d77896efdd95c69b7bc5ae8de56d41223479c0",
+   "phash": "0000000000000000000000000000010001001001110001010111000101101010",
+   "blurhash": "L02X|boiX4oj+UjajajFSaj]n-jc",
+   "palette": [
+    "#190037",
+    "#150031",
+    "#10002c",
+    "#101038",
+    "#170034"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-15T01:36:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M4YK7C00ZJ5CBN5S62RS1TK4/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 25726
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M4YK7C00ZJ5CBN5S62RS1TK4/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 19428
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M4YK7C00ZJ5CBN5S62RS1TK4/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 6018
+    }
+   ]
+  },
+  {
+   "id": "ast_01M5P7EK00M4RQB3T5DWHXPP33",
+   "owner": "00000000-0000-4000-8000-000000000009",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M5P7EK00M4RQB3T5DWHXPP33/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 80624,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "f2a43a84d7a20e933ceac021947fecaca7a2a910eedf082baefd0c2849b4296b",
+   "phash": "0000000000100000000001101001011110011011100111010011010000100000",
+   "blurhash": "LEFsACxuWBt8~qj[ayofM{ayoffQ",
+   "palette": [
+    "#6e777f",
+    "#7f878e",
+    "#8e949a",
+    "#9fa4a8",
+    "#999ea3"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-24T05:52:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M5P7EK00M4RQB3T5DWHXPP33/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 19304
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M5P7EK00M4RQB3T5DWHXPP33/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 14842
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M5P7EK00M4RQB3T5DWHXPP33/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 5218
+    }
+   ]
+  },
+  {
+   "id": "ast_01M635YR40BZBMVHJA8M2EW7VK",
+   "owner": "00000000-0000-4000-8000-000000000001",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M635YR40BZBMVHJA8M2EW7VK/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 188206,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "b9ad23ccbee12410d58d2f72b2a65205b08166815c115ce35c2548f685e0563d",
+   "phash": "0000100001001010100100010011011001000100011001110100100100100101",
+   "blurhash": "L30xQLaLa1kpUcaLkVaLaLkVkWf6",
+   "palette": [
+    "#053a38",
+    "#02201f",
+    "#0d584b",
+    "#03302f",
+    "#032928"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-29T06:36:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M635YR40BZBMVHJA8M2EW7VK/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 57944
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M635YR40BZBMVHJA8M2EW7VK/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 32686
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M635YR40BZBMVHJA8M2EW7VK/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 5434
+    }
+   ]
+  },
+  {
+   "id": "ast_01M5XZ1J50K7J9MVP40EQJBB1D",
+   "owner": "00000000-0000-4000-8000-000000000006",
+   "purpose": "WALLPAPER",
+   "status": "REJECTED",
+   "original_key": "wallpaper/2026/10/ast_01M5XZ1J50K7J9MVP40EQJBB1D/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 109635,
+   "width": null,
+   "height": null,
+   "sha256": "927c21f132186466a9bcf6c7d235e1c5bb003ebffe77f8201878c1692e7b2bb6",
+   "phash": null,
+   "blurhash": null,
+   "palette": [],
+   "reject_reason": "TOO_SMALL",
+   "created": "2026-10-27T05:59:00Z",
+   "variants": []
+  },
+  {
+   "id": "ast_01M5RQ72P0G42C0DSE4MDT3TQY",
+   "owner": "00000000-0000-4000-8000-000000000010",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M5RQ72P0G42C0DSE4MDT3TQY/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 172386,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "595efeeb8181d9a767e5ae013827b8e3462eab1b5e20f12dd54202a62b3f48f2",
+   "phash": "0010110000101100010001100100010001000100000101010010010011100110",
+   "blurhash": "L15qkkogoKog57NbsnNbR+j@J8WV",
+   "palette": [
+    "#2b2827",
+    "#4a3026",
+    "#1d1c1c",
+    "#252323",
+    "#222020"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-25T05:06:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M5RQ72P0G42C0DSE4MDT3TQY/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 54646
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M5RQ72P0G42C0DSE4MDT3TQY/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 29394
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M5RQ72P0G42C0DSE4MDT3TQY/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 4834
+    }
+   ]
+  },
+  {
+   "id": "ast_01M6B2PGQ0MB5V7HB2VBQZSX6A",
+   "owner": "00000000-0000-4000-8000-000000000007",
+   "purpose": "WALLPAPER",
+   "status": "PROCESSING",
+   "original_key": "wallpaper/2026/11/ast_01M6B2PGQ0MB5V7HB2VBQZSX6A/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 20180,
+   "width": null,
+   "height": null,
+   "sha256": null,
+   "phash": null,
+   "blurhash": null,
+   "palette": [],
+   "reject_reason": null,
+   "created": "2026-11-01T08:13:00Z",
+   "variants": []
+  },
+  {
+   "id": "ast_01M6B4ZRF03JTPVKKFK8GH6RM6",
+   "owner": "00000000-0000-4000-8000-000000000004",
+   "purpose": "WALLPAPER",
+   "status": "PROCESSING",
+   "original_key": "wallpaper/2026/11/ast_01M6B4ZRF03JTPVKKFK8GH6RM6/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 17605,
+   "width": null,
+   "height": null,
+   "sha256": null,
+   "phash": null,
+   "blurhash": null,
+   "palette": [],
+   "reject_reason": null,
+   "created": "2026-11-01T08:53:00Z",
+   "variants": []
+  },
+  {
+   "id": "ast_01M425Y2Q0VWYXQPE87CS3B0TW",
+   "owner": "00000000-0000-4000-8000-000000000001",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M425Y2Q0VWYXQPE87CS3B0TW/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 27007,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "6d460235f019a8d6062bb0847d56929fe5a96d1a069acd690985f931a9627b7c",
+   "phash": "0010100001001101100101101011001000000000000000000000000000000000",
+   "blurhash": "L34o1dof4nWB_3of9FWBfQfQM{WB",
+   "palette": [
+    "#111111",
+    "#ededed",
+    "#191919",
+    "#b1b1b1",
+    "#505050"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-04T00:45:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M425Y2Q0VWYXQPE87CS3B0TW/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 8888
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M425Y2Q0VWYXQPE87CS3B0TW/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 5192
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M425Y2Q0VWYXQPE87CS3B0TW/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 1048
+    }
+   ]
+  },
+  {
+   "id": "ast_01M4F8X250NKGWGWBHGYGA8T1Y",
+   "owner": "00000000-0000-4000-8000-000000000001",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M4F8X250NKGWGWBHGYGA8T1Y/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 48691,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "352d20c786ab91792bfe9da46424569a4e03332f6f489f4984695a245dd34285",
+   "phash": "0100110010000110100011101001011000001111100011101001011001001100",
+   "blurhash": "LQEy0?s;0~W=DhayS2WV9_WV=woe",
+   "palette": [
+    "#878a9b",
+    "#6a626e",
+    "#3c3f54",
+    "#8e7d83",
+    "#a9a1a9"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-09T02:47:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M4F8X250NKGWGWBHGYGA8T1Y/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 16674
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M4F8X250NKGWGWBHGYGA8T1Y/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 9248
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M4F8X250NKGWGWBHGYGA8T1Y/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 1880
+    }
+   ]
+  },
+  {
+   "id": "ast_01M58P0BB0KVFSHC0MS48AGZ2S",
+   "owner": "00000000-0000-4000-8000-000000000005",
+   "purpose": "WALLPAPER",
+   "status": "READY",
+   "original_key": "wallpaper/2026/10/ast_01M58P0BB0KVFSHC0MS48AGZ2S/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 46858,
+   "width": 1920,
+   "height": 1080,
+   "sha256": "9ea63e56c08e289514003494fba802db99116ef5ac97bd5246aae5ce788b40fc",
+   "phash": "0100110010010110100011101000111000001111100011101000111001001101",
+   "blurhash": "LNAxJ:oz01R+Z#f6V@ax9FWC?aof",
+   "palette": [
+    "#447292",
+    "#244162",
+    "#365d7e",
+    "#4f7e9c",
+    "#becccd"
+   ],
+   "reject_reason": null,
+   "created": "2026-10-18T23:37:00Z",
+   "variants": [
+    {
+     "kind": "FULL",
+     "key": "wallpaper/2026/10/ast_01M58P0BB0KVFSHC0MS48AGZ2S/full.webp",
+     "width": 1920,
+     "height": 1080,
+     "format": "webp",
+     "size_bytes": 15948
+    },
+    {
+     "kind": "PREVIEW",
+     "key": "wallpaper/2026/10/ast_01M58P0BB0KVFSHC0MS48AGZ2S/preview.webp",
+     "width": 1280,
+     "height": 720,
+     "format": "webp",
+     "size_bytes": 8868
+    },
+    {
+     "kind": "THUMBNAIL",
+     "key": "wallpaper/2026/10/ast_01M58P0BB0KVFSHC0MS48AGZ2S/thumbnail.webp",
+     "width": 320,
+     "height": 180,
+     "format": "webp",
+     "size_bytes": 1852
+    }
+   ]
+  },
+  {
+   "id": "ast_01M6AV2ZR090Q2DHK7J8RAEYYN",
+   "owner": "00000000-0000-4000-8000-000000000010",
+   "purpose": "WALLPAPER",
+   "status": "PROCESSING",
+   "original_key": "wallpaper/2026/11/ast_01M6AV2ZR090Q2DHK7J8RAEYYN/original.jpg",
+   "content_type": "image/jpeg",
+   "size_bytes": 58743,
+   "width": null,
+   "height": null,
+   "sha256": null,
+   "phash": null,
+   "blurhash": null,
+   "palette": [],
+   "reject_reason": null,
+   "created": "2026-11-01T06:00:00Z",
+   "variants": []
+  }
+ ],
+ "wallpapers": [
+  {
+   "key": "w01",
+   "id": "wp_01M339EKP0DKWNX60KM3R9NE0K",
+   "authorId": "00000000-0000-4000-8000-000000000001",
+   "title": "Misty Pines",
+   "category": "NATURE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M339AYG0P9GWYY5EXKZ89SGZ",
+   "favorites": 2,
+   "tags": [
+    "forest",
+    "fog",
+    "pine",
+    "mountains"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w02",
+   "id": "wp_01M3NKX310HD28CP87RG8EFX17",
+   "authorId": "00000000-0000-4000-8000-000000000001",
+   "title": "Golden Ridge at Dawn",
+   "category": "NATURE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M3NKSDV012DK5ZDS5NFCGA89",
+   "favorites": 4,
+   "tags": [
+    "sunrise",
+    "mountains",
+    "golden",
+    "ridge"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w03",
+   "id": "wp_01M40FMD80QV5HA8QQFMRJT5G6",
+   "authorId": "00000000-0000-4000-8000-000000000004",
+   "title": "Quiet Tide",
+   "category": "NATURE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M40FGR20PCM5F0VZKPXJ4ZZB",
+   "favorites": 3,
+   "tags": [
+    "ocean",
+    "calm",
+    "blue",
+    "waves"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w04",
+   "id": "wp_01M45EK2P0C1S69QGCGFX75KQP",
+   "authorId": "00000000-0000-4000-8000-000000000005",
+   "title": "Herbstnebel im Wald",
+   "category": "NATURE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M45EFDG0X5APNN9QS10W3TRH",
+   "favorites": 1,
+   "tags": [
+    "autumn",
+    "fog",
+    "forest",
+    "herbst"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w05",
+   "id": "wp_01M4AR2NC0MDDKGMYGQGCCTET6",
+   "authorId": "00000000-0000-4000-8000-000000000007",
+   "title": "Desierto Rojo al Atardecer",
+   "category": "NATURE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M4AQZ060R6Q0QDXW1A9CHSW9",
+   "favorites": 4,
+   "tags": [
+    "desert",
+    "sunset",
+    "red",
+    "desierto"
+   ],
+   "moderation": {
+    "decision": "APPROVED",
+    "reason": null,
+    "moderatorId": "00000000-0000-4000-8000-000000000002",
+    "decidedAt": "2026-10-08T08:38:00Z"
+   }
+  },
+  {
+   "key": "w06",
+   "id": "wp_01M4JD8QK00K12P9VETWX3K89K",
+   "authorId": "00000000-0000-4000-8000-000000000001",
+   "title": "Northern Ridge",
+   "category": "NATURE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M4JD52D07TB5MR7A82H837MH",
+   "favorites": 1,
+   "tags": [
+    "mountains",
+    "night",
+    "teal",
+    "aurora"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w07",
+   "id": "wp_01M4VSNRS091KB2S80ZZ0P5KQX",
+   "authorId": "00000000-0000-4000-8000-000000000009",
+   "title": "Blaue Stunde über dem Meer",
+   "category": "NATURE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M4VSJ3K01ZZ0DY9K31WVVEKD",
+   "favorites": 0,
+   "tags": [
+    "meer",
+    "dusk",
+    "ocean",
+    "blue"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w08",
+   "id": "wp_01M548CFT0QNEXT4K5VPMDSDAR",
+   "authorId": "00000000-0000-4000-8000-000000000006",
+   "title": "Alpine Layers",
+   "category": "NATURE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M5488TM08SM9R1HPJFXESVMC",
+   "favorites": 1,
+   "tags": [
+    "alps",
+    "layers",
+    "mountains"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w09",
+   "id": "wp_01M5K5C5A0CQQ3S7K46AG0Y2KN",
+   "authorId": "00000000-0000-4000-8000-000000000010",
+   "title": "Cold Coast",
+   "category": "NATURE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M5K58G40H881RZV42QERP70Y",
+   "favorites": 0,
+   "tags": [
+    "coast",
+    "ocean",
+    "grey",
+    "waves"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w10",
+   "id": "wp_01M38NCXX0JE42RSKC2XP466PT",
+   "authorId": "00000000-0000-4000-8000-000000000001",
+   "title": "Soft Gradient Bloom",
+   "category": "ABSTRACT",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M38N98Q03G21M5YC2RVJJ044",
+   "favorites": 3,
+   "tags": [
+    "gradient",
+    "bloom",
+    "purple",
+    "soft"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w11",
+   "id": "wp_01M4MXYGS0BQXGK49T5VW6V2B6",
+   "authorId": "00000000-0000-4000-8000-000000000004",
+   "title": "Neon Haze",
+   "category": "ABSTRACT",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M4MXTVK016Z3RR03BA2SDAZ8",
+   "favorites": 2,
+   "tags": [
+    "neon",
+    "haze",
+    "pink",
+    "cyan"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w12",
+   "id": "wp_01M564PDM0WDZ76WM2RNFTG5JQ",
+   "authorId": "00000000-0000-4000-8000-000000000005",
+   "title": "Farbfluss",
+   "category": "ABSTRACT",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M564JRE0N4F4EAMB57PPAJDM",
+   "favorites": 2,
+   "tags": [
+    "colour",
+    "flow",
+    "abstract",
+    "farbe"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w13",
+   "id": "wp_01M5BT6H004JD1AQ935Z1ZZJFV",
+   "authorId": "00000000-0000-4000-8000-000000000006",
+   "title": "Magma Flow",
+   "category": "ABSTRACT",
+   "status": "REJECTED",
+   "assetId": "ast_01M5BT2VT0QS56QPYV61EPZZ8N",
+   "favorites": 0,
+   "tags": [
+    "magma",
+    "red",
+    "flow"
+   ],
+   "moderation": {
+    "decision": "REJECTED",
+    "reason": "Contains a third-party watermark.",
+    "moderatorId": "00000000-0000-4000-8000-000000000002",
+    "decidedAt": "2026-10-21T05:45:00Z"
+   }
+  },
+  {
+   "key": "w14",
+   "id": "wp_01M1GKPVM0PH34P6PHEZGZ8MGH",
+   "authorId": "00000000-0000-4000-8000-000000000002",
+   "title": "Calm Pastel",
+   "category": "ABSTRACT",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M1GKK6E08HTHJMCYWGMWRS26",
+   "favorites": 1,
+   "tags": [
+    "pastel",
+    "calm",
+    "soft"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w15",
+   "id": "wp_01M3DMT830KWXSVEGSXAH78HMP",
+   "authorId": "00000000-0000-4000-8000-000000000001",
+   "title": "Ringed Giant",
+   "category": "SPACE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M3DMPJX0126E54PPB0ZAVY9N",
+   "favorites": 2,
+   "tags": [
+    "space",
+    "planet",
+    "rings",
+    "saturn"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w16",
+   "id": "wp_01M3TA1S10GDADJP13EMTR8AQ2",
+   "authorId": "00000000-0000-4000-8000-000000000004",
+   "title": "Deep Field",
+   "category": "SPACE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M3T9Y3V0RDF5QGSD6381A8XZ",
+   "favorites": 3,
+   "tags": [
+    "space",
+    "stars",
+    "deep-field",
+    "dark"
+   ],
+   "moderation": {
+    "decision": "APPROVED",
+    "reason": null,
+    "moderatorId": "00000000-0000-4000-8000-000000000002",
+    "decidedAt": "2026-10-02T06:15:00Z"
+   }
+  },
+  {
+   "key": "w17",
+   "id": "wp_01M4SM36S0AZACDDX6S8PJ5P4B",
+   "authorId": "00000000-0000-4000-8000-000000000007",
+   "title": "Deriva de Nebulosa",
+   "category": "SPACE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M4SKZHK0F7QH2PG0NN4YMAWZ",
+   "favorites": 2,
+   "tags": [
+    "nebulosa",
+    "space",
+    "purple",
+    "estrellas"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w18",
+   "id": "wp_01M51MQFR082MYPQ6H90YJYQVS",
+   "authorId": "00000000-0000-4000-8000-000000000001",
+   "title": "Lunar Horizon",
+   "category": "SPACE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M51MKTJ0KTJD437DCGDVG9C4",
+   "favorites": 3,
+   "tags": [
+    "moon",
+    "horizon",
+    "space",
+    "grey"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w19",
+   "id": "wp_01M3H0CMB0TP8N7WSBXN35E57Q",
+   "authorId": "00000000-0000-4000-8000-000000000008",
+   "title": "Binary Dawn",
+   "category": "SPACE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M3H08Z50QYHP3YQ9RRCMB95R",
+   "favorites": 1,
+   "tags": [
+    "space",
+    "binary",
+    "sun",
+    "orange"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w20",
+   "id": "wp_01M47SKK30Z5GPG4D1QNAXNHFA",
+   "authorId": "00000000-0000-4000-8000-000000000005",
+   "title": "Dusk Skyline",
+   "category": "ARCHITECTURE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M47SFXX0QP1ZCSMJWMWNB08M",
+   "favorites": 3,
+   "tags": [
+    "city",
+    "skyline",
+    "dusk",
+    "ultrawide"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w21",
+   "id": "wp_01M4YKB160JNVE6QNQAWW44C7T",
+   "authorId": "00000000-0000-4000-8000-000000000004",
+   "title": "Neon Blocks",
+   "category": "ARCHITECTURE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M4YK7C00ZJ5CBN5S62RS1TK4",
+   "favorites": 2,
+   "tags": [
+    "city",
+    "neon",
+    "night",
+    "blocks"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w22",
+   "id": "wp_01M5P7J860ZY8J6JCY417FYJSS",
+   "authorId": "00000000-0000-4000-8000-000000000009",
+   "title": "Beton und Stille",
+   "category": "ARCHITECTURE",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M5P7EK00M4RQB3T5DWHXPP33",
+   "favorites": 0,
+   "tags": [
+    "beton",
+    "minimal",
+    "grey",
+    "architektur"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w23",
+   "id": "wp_01M6362DA0VPK8F7930KN03DYE",
+   "authorId": "00000000-0000-4000-8000-000000000001",
+   "title": "Circuit Bloom",
+   "category": "TECHNOLOGY",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M635YR40BZBMVHJA8M2EW7VK",
+   "favorites": 2,
+   "tags": [
+    "circuit",
+    "tech",
+    "green",
+    "grid"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w24",
+   "id": "wp_01M5XZ57B012NW5N7KZ56QN257",
+   "authorId": "00000000-0000-4000-8000-000000000006",
+   "title": "Data Lattice",
+   "category": "TECHNOLOGY",
+   "status": "REJECTED",
+   "assetId": "ast_01M5XZ1J50K7J9MVP40EQJBB1D",
+   "favorites": 0,
+   "tags": [
+    "data",
+    "lattice",
+    "blue"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w25",
+   "id": "wp_01M5RQAQW00A70CM2C5012229K",
+   "authorId": "00000000-0000-4000-8000-000000000010",
+   "title": "Signal Trace",
+   "category": "TECHNOLOGY",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M5RQ72P0G42C0DSE4MDT3TQY",
+   "favorites": 3,
+   "tags": [
+    "signal",
+    "tech",
+    "orange",
+    "trace"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w26",
+   "id": "wp_01M6B2T5X01YQYDD8TPTS3CQV6",
+   "authorId": "00000000-0000-4000-8000-000000000007",
+   "title": "Un Solo Sol",
+   "category": "MINIMAL",
+   "status": "PENDING_MEDIA",
+   "assetId": "ast_01M6B2PGQ0MB5V7HB2VBQZSX6A",
+   "favorites": 0,
+   "tags": [
+    "minimal",
+    "sol",
+    "red"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w27",
+   "id": "wp_01M6B53DN0NN0C79D47PC97AVF",
+   "authorId": "00000000-0000-4000-8000-000000000004",
+   "title": "Paper Horizon",
+   "category": "MINIMAL",
+   "status": "PENDING_MEDIA",
+   "assetId": "ast_01M6B4ZRF03JTPVKKFK8GH6RM6",
+   "favorites": 0,
+   "tags": [
+    "minimal",
+    "paper",
+    "horizon"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w28",
+   "id": "wp_01M4261QX087XJG40P6VSD1FGZ",
+   "authorId": "00000000-0000-4000-8000-000000000001",
+   "title": "Monochrome Arc",
+   "category": "MINIMAL",
+   "status": "REMOVED",
+   "assetId": "ast_01M425Y2Q0VWYXQPE87CS3B0TW",
+   "favorites": 0,
+   "tags": [
+    "minimal",
+    "monochrome",
+    "arc"
+   ],
+   "moderation": {
+    "decision": "REMOVED",
+    "reason": "Copyright complaint received.",
+    "moderatorId": "00000000-0000-4000-8000-000000000002",
+    "decidedAt": "2026-10-30T07:42:00Z"
+   }
+  },
+  {
+   "key": "w29",
+   "id": "wp_01M4F90QB03RFZPXAN9HNB3BCB",
+   "authorId": "00000000-0000-4000-8000-000000000001",
+   "title": "Geometric Fox",
+   "category": "ANIMALS",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M4F8X250NKGWGWBHGYGA8T1Y",
+   "favorites": 3,
+   "tags": [
+    "fox",
+    "geometric",
+    "animal",
+    "orange"
+   ],
+   "moderation": null
+  },
+  {
+   "key": "w30",
+   "id": "wp_01M58P40H0Y1DKACP9TQCN941E",
+   "authorId": "00000000-0000-4000-8000-000000000005",
+   "title": "Eulenblick",
+   "category": "ANIMALS",
+   "status": "PUBLISHED",
+   "assetId": "ast_01M58P0BB0KVFSHC0MS48AGZ2S",
+   "favorites": 0,
+   "tags": [
+    "eule",
+    "owl",
+    "geometric",
+    "animal"
+   ],
+   "moderation": null
+  }
+ ],
+ "collections": [
+  {
+   "id": "col_01M5HC38Z0J4F3BWG0WJ2F7MTY",
+   "ownerId": "00000000-0000-4000-8000-000000000001",
+   "title": "Forest moods",
+   "wallpaperIds": [
+    "wp_01M339EKP0DKWNX60KM3R9NE0K",
+    "wp_01M45EK2P0C1S69QGCGFX75KQP",
+    "wp_01M548CFT0QNEXT4K5VPMDSDAR",
+    "wp_01M4JD8QK00K12P9VETWX3K89K"
+   ]
+  },
+  {
+   "id": "col_01M5E8BR20JEFK0AGPDCEX1N69",
+   "ownerId": "00000000-0000-4000-8000-000000000001",
+   "title": "Space",
+   "wallpaperIds": [
+    "wp_01M3DMT830KWXSVEGSXAH78HMP",
+    "wp_01M3TA1S10GDADJP13EMTR8AQ2",
+    "wp_01M4SM36S0AZACDDX6S8PJ5P4B",
+    "wp_01M51MQFR082MYPQ6H90YJYQVS"
+   ]
+  },
+  {
+   "id": "col_01M5BDKPC0RNC6R7319R99G8F9",
+   "ownerId": "00000000-0000-4000-8000-000000000004",
+   "title": "Desk wallpapers",
+   "wallpaperIds": [
+    "wp_01M4YKB160JNVE6QNQAWW44C7T",
+    "wp_01M6362DA0VPK8F7930KN03DYE",
+    "wp_01M5RQAQW00A70CM2C5012229K",
+    "wp_01M4MXYGS0BQXGK49T5VW6V2B6"
+   ]
+  },
+  {
+   "id": "col_01M58TRAM0PC9HNSMSKDK4A0M8",
+   "ownerId": "00000000-0000-4000-8000-000000000005",
+   "title": "Herbst und Nebel",
+   "wallpaperIds": [
+    "wp_01M45EK2P0C1S69QGCGFX75KQP",
+    "wp_01M339EKP0DKWNX60KM3R9NE0K"
+   ]
+  },
+  {
+   "id": "col_01M56GFKY0NDP64D0SZZTBZQE3",
+   "ownerId": "00000000-0000-4000-8000-000000000002",
+   "title": "Reference examples",
+   "wallpaperIds": [
+    "wp_01M1GKPVM0PH34P6PHEZGZ8MGH",
+    "wp_01M3H0CMB0TP8N7WSBXN35E57Q"
+   ]
+  }
+ ],
+ "favorites": [
+  {
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "wallpaperId": "wp_01M40FMD80QV5HA8QQFMRJT5G6"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "wallpaperId": "wp_01M4AR2NC0MDDKGMYGQGCCTET6"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "wallpaperId": "wp_01M548CFT0QNEXT4K5VPMDSDAR"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "wallpaperId": "wp_01M564PDM0WDZ76WM2RNFTG5JQ"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "wallpaperId": "wp_01M1GKPVM0PH34P6PHEZGZ8MGH"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "wallpaperId": "wp_01M3TA1S10GDADJP13EMTR8AQ2"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "wallpaperId": "wp_01M4YKB160JNVE6QNQAWW44C7T"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000002",
+   "wallpaperId": "wp_01M339EKP0DKWNX60KM3R9NE0K"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000002",
+   "wallpaperId": "wp_01M4AR2NC0MDDKGMYGQGCCTET6"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000002",
+   "wallpaperId": "wp_01M4MXYGS0BQXGK49T5VW6V2B6"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000002",
+   "wallpaperId": "wp_01M3TA1S10GDADJP13EMTR8AQ2"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000003",
+   "wallpaperId": "wp_01M45EK2P0C1S69QGCGFX75KQP"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000003",
+   "wallpaperId": "wp_01M564PDM0WDZ76WM2RNFTG5JQ"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000003",
+   "wallpaperId": "wp_01M5RQAQW00A70CM2C5012229K"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "wallpaperId": "wp_01M4JD8QK00K12P9VETWX3K89K"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "wallpaperId": "wp_01M38NCXX0JE42RSKC2XP466PT"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "wallpaperId": "wp_01M4SM36S0AZACDDX6S8PJ5P4B"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "wallpaperId": "wp_01M51MQFR082MYPQ6H90YJYQVS"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "wallpaperId": "wp_01M3H0CMB0TP8N7WSBXN35E57Q"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "wallpaperId": "wp_01M6362DA0VPK8F7930KN03DYE"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "wallpaperId": "wp_01M5RQAQW00A70CM2C5012229K"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "wallpaperId": "wp_01M4F90QB03RFZPXAN9HNB3BCB"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000005",
+   "wallpaperId": "wp_01M3NKX310HD28CP87RG8EFX17"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000005",
+   "wallpaperId": "wp_01M40FMD80QV5HA8QQFMRJT5G6"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000005",
+   "wallpaperId": "wp_01M4AR2NC0MDDKGMYGQGCCTET6"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000005",
+   "wallpaperId": "wp_01M38NCXX0JE42RSKC2XP466PT"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000005",
+   "wallpaperId": "wp_01M3DMT830KWXSVEGSXAH78HMP"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000005",
+   "wallpaperId": "wp_01M4YKB160JNVE6QNQAWW44C7T"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000006",
+   "wallpaperId": "wp_01M4AR2NC0MDDKGMYGQGCCTET6"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000006",
+   "wallpaperId": "wp_01M51MQFR082MYPQ6H90YJYQVS"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000006",
+   "wallpaperId": "wp_01M47SKK30Z5GPG4D1QNAXNHFA"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000006",
+   "wallpaperId": "wp_01M5RQAQW00A70CM2C5012229K"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000007",
+   "wallpaperId": "wp_01M3DMT830KWXSVEGSXAH78HMP"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000007",
+   "wallpaperId": "wp_01M3TA1S10GDADJP13EMTR8AQ2"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000007",
+   "wallpaperId": "wp_01M51MQFR082MYPQ6H90YJYQVS"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000007",
+   "wallpaperId": "wp_01M47SKK30Z5GPG4D1QNAXNHFA"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000007",
+   "wallpaperId": "wp_01M4F90QB03RFZPXAN9HNB3BCB"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000008",
+   "wallpaperId": "wp_01M3NKX310HD28CP87RG8EFX17"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000008",
+   "wallpaperId": "wp_01M47SKK30Z5GPG4D1QNAXNHFA"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000009",
+   "wallpaperId": "wp_01M339EKP0DKWNX60KM3R9NE0K"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000009",
+   "wallpaperId": "wp_01M3NKX310HD28CP87RG8EFX17"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000009",
+   "wallpaperId": "wp_01M40FMD80QV5HA8QQFMRJT5G6"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000009",
+   "wallpaperId": "wp_01M6362DA0VPK8F7930KN03DYE"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000009",
+   "wallpaperId": "wp_01M4F90QB03RFZPXAN9HNB3BCB"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000010",
+   "wallpaperId": "wp_01M3NKX310HD28CP87RG8EFX17"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000010",
+   "wallpaperId": "wp_01M38NCXX0JE42RSKC2XP466PT"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000010",
+   "wallpaperId": "wp_01M4MXYGS0BQXGK49T5VW6V2B6"
+  },
+  {
+   "userId": "00000000-0000-4000-8000-000000000010",
+   "wallpaperId": "wp_01M4SM36S0AZACDDX6S8PJ5P4B"
+  }
+ ],
+ "notifications": [
+  {
+   "id": "ntf_01KE65YRK012YRF2ZA034SKWN5",
+   "userId": "00000000-0000-4000-8000-000000000003",
+   "type": "WELCOME",
+   "read": true,
+   "createdAt": "2026-01-05T04:17:00Z",
+   "data": {}
+  },
+  {
+   "id": "ntf_01KP76DR20S6GY0TG6HDYR98JK",
+   "userId": "00000000-0000-4000-8000-000000000002",
+   "type": "WELCOME",
+   "read": true,
+   "createdAt": "2026-04-14T23:50:00Z",
+   "data": {}
+  },
+  {
+   "id": "ntf_01KWNXGFQ03WF14HS5VP1FM7NE",
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "type": "WELCOME",
+   "read": true,
+   "createdAt": "2026-07-04T06:37:00Z",
+   "data": {}
+  },
+  {
+   "id": "ntf_01KZ2EN9D0AW3KKG9Y3QYMRMH2",
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "type": "WELCOME",
+   "read": true,
+   "createdAt": "2026-08-02T23:59:00Z",
+   "data": {}
+  },
+  {
+   "id": "ntf_01M09Y2ZD00WFPS9G9BJTEEJV8",
+   "userId": "00000000-0000-4000-8000-000000000005",
+   "type": "WELCOME",
+   "read": true,
+   "createdAt": "2026-08-18T07:59:00Z",
+   "data": {}
+  },
+  {
+   "id": "ntf_01M1G5P850KBZ12TPP19RNH2MY",
+   "userId": "00000000-0000-4000-8000-000000000006",
+   "type": "WELCOME",
+   "read": true,
+   "createdAt": "2026-09-02T04:23:00Z",
+   "data": {}
+  },
+  {
+   "id": "ntf_01M1GKPVM0EDDMNAJ4BDWMAB0J",
+   "userId": "00000000-0000-4000-8000-000000000002",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-09-02T08:28:00Z",
+   "data": {
+    "wallpaperId": "wp_01M1GKPVM0PH34P6PHEZGZ8MGH",
+    "assetId": "ast_01M1GKK6E08HTHJMCYWGMWRS26"
+   }
+  },
+  {
+   "id": "ntf_01M2Q5G220KFE3HHWZDJ8GZXCX",
+   "userId": "00000000-0000-4000-8000-000000000007",
+   "type": "WELCOME",
+   "read": true,
+   "createdAt": "2026-09-17T07:50:00Z",
+   "data": {}
+  },
+  {
+   "id": "ntf_01M3369X10ZHQF8P3DAPBVJMG3",
+   "userId": "00000000-0000-4000-8000-000000000008",
+   "type": "WELCOME",
+   "read": true,
+   "createdAt": "2026-09-21T23:55:00Z",
+   "data": {}
+  },
+  {
+   "id": "ntf_01M339EKP06DVDXT41C4VFQ4XQ",
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-09-22T00:50:00Z",
+   "data": {
+    "wallpaperId": "wp_01M339EKP0DKWNX60KM3R9NE0K",
+    "assetId": "ast_01M339AYG0P9GWYY5EXKZ89SGZ"
+   }
+  },
+  {
+   "id": "ntf_01M38NCXX0Y6BNGADGCABBYKM0",
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-09-24T02:55:00Z",
+   "data": {
+    "wallpaperId": "wp_01M38NCXX0JE42RSKC2XP466PT",
+    "assetId": "ast_01M38N98Q03G21M5YC2RVJJ044"
+   }
+  },
+  {
+   "id": "ntf_01M3DMT830X7BCZF9K547APMGP",
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-09-26T01:21:00Z",
+   "data": {
+    "wallpaperId": "wp_01M3DMT830KWXSVEGSXAH78HMP",
+    "assetId": "ast_01M3DMPJX0126E54PPB0ZAVY9N"
+   }
+  },
+  {
+   "id": "ntf_01M3H0CMB02C8RN081VHR8R4YP",
+   "userId": "00000000-0000-4000-8000-000000000008",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-09-27T08:41:00Z",
+   "data": {
+    "wallpaperId": "wp_01M3H0CMB0TP8N7WSBXN35E57Q",
+    "assetId": "ast_01M3H08Z50QYHP3YQ9RRCMB95R"
+   }
+  },
+  {
+   "id": "ntf_01M3NKX310DZ85MX2408Y4DX44",
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-09-29T03:39:00Z",
+   "data": {
+    "wallpaperId": "wp_01M3NKX310HD28CP87RG8EFX17",
+    "assetId": "ast_01M3NKSDV012DK5ZDS5NFCGA89"
+   }
+  },
+  {
+   "id": "ntf_01M3TA1S10R3FC5DF8JKZSNCPH",
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-09-30T23:23:00Z",
+   "data": {
+    "wallpaperId": "wp_01M3TA1S10GDADJP13EMTR8AQ2",
+    "assetId": "ast_01M3T9Y3V0RDF5QGSD6381A8XZ"
+   }
+  },
+  {
+   "id": "ntf_01M3XM0WN08S321HM05FAM5JVA",
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "type": "WALLPAPER_MODERATED",
+   "read": true,
+   "createdAt": "2026-10-02T06:15:00Z",
+   "data": {
+    "wallpaperId": "wp_01M3TA1S10GDADJP13EMTR8AQ2",
+    "decision": "APPROVED"
+   }
+  },
+  {
+   "id": "ntf_01M3XSXFT0E0GE9GVNH4XMA63S",
+   "userId": "00000000-0000-4000-8000-000000000009",
+   "type": "WELCOME",
+   "read": true,
+   "createdAt": "2026-10-02T07:58:00Z",
+   "data": {}
+  },
+  {
+   "id": "ntf_01M40FMD808G88BE2SF282WGQA",
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-03T08:56:00Z",
+   "data": {
+    "wallpaperId": "wp_01M40FMD80QV5HA8QQFMRJT5G6",
+    "assetId": "ast_01M40FGR20PCM5F0VZKPXJ4ZZB"
+   }
+  },
+  {
+   "id": "ntf_01M4261QX09EJ1VMP1J77944XZ",
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-04T00:47:00Z",
+   "data": {
+    "wallpaperId": "wp_01M4261QX087XJG40P6VSD1FGZ",
+    "assetId": "ast_01M425Y2Q0VWYXQPE87CS3B0TW"
+   }
+  },
+  {
+   "id": "ntf_01M45EK2P0FZDSFMFFV91RXYVW",
+   "userId": "00000000-0000-4000-8000-000000000005",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-05T07:14:00Z",
+   "data": {
+    "wallpaperId": "wp_01M45EK2P0C1S69QGCGFX75KQP",
+    "assetId": "ast_01M45EFDG0X5APNN9QS10W3TRH"
+   }
+  },
+  {
+   "id": "ntf_01M47SKK3035RZ0S3K1GQG508A",
+   "userId": "00000000-0000-4000-8000-000000000005",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-06T05:05:00Z",
+   "data": {
+    "wallpaperId": "wp_01M47SKK30Z5GPG4D1QNAXNHFA",
+    "assetId": "ast_01M47SFXX0QP1ZCSMJWMWNB08M"
+   }
+  },
+  {
+   "id": "ntf_01M4AR2NC0W5765PHVY3NWCVMX",
+   "userId": "00000000-0000-4000-8000-000000000007",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-07T08:36:00Z",
+   "data": {
+    "wallpaperId": "wp_01M4AR2NC0MDDKGMYGQGCCTET6",
+    "assetId": "ast_01M4AQZ060R6Q0QDXW1A9CHSW9"
+   }
+  },
+  {
+   "id": "ntf_01M4DAK1J0NKFEX8ZDH55E0FMR",
+   "userId": "00000000-0000-4000-8000-000000000007",
+   "type": "WALLPAPER_MODERATED",
+   "read": true,
+   "createdAt": "2026-10-08T08:38:00Z",
+   "data": {
+    "wallpaperId": "wp_01M4AR2NC0MDDKGMYGQGCCTET6",
+    "decision": "APPROVED"
+   }
+  },
+  {
+   "id": "ntf_01M4F90QB02K2VPS8P8JFPNE53",
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-09T02:49:00Z",
+   "data": {
+    "wallpaperId": "wp_01M4F90QB03RFZPXAN9HNB3BCB",
+    "assetId": "ast_01M4F8X250NKGWGWBHGYGA8T1Y"
+   }
+  },
+  {
+   "id": "ntf_01M4JD8QK0TBHYF365GX7Z0HW8",
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-10T08:01:00Z",
+   "data": {
+    "wallpaperId": "wp_01M4JD8QK00K12P9VETWX3K89K",
+    "assetId": "ast_01M4JD52D07TB5MR7A82H837MH"
+   }
+  },
+  {
+   "id": "ntf_01M4MXYGS0BAK35HD0VV0JGD11",
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-11T07:31:00Z",
+   "data": {
+    "wallpaperId": "wp_01M4MXYGS0BQXGK49T5VW6V2B6",
+    "assetId": "ast_01M4MXTVK016Z3RR03BA2SDAZ8"
+   }
+  },
+  {
+   "id": "ntf_01M4QK19P050DQ7PZ2HS78MP0R",
+   "userId": "00000000-0000-4000-8000-000000000010",
+   "type": "WELCOME",
+   "read": true,
+   "createdAt": "2026-10-12T08:18:00Z",
+   "data": {}
+  },
+  {
+   "id": "ntf_01M4SM36S0VMMM22HNRSBXTVZ7",
+   "userId": "00000000-0000-4000-8000-000000000007",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-13T03:15:00Z",
+   "data": {
+    "wallpaperId": "wp_01M4SM36S0AZACDDX6S8PJ5P4B",
+    "assetId": "ast_01M4SKZHK0F7QH2PG0NN4YMAWZ"
+   }
+  },
+  {
+   "id": "ntf_01M4VSNRS0XDGQ2EW2JHVBSYK0",
+   "userId": "00000000-0000-4000-8000-000000000009",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-13T23:31:00Z",
+   "data": {
+    "wallpaperId": "wp_01M4VSNRS091KB2S80ZZ0P5KQX",
+    "assetId": "ast_01M4VSJ3K01ZZ0DY9K31WVVEKD"
+   }
+  },
+  {
+   "id": "ntf_01M4YKB160WEX15ZBT7015SX0P",
+   "userId": "00000000-0000-4000-8000-000000000004",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-15T01:38:00Z",
+   "data": {
+    "wallpaperId": "wp_01M4YKB160JNVE6QNQAWW44C7T",
+    "assetId": "ast_01M4YK7C00ZJ5CBN5S62RS1TK4"
+   }
+  },
+  {
+   "id": "ntf_01M51MQFR0031DCVMY4561XSC8",
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-16T06:00:00Z",
+   "data": {
+    "wallpaperId": "wp_01M51MQFR082MYPQ6H90YJYQVS",
+    "assetId": "ast_01M51MKTJ0KTJD437DCGDVG9C4"
+   }
+  },
+  {
+   "id": "ntf_01M548CFT0CPGNX9D3F5SR2XA7",
+   "userId": "00000000-0000-4000-8000-000000000006",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-17T06:22:00Z",
+   "data": {
+    "wallpaperId": "wp_01M548CFT0QNEXT4K5VPMDSDAR",
+    "assetId": "ast_01M5488TM08SM9R1HPJFXESVMC"
+   }
+  },
+  {
+   "id": "ntf_01M564PDM0TC2WY0D3A0MGQE3B",
+   "userId": "00000000-0000-4000-8000-000000000005",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-17T23:56:00Z",
+   "data": {
+    "wallpaperId": "wp_01M564PDM0WDZ76WM2RNFTG5JQ",
+    "assetId": "ast_01M564JRE0N4F4EAMB57PPAJDM"
+   }
+  },
+  {
+   "id": "ntf_01M58P40H0XYRDHX83DQE7A2MQ",
+   "userId": "00000000-0000-4000-8000-000000000005",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-18T23:39:00Z",
+   "data": {
+    "wallpaperId": "wp_01M58P40H0Y1DKACP9TQCN941E",
+    "assetId": "ast_01M58P0BB0KVFSHC0MS48AGZ2S"
+   }
+  },
+  {
+   "id": "ntf_01M5BT6H0037DFESYBWNE9EGPX",
+   "userId": "00000000-0000-4000-8000-000000000006",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-20T04:48:00Z",
+   "data": {
+    "wallpaperId": "wp_01M5BT6H004JD1AQ935Z1ZZJFV",
+    "assetId": "ast_01M5BT2VT0QS56QPYV61EPZZ8N"
+   }
+  },
+  {
+   "id": "ntf_01M5EFVKV0H4CCSVY4GPN434AF",
+   "userId": "00000000-0000-4000-8000-000000000006",
+   "type": "WALLPAPER_MODERATED",
+   "read": true,
+   "createdAt": "2026-10-21T05:45:00Z",
+   "data": {
+    "wallpaperId": "wp_01M5BT6H004JD1AQ935Z1ZZJFV",
+    "decision": "REJECTED"
+   }
+  },
+  {
+   "id": "ntf_01M5K5C5A0VF7896KGV2ZK1EJK",
+   "userId": "00000000-0000-4000-8000-000000000010",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-23T01:18:00Z",
+   "data": {
+    "wallpaperId": "wp_01M5K5C5A0CQQ3S7K46AG0Y2KN",
+    "assetId": "ast_01M5K58G40H881RZV42QERP70Y"
+   }
+  },
+  {
+   "id": "ntf_01M5P7J8609X4DPT7AS2RFH8AK",
+   "userId": "00000000-0000-4000-8000-000000000009",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-24T05:54:00Z",
+   "data": {
+    "wallpaperId": "wp_01M5P7J860ZY8J6JCY417FYJSS",
+    "assetId": "ast_01M5P7EK00M4RQB3T5DWHXPP33"
+   }
+  },
+  {
+   "id": "ntf_01M5RQAQW0CHT0RHC53ZQ2RYT9",
+   "userId": "00000000-0000-4000-8000-000000000010",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": true,
+   "createdAt": "2026-10-25T05:08:00Z",
+   "data": {
+    "wallpaperId": "wp_01M5RQAQW00A70CM2C5012229K",
+    "assetId": "ast_01M5RQ72P0G42C0DSE4MDT3TQY"
+   }
+  },
+  {
+   "id": "ntf_01M5XZ3CR0R5G3W28TB0WE8JT5",
+   "userId": "00000000-0000-4000-8000-000000000006",
+   "type": "ASSET_REJECTED",
+   "read": true,
+   "createdAt": "2026-10-27T06:00:00Z",
+   "data": {
+    "assetId": "ast_01M5XZ1J50K7J9MVP40EQJBB1D"
+   }
+  },
+  {
+   "id": "ntf_01M6362DA0XP77V7P5N04BF7E4",
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "type": "WALLPAPER_PUBLISHED",
+   "read": false,
+   "createdAt": "2026-10-29T06:38:00Z",
+   "data": {
+    "wallpaperId": "wp_01M6362DA0VPK8F7930KN03DYE",
+    "assetId": "ast_01M635YR40BZBMVHJA8M2EW7VK"
+   }
+  },
+  {
+   "id": "ntf_01M65W4AA022ZSWZZ1ZSXZHGHX",
+   "userId": "00000000-0000-4000-8000-000000000001",
+   "type": "WALLPAPER_MODERATED",
+   "read": false,
+   "createdAt": "2026-10-30T07:42:00Z",
+   "data": {
+    "wallpaperId": "wp_01M4261QX087XJG40P6VSD1FGZ",
+    "decision": "REMOVED"
+   }
+  },
+  {
+   "id": "ntf_01M67WSD80QSSHBTYNS5SKHXVX",
+   "userId": "00000000-0000-4000-8000-000000000012",
+   "type": "WELCOME",
+   "read": false,
+   "createdAt": "2026-10-31T02:32:00Z",
+   "data": {}
+  }
+ ]
+}

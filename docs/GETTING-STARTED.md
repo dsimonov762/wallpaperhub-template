@@ -60,7 +60,7 @@ Elasticsearch (1 GB), Kafka and Keycloak (768 MB each) are the big ones; add the
 | URL | What | Login |
 |---|---|---|
 | http://localhost:8080/health | gateway (public entry point) | - |
-| http://localhost:8180 | Keycloak admin console | `admin` / `admin`; realm users `alice`, `mod`, `admin`: password `password` |
+| http://localhost:8180 | Keycloak admin console | `admin` / `admin`; realm users `alice`, `mod`, `admin`: password `password` (after `make seed` also bob, carol, dave, ...) |
 | http://localhost:8025 | Mailpit (all outgoing mail) | - |
 | http://localhost:9001 | S3 console (Silo) | `silo-admin` / `silo-admin-secret` |
 | http://localhost:9200 | Elasticsearch | no auth in dev |
@@ -82,6 +82,10 @@ curl -s -d grant_type=password -d client_id=e2e-tests -d username=alice -d passw
 4. `make up-apps && make e2e-system` - README 4.1 user flows (register, upload, publish, search, favorite, moderate, notify).
 5. `make conformance SVC=account` (or `make conformance-all`) - does one service obey [docs/SERVICE-SPEC.md](SERVICE-SPEC.md) (health endpoints, JWT validation, problem+json and localization, JSON logs, traces/logs/metrics arriving in Tempo/Loki/Prometheus, graceful shutdown, fail-fast config)? Same checks for every language: [conformance/README.md](../conformance/README.md). Run it the first day of a new service, before there is any business logic.
 6. CI runs all of the above on every pull request, see [CI.md](CI.md).
+
+### Development data
+
+`make seed` fills every store with a consistent dataset (12 users, 30 wallpapers in every state, favorites, collections, inboxes, images in S3; all users have the password `password`), `make reset` deletes all data again (schemas stay, asks first), `make reseed` does both. What is in it and why: [seed/README.md](../seed/README.md), the ids: [seed/CATALOG.md](../seed/CATALOG.md). `make seed-check` verifies the dataset against the DB contracts without a database.
 
 ### Contract tooling
 
@@ -137,12 +141,13 @@ Not verified (needs your Docker): image behavior of Kafka/Schema Registry/Elasti
 ```
 README.md                 design document (v1.1)
 contracts/                openapi/ proto/ avro/ graphql/ i18n/ db-schema/     the source of truth, language-agnostic
-infra/                    docker-compose.yml, .env.example, db-init/, keycloak/, kafka-init/, observability configs
+infra/                    docker-compose.yml, .env.example, db-init/, data/ (seed and reset jobs), keycloak/, kafka-init/, observability configs
 services/gateway/envoy/   the Envoy gateway (config, Dockerfile, CHEATSHEET.md)
 services/_mock/           Prism mock of a service (Dockerfile, mock.js)
 conformance/              language-agnostic conformance suite (run.sh, selftest.sh, http/, checks/, reference-stub/); spec: docs/SERVICE-SPEC.md
 .github/workflows/        ci.yml, service.yml (one implementation), system.yml (all services, nightly); scripts/ci/ helpers; docs/CI.md
 infra/host/, host-proxy/  host mode: env files for the IDE, TCP forwarder
+seed/                     development dataset: dataset.yaml, build.py, generated out/ and s3/ (make seed / reset / reseed)
 services/<name>/<impl>/   YOUR implementations go here (account, media, catalog, notification)
 e2e/                      Hurl tests: gateway/ (any backend) and system/ (real services), fixtures/, run.sh
 scripts/                  doctor.sh, wait-healthy.sh, validate/ (contract cross-checks), contracts.sh + contracts/ (lint, breaking), codegen.sh, ct.sh
