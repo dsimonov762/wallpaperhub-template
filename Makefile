@@ -137,6 +137,18 @@ seed-check: ## fail when seed/out or the images are out of date, and validate th
 	.venv-validate/bin/python seed/build.py --check
 	.venv-validate/bin/python scripts/validate/validate_seed.py
 
+# ---- Grafana dashboards (infra/grafana/dashboards) ----------------------------------------------------------------------
+PROMETHEUS_URL ?= http://localhost:9090
+dashboards-check: ## validate the dashboard JSON without Grafana (structure, datasources, PromQL syntax, variables)
+	@[ -d .venv-validate ] || python3 -m venv .venv-validate
+	@.venv-validate/bin/pip install -q -r scripts/validate/requirements.txt
+	.venv-validate/bin/python scripts/validate/validate_dashboards.py
+
+dashboards-coverage: ## which metrics the dashboards use that your running Prometheus does not have (why is a panel empty?)
+	@[ -d .venv-validate ] || python3 -m venv .venv-validate
+	@.venv-validate/bin/pip install -q -r scripts/validate/requirements.txt
+	.venv-validate/bin/python scripts/validate/validate_dashboards.py --coverage $(PROMETHEUS_URL)
+
 # ---- calling the API by hand -------------------------------------------------------------------------------------------
 token: ## access token of a user for curl & co:  make token [U=alice|mod|admin|bob ...] [ARGS=--decode|--header|--json] ; a service account: ARGS="--client catalog-svc"
 	@bash scripts/token.sh $(ARGS) $(U)
@@ -173,4 +185,4 @@ check-contracts: ## cross-check OpenAPI, GraphQL, Avro, proto, i18n and the gate
 	.venv-validate/bin/python scripts/validate/validate_contracts2.py
 	.venv-validate/bin/python scripts/validate/validate_host_env.py
 
-.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check up-apps up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen
+.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen

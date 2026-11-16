@@ -144,7 +144,8 @@ a few requests (the conformance run makes them; skip with `--no-telemetry`):
   (`http_server_request_duration_seconds_count{job="<OTEL_SERVICE_NAME>"}`).
 
 Also: server spans for HTTP and gRPC, client spans for outgoing calls, Kafka produce/consume spans, database spans with
-sanitized statements. Business metrics named in README section 11. The service itself never talks to Loki, Tempo
+sanitized statements. Business metrics named in README section 11; their exact names, units and labels are the contract the
+Grafana dashboards are written against: `docs/OBSERVABILITY.md`. The service itself never talks to Loki, Tempo
 or Prometheus.
 
 ## 9. Data stores and migrations

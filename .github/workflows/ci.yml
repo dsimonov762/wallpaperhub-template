@@ -58,6 +58,8 @@ jobs:
         run: make seed-check
       - name: Bruno collection is up to date with the contracts and the seed data
         run: make bruno-check
+      - name: Grafana dashboards are valid (structure, datasources, PromQL)
+        run: make dashboards-check
 
   seed:
     name: seed data loads into Postgres

@@ -21,6 +21,13 @@ scrape_configs:
     static_configs:
       - targets: ["tempo:3200"]
 
+  # The Envoy gateway cannot push OTLP metrics (it only exports traces), so its own stats are pulled from the management
+  # port. The target is down while the apps/mocks profile is not running; the "Gateway" dashboard uses these.
+  - job_name: gateway
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["gateway:8081"]
+
   # Optional pull-based /metrics next to the OTLP push (README decision 8).
   # Uncomment once the services expose /metrics on their management port (8081).
   # - job_name: wallpaperhub-services-pull

@@ -1,0 +1,16 @@
+apiVersion: 1
+
+# The dashboards are files in ../dashboards (mounted at /etc/grafana/dashboards), one JSON per dashboard. Grafana re-reads them
+# every 30 seconds, so editing a file or running `git pull` updates the running Grafana without a restart.
+# allowUiUpdates: you may change a dashboard in the UI to experiment; to keep the change, export it (Export > Export as JSON, "export for
+# sharing externally" off) and replace the file. A changed file wins over the UI version.
+providers:
+  - name: wallpaperhub
+    orgId: 1
+    folder: Wallpaper Hub
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/dashboards

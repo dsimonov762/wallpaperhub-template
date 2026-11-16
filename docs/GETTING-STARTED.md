@@ -65,7 +65,7 @@ Elasticsearch (1 GB), Kafka and Keycloak (768 MB each) are the big ones; add the
 | http://localhost:8025 | Mailpit (all outgoing mail) | - |
 | http://localhost:9001 | S3 console (Silo) | `silo-admin` / `silo-admin-secret` |
 | http://localhost:9200 | Elasticsearch | no auth in dev |
-| http://localhost:3000 | Grafana (observability profile) | anonymous admin |
+| http://localhost:3000 | Grafana (observability profile): six provisioned dashboards, start at Overview ([docs/OBSERVABILITY.md](OBSERVABILITY.md)) | anonymous admin |
 | http://localhost:8081 | Schema Registry | - |
 | http://localhost:8082 | Kafka UI (tools profile) | no login |
 | http://localhost:8083 | Adminer, Postgres (tools profile) | System PostgreSQL, user = database name, password as in `infra/.env` (default = user name); `make up-tools` prints ready-filled links |
