@@ -1,0 +1,38 @@
+meta {
+  name: List the caller's collections
+  type: http
+  seq: 12
+  tags: [
+    authenticated
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/collections
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~page: 0
+  ~size: 20
+  ~sort: createdAt,desc
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  List the caller's collections (listCollections)
+
+  Only collections owned by the caller. Paged; `size` is at most 100.
+
+  Access: `authenticated`.
+  Error codes: `pagination.size-too-large`, `pagination.sort-not-allowed`.
+}

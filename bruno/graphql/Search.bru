@@ -1,0 +1,68 @@
+meta {
+  name: Search
+  type: graphql
+  seq: 4
+  tags: [
+    authenticated
+    read
+  ]
+}
+
+post {
+  url: {{baseUrl}}/graphql
+  body: graphql
+  auth: inherit
+}
+
+body:graphql {
+  query Search($q: String!, $facets: [FacetKey!], $first: Int = 20, $after: String) {
+    search(q: $q, facets: $facets, first: $first, after: $after) {
+      wallpapers {
+        totalCount
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        edges {
+          node {
+            id
+            title
+            tags
+            blurhash
+            variants {
+              kind
+              url
+            }
+            author {
+              username
+            }
+          }
+        }
+      }
+      facets {
+        key
+        buckets {
+          value
+          count
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "q": "forest"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isUndefined
+}
+
+docs {
+  Query `Search` from contracts/graphql/examples/search.graphql.
+
+  GraphQL answers 200 even for errors, so the assertion also checks that `errors` is absent.
+}

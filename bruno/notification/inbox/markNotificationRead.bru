@@ -1,0 +1,32 @@
+meta {
+  name: Mark a notification as read
+  type: http
+  seq: 2
+  tags: [
+    owner
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/notifications/{{notificationId}}/read
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Mark a notification as read (markNotificationRead)
+
+  Idempotent: marking a read notification again changes nothing.
+
+  Access: `owner`.
+  Error codes: `notification.not-found`.
+}

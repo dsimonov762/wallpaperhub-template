@@ -137,6 +137,23 @@ seed-check: ## fail when seed/out or the images are out of date, and validate th
 	.venv-validate/bin/python seed/build.py --check
 	.venv-validate/bin/python scripts/validate/validate_seed.py
 
+# ---- calling the API by hand -------------------------------------------------------------------------------------------
+token: ## access token of a user for curl & co:  make token [U=alice|mod|admin|bob ...] [ARGS=--decode|--header|--json] ; a service account: ARGS="--client catalog-svc"
+	@bash scripts/token.sh $(ARGS) $(U)
+
+bruno-run: ## run the Bruno collection (bruno/) against the running stack as a seeded user:  make bruno-run [U=alice] [ARGS="--tags read"]
+	@bash scripts/bruno.sh --env $(or $(U),alice) $(ARGS)
+
+bruno-gen: ## regenerate bruno/ from contracts/ and the seed manifest (your own requests in bruno/custom/ stay)
+	@[ -d .venv-validate ] || python3 -m venv .venv-validate
+	@.venv-validate/bin/pip install -q -r scripts/validate/requirements.txt
+	.venv-validate/bin/python scripts/bruno-gen.py
+
+bruno-check: ## fail when bruno/ is out of date with contracts/ or seed/out
+	@[ -d .venv-validate ] || python3 -m venv .venv-validate
+	@.venv-validate/bin/pip install -q -r scripts/validate/requirements.txt
+	.venv-validate/bin/python scripts/bruno-gen.py --check
+
 seed-test-sql: ## load the seed SQL twice into a throw-away Postgres (docker) on top of the canonical schema: proves constraints and idempotency
 	@bash scripts/ci/seed-sql-test.sh
 
@@ -156,4 +173,4 @@ check-contracts: ## cross-check OpenAPI, GraphQL, Avro, proto, i18n and the gate
 	.venv-validate/bin/python scripts/validate/validate_contracts2.py
 	.venv-validate/bin/python scripts/validate/validate_host_env.py
 
-.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql up-apps up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen
+.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check up-apps up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen

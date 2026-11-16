@@ -1,0 +1,47 @@
+meta {
+  name: Replace the editable fields of a wallpaper
+  type: http
+  seq: 5
+  tags: [
+    owner-or-moderator
+    write
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/wallpapers/{{createdWallpaperId}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+  If-Match: {{etag}}
+}
+
+body:json {
+  {
+    "title": "Misty Pines at Dawn",
+    "description": "Fog over a pine forest at dawn",
+    "tags": [
+      "forest",
+      "fog"
+    ],
+    "category": "NATURE"
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Replace the editable fields of a wallpaper (replaceWallpaper)
+
+  Replaces title, description, tags and category; fields left out are reset (description to null, tags to
+  empty). The asset cannot be changed. Author or moderator only.
+
+  Access: `owner-or-moderator`.
+  Works on `{{createdWallpaperId}}`, which an earlier request of this collection creates, so seed data stays untouched.
+  Error codes: `wallpaper.not-found`, `wallpaper.not-owner`, `wallpaper.too-many-tags`, `request.version-conflict`.
+}

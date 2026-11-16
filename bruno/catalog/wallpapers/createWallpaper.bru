@@ -1,0 +1,57 @@
+meta {
+  name: Create a wallpaper
+  type: http
+  seq: 2
+  tags: [
+    authenticated
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallpapers
+  body: json
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+  Idempotency-Key: {{$guid}}
+}
+
+body:json {
+  {
+    "assetId": "{{uploadedAssetId}}",
+    "title": "Misty Pines",
+    "description": "Fog over a pine forest at dawn",
+    "tags": [
+      "forest",
+      "fog",
+      "nature"
+    ],
+    "category": "NATURE"
+  }
+}
+
+script:post-response {
+  if (res.status < 300 && res.body && res.body.id) bru.setVar("createdWallpaperId", res.body.id);
+}
+
+assert {
+  res.status: eq 201
+}
+
+docs {
+  Create a wallpaper (createWallpaper)
+
+  Verifies the media asset with media-service (REST, client credentials): it must exist, belong to the caller,
+  have purpose `WALLPAPER` and not be `REJECTED`. The wallpaper is then saved (README 4.1 step 6). The author is
+  the caller; the author snapshot is filled from account-service.
+
+  An asset backs at most one wallpaper: a second wallpaper for the same `assetId` is refused with `409`
+  (`wallpaper.asset-already-used`), whatever its status and whoever sends it. The unique index on `assetId` makes
+  this hold for concurrent requests too. The asset is free again once the wallpaper is deleted.
+
+  Access: `authenticated`.
+  Error codes: `media.asset-not-found`, `media.asset-not-owned`, `media.asset-rejected`, `media.asset-purpose-mismatch`, `wallpaper.asset-already-used`, `wallpaper.too-many-tags`, `idempotency.key-reused`, `idempotency.in-progress`.
+}

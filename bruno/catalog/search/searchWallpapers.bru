@@ -1,0 +1,45 @@
+meta {
+  name: Search wallpapers
+  type: http
+  seq: 3
+  tags: [
+    authenticated
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallpapers/search?q=forest
+  body: none
+  auth: inherit
+}
+
+params:query {
+  q: forest
+  ~page: 0
+  ~size: 20
+  ~facets: CATEGORY,TAG
+  ~category: NATURE
+  ~tag: forest
+  ~autocomplete: false
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Search wallpapers (searchWallpapers)
+
+  Full-text search over title, description and tags, in relevance order (no `sort` parameter). Uses
+  Elasticsearch; when it is unavailable the service falls back to a degraded Mongo query (README 8).
+  With `autocomplete=true` the text is matched as a title prefix (search-as-you-type) and no facets are
+  computed. Rate-limited.
+
+  Access: `authenticated`.
+  Error codes: `search.query-too-long`, `pagination.size-too-large`.
+}

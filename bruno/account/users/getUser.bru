@@ -1,0 +1,32 @@
+meta {
+  name: Get a public profile
+  type: http
+  seq: 7
+  tags: [
+    authenticated
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/users/{{otherUserId}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Get a public profile (getUser)
+
+  Public view of any user (no email address, locale or status).
+
+  Access: `authenticated`.
+  Error codes: `user.not-found`.
+}

@@ -1,0 +1,32 @@
+meta {
+  name: Add a wallpaper to the caller's favorites
+  type: http
+  seq: 8
+  tags: [
+    authenticated
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallpapers/{{wallpaperId}}/favorite
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Add a wallpaper to the caller's favorites (favoriteWallpaper)
+
+  Idempotent: favoriting twice changes nothing.
+
+  Access: `authenticated`.
+  Error codes: `wallpaper.not-found`.
+}

@@ -1,0 +1,31 @@
+meta {
+  name: Get the caller's notification preferences
+  type: http
+  seq: 4
+  tags: [
+    authenticated
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/notification-preferences
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Get the caller's notification preferences (getNotificationPreferences)
+
+  Returns the defaults (email and in-app on, digest on, locale from the profile) until the user changes them.
+
+  Access: `authenticated`.
+}

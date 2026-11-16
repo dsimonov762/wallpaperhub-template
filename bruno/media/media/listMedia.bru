@@ -1,0 +1,40 @@
+meta {
+  name: List the caller's assets
+  type: http
+  seq: 1
+  tags: [
+    authenticated
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/media
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~page: 0
+  ~size: 20
+  ~sort: createdAt,desc
+  ~purpose: AVATAR
+  ~status: PROCESSING
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  List the caller's assets (listMedia)
+
+  The caller's own assets, newest first by default.
+
+  Access: `authenticated`.
+  Error codes: `pagination.size-too-large`, `pagination.sort-not-allowed`.
+}

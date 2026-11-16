@@ -1,0 +1,45 @@
+meta {
+  name: Upload an image
+  type: http
+  seq: 2
+  tags: [
+    authenticated
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/media
+  body: multipartForm
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+  Idempotency-Key: {{$guid}}
+}
+
+body:multipart-form {
+  file: @file(../seed/s3/originals/wallpaper/2026/09/ast_01M1GKK6E08HTHJMCYWGMWRS26/original.jpg)
+  purpose: WALLPAPER
+}
+
+script:post-response {
+  if (res.status < 300 && res.body && res.body.assetId) bru.setVar("uploadedAssetId", res.body.assetId);
+}
+
+assert {
+  res.status: eq 202
+}
+
+docs {
+  Upload an image (uploadMedia)
+
+  Validates the upload, stores the original privately in object storage and enqueues the processing job.
+  Answers `202` right away with the asset in status `PROCESSING`; poll `GET /media/{id}` or wait for the
+  notification. Rate-limited. The gateway allows bodies up to 35 MiB, the purpose-specific limit is
+  enforced here.
+
+  Access: `authenticated`.
+  Error codes: `media.file-too-large`, `media.unsupported-type`, `media.corrupt-image`, `idempotency.key-reused`, `idempotency.in-progress`.
+}

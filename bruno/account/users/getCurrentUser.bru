@@ -1,0 +1,32 @@
+meta {
+  name: Get the caller's profile
+  type: http
+  seq: 3
+  tags: [
+    authenticated
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/users/me
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Get the caller's profile (getCurrentUser)
+
+  The caller's own profile, including the e-mail address (which other users never see). The response carries an `ETag` to use in `If-Match` when updating.
+
+  Access: `authenticated`.
+  Error codes: `user.not-found`.
+}

@@ -21,3 +21,4 @@ target/
 tools/contract-tools/node_modules/
 conformance/.venv/
 conformance/.run/
+.token-cache/

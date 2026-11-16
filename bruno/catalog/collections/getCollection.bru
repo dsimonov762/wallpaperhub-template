@@ -1,0 +1,31 @@
+meta {
+  name: Get a collection
+  type: http
+  seq: 14
+  tags: [
+    owner
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/collections/{{collectionId}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Get a collection (getCollection)
+
+  Collections are private to their owner.
+
+  Access: `owner`.
+}

@@ -1,0 +1,46 @@
+meta {
+  name: Replace the caller's notification preferences
+  type: http
+  seq: 5
+  tags: [
+    authenticated
+    write
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/notification-preferences
+  body: json
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+  If-Match: {{etag}}
+}
+
+body:json {
+  {
+    "locale": "de",
+    "channels": {
+      "email": true,
+      "inApp": true
+    },
+    "digest": {
+      "enabled": false
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Replace the caller's notification preferences (updateNotificationPreferences)
+
+  Replaces all channel and event preferences at once. Requires `If-Match` with the current ETag; a stale value is answered with 409 `request.version-conflict`.
+
+  Access: `authenticated`.
+  Error codes: `request.version-conflict`.
+}

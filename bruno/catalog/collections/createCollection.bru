@@ -1,0 +1,46 @@
+meta {
+  name: Create a collection
+  type: http
+  seq: 13
+  tags: [
+    authenticated
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/collections
+  body: json
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+  Idempotency-Key: {{$guid}}
+}
+
+body:json {
+  {
+    "title": "Forest mornings",
+    "wallpaperIds": [
+      "{{wallpaperId}}"
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status < 300 && res.body && res.body.id) bru.setVar("createdCollectionId", res.body.id);
+}
+
+assert {
+  res.status: eq 201
+}
+
+docs {
+  Create a collection (createCollection)
+
+  Creates an empty collection owned by the caller. Retried requests with the same `Idempotency-Key` return the first result.
+
+  Access: `authenticated`.
+  Error codes: `idempotency.key-reused`, `idempotency.in-progress`.
+}

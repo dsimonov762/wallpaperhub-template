@@ -1,0 +1,39 @@
+meta {
+  name: Delete a wallpaper
+  type: http
+  seq: 7
+  tags: [
+    owner-or-moderator
+    write
+  ]
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/wallpapers/{{createdWallpaperId}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Delete a wallpaper (deleteWallpaper)
+
+  Removes the wallpaper from the catalog and the search index, and frees its media asset for a new wallpaper.
+  Author or moderator only.
+
+  A wallpaper that a moderator took down (status `REMOVED`) cannot be deleted by its author: `409`
+  (`wallpaper.removed-by-moderation`). Otherwise deleting it would free the asset and the author could simply repost
+  the same picture. Only a moderator (or admin) can delete a `REMOVED` wallpaper. A `REJECTED` wallpaper can be
+  deleted by its author, so the asset can be used for a corrected submission.
+
+  Access: `owner-or-moderator`.
+  Works on `{{createdWallpaperId}}`, which an earlier request of this collection creates, so seed data stays untouched.
+  Error codes: `wallpaper.not-found`, `wallpaper.not-owner`, `wallpaper.removed-by-moderation`.
+}

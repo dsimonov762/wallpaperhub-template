@@ -1,0 +1,32 @@
+meta {
+  name: Delete a collection
+  type: http
+  seq: 16
+  tags: [
+    owner
+    write
+  ]
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/collections/{{createdCollectionId}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Delete a collection (deleteCollection)
+
+  Deletes the collection only, never the wallpapers in it.
+
+  Access: `owner`.
+  Works on `{{createdCollectionId}}`, which an earlier request of this collection creates, so seed data stays untouched.
+}

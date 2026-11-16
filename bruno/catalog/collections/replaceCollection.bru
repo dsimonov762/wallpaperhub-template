@@ -1,0 +1,44 @@
+meta {
+  name: Replace a collection
+  type: http
+  seq: 15
+  tags: [
+    owner
+    write
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/collections/{{createdCollectionId}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+  If-Match: {{etag}}
+}
+
+body:json {
+  {
+    "title": "Forest mornings",
+    "description": "Fog and pines",
+    "wallpaperIds": [
+      "wp_01HXZ3R2M7P4T9W1E5Y8A0C3DF"
+    ]
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Replace a collection (replaceCollection)
+
+  Replaces the title, the description and the list of wallpapers. Requires `If-Match` with the current ETag; a stale value is answered with 409 `request.version-conflict`.
+
+  Access: `owner`.
+  Works on `{{createdCollectionId}}`, which an earlier request of this collection creates, so seed data stays untouched.
+  Error codes: `request.version-conflict`.
+}

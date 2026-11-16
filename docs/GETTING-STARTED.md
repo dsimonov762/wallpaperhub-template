@@ -71,12 +71,14 @@ Elasticsearch (1 GB), Kafka and Keycloak (768 MB each) are the big ones; add the
 | http://localhost:8083 | Adminer, Postgres (tools profile) | System PostgreSQL, user = database name, password as in `infra/.env` (default = user name); `make up-tools` prints ready-filled links |
 | http://localhost:8084 | Mongoku, MongoDB (tools profile) | no login, connected as root |
 
-Get a token for manual calls:
+Get a token for manual calls (alice by default, `mod`, `admin` and the seeded users work too; `--client catalog-svc` gives a service account, `--decode` shows the claims):
 
 ```bash
-curl -s -d grant_type=password -d client_id=e2e-tests -d username=alice -d password=password \
-  http://localhost:8180/realms/wallpaperhub/protocol/openid-connect/token
+make token                      # or: scripts/token.sh bob
+curl -H "$(scripts/token.sh --header alice)" http://localhost:8080/api/v1/users/me
 ```
+
+For clicking through the whole API there is a [Bruno collection](../bruno/README.md): one request per operation, one environment per seeded user, the token handled for you. `make bruno-run` runs it from the command line.
 
 ## 4. Test ladder
 

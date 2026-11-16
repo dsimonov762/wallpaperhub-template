@@ -1,0 +1,37 @@
+meta {
+  name: Delete a user (soft delete)
+  type: http
+  seq: 8
+  tags: [
+    owner-or-admin
+    write
+    admin
+  ]
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/users/{{newUserId}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Delete a user (soft delete) (deleteUser)
+
+  Marks the user as deleted (`deleted_at`); the data is purged after the 30-day retention (README 9).
+  A `user.deleted` outbox event tells catalog, media and notification to clean up.
+  Allowed for the user themselves and for administrators.
+
+  Access: `owner-or-admin`.
+  Works on `{{newUserId}}`, which an earlier request of this collection creates, so seed data stays untouched.
+  Run as `admin`: the user it deletes is the one `Register a user` created.
+  Error codes: `user.not-found`.
+}

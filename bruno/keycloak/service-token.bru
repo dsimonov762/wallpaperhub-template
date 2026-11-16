@@ -1,0 +1,34 @@
+meta {
+  name: Service token (client credentials)
+  type: http
+  seq: 2
+  tags: [
+    keycloak
+  ]
+}
+
+post {
+  url: {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: client_credentials
+  client_id: {{serviceClient}}
+  client_secret: {{serviceSecret}}
+}
+
+script:post-response {
+  if (res.status === 200) bru.setVar("serviceToken", res.body.access_token);
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  A token of a service account (`internal` role), what one service presents to another. Stored as `serviceToken`;
+  use it as `Authorization: Bearer {{serviceToken}}` on a request, for example `Get a media asset`, which the
+  contract allows for owner or internal callers.
+}

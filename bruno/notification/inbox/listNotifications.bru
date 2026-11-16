@@ -1,0 +1,39 @@
+meta {
+  name: List the caller's inbox
+  type: http
+  seq: 1
+  tags: [
+    authenticated
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/notifications
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~page: 0
+  ~size: 20
+  ~sort: createdAt,desc
+  ~unread: false
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  List the caller's inbox (listNotifications)
+
+  Paged inbox, newest first by default.
+
+  Access: `authenticated`.
+  Error codes: `pagination.size-too-large`, `pagination.sort-not-allowed`.
+}

@@ -1,0 +1,38 @@
+meta {
+  name: Get a time-limited download URL
+  type: http
+  seq: 5
+  tags: [
+    owner
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/media/{{assetId}}/url
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~variant: ORIGINAL
+  ~expiresIn: 300
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Get a time-limited download URL (getMediaUrl)
+
+  A presigned URL for one rendition of the asset. This is the only way to reach the private original.
+  Public variants are also available as plain URLs in `GET /media/{id}`. Owner only.
+
+  Access: `owner`.
+  Error codes: `media.asset-not-found`, `media.asset-not-owned`.
+}

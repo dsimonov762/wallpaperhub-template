@@ -1,0 +1,43 @@
+meta {
+  name: List published wallpapers
+  type: http
+  seq: 1
+  tags: [
+    authenticated
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallpapers
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~page: 0
+  ~size: 20
+  ~sort: createdAt,desc
+  ~category: NATURE
+  ~tag: 
+  ~authorId: 3f2b8c1e-6a54-4c1d-9d0b-5f8d2a7e9c10
+  ~minWidth: 
+  ~minHeight: 
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  List published wallpapers (listWallpapers)
+
+  Paged, filterable list of `PUBLISHED` wallpapers, newest first by default.
+
+  Access: `authenticated`.
+  Error codes: `pagination.size-too-large`, `pagination.sort-not-allowed`.
+}

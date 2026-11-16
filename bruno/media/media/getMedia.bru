@@ -1,0 +1,33 @@
+meta {
+  name: Get an asset
+  type: http
+  seq: 3
+  tags: [
+    owner-or-internal
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/media/{{assetId}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Get an asset (getMedia)
+
+  Status, metadata and public variants of an asset. Allowed for the owner and for services holding the
+  `internal` role (catalog calls this with a client-credentials token to verify an asset, README 4.1).
+
+  Access: `owner-or-internal`.
+  Error codes: `media.asset-not-found`, `media.asset-not-owned`.
+}

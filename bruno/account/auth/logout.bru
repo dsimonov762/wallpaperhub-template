@@ -1,0 +1,38 @@
+meta {
+  name: Revoke a refresh token
+  type: http
+  seq: 10
+  tags: [
+    public
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/logout
+  body: json
+  auth: none
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Revoke a refresh token (logout)
+
+  Revokes the refresh token at Keycloak, which ends the session. No access token is required.
+
+  Access: `public`.
+  Error codes: `auth.refresh-token-invalid`.
+}

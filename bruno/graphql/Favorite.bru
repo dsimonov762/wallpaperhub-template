@@ -1,0 +1,42 @@
+meta {
+  name: Favorite
+  type: graphql
+  seq: 1
+  tags: [
+    authenticated
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/graphql
+  body: graphql
+  auth: inherit
+}
+
+body:graphql {
+  mutation Favorite($id: ID!) {
+    favoriteWallpaper(id: $id) {
+      id
+      favoriteCount
+      favoritedByMe
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "id": "{{wallpaperId}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isUndefined
+}
+
+docs {
+  Mutation `Favorite` from contracts/graphql/examples/favorite.graphql.
+
+  GraphQL answers 200 even for errors, so the assertion also checks that `errors` is absent.
+}

@@ -1,0 +1,51 @@
+meta {
+  name: Set the caller's avatar
+  type: http
+  seq: 5
+  tags: [
+    authenticated
+    write
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/users/me/avatar
+  body: json
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+  If-Match: {{etag}}
+}
+
+body:json {
+  {
+    "assetId": "{{avatarAssetId}}"
+  }
+}
+
+script:pre-request {
+  if (!bru.getEnvVar("avatarAssetId")) bru.runner.skipRequest(); // this user has no seeded image of that kind
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Set the caller's avatar (setAvatar)
+
+  Links an uploaded media asset (purpose `AVATAR`) as the avatar. The profile change and a `profile-updated`
+  outbox event are written in one transaction (README 4.2).
+
+  Before anything is written, account-service verifies the asset with media-service (`GET /media/{id}`, REST,
+  with the caller's own access token forwarded, so media applies its owner check). The asset must exist
+  (`media.asset-not-found`, 404), belong to the caller (`media.asset-not-owned`, 403), have the purpose `AVATAR`
+  (`media.asset-purpose-mismatch`, 409) and not be `REJECTED` (`media.asset-rejected`, 409). `PROCESSING` is
+  accepted, like for wallpapers. While media-service is unreachable the answer is `503`; nothing is changed.
+
+  Access: `authenticated`.
+  Uses an image of the active user from the seed (`{{avatarAssetId}}`); skipped for users that have none.
+  Error codes: `user.not-found`, `media.asset-not-found`, `media.asset-not-owned`, `media.asset-rejected`, `media.asset-purpose-mismatch`, `request.version-conflict`.
+}

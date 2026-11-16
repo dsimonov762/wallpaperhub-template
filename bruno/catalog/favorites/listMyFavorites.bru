@@ -1,0 +1,38 @@
+meta {
+  name: List the caller's favorites
+  type: http
+  seq: 11
+  tags: [
+    authenticated
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/users/me/favorites
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~size: 20
+  ~cursor: 
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  List the caller's favorites (listMyFavorites)
+
+  Keyset (cursor) pagination: most recently favorited first. Pass the `nextCursor` of a page as `cursor` to get
+  the next one; it is null on the last page. A cursor is opaque and only valid for this endpoint and caller.
+
+  Access: `authenticated`.
+  Error codes: `pagination.invalid-cursor`, `pagination.size-too-large`.
+}

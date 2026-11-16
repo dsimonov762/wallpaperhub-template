@@ -1,0 +1,41 @@
+meta {
+  name: Change the caller's profile
+  type: http
+  seq: 4
+  tags: [
+    authenticated
+    write
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/users/me
+  body: json
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+  If-Match: {{etag}}
+}
+
+body:json {
+  {
+    "displayName": "Alice in Wonderland",
+    "bio": "Fog, forests and long exposures."
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Change the caller's profile (updateCurrentUser)
+
+  Partial update: only the given fields change. A change of `displayName` also writes a `profile-updated`
+  outbox event so that catalog can refresh its author snapshots (README 4.2).
+
+  Access: `authenticated`.
+  Error codes: `user.not-found`, `request.version-conflict`.
+}

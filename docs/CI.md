@@ -14,7 +14,7 @@ Dockerfile that passes [SERVICE-SPEC.md](SERVICE-SPEC.md)".
 
 | Job | Runs | Local equivalent |
 |---|---|---|
-| `static` | compose files for every profile, shell syntax, Hurl formatting, generated gateway error mappers; cross-checks of OpenAPI/GraphQL/Avro/proto/i18n/gateway against each other and the README; Spectral, buf lint, Avro and GraphQL conventions; the seed data is up to date and valid against the Mongo/Elasticsearch/Redis schemas | `make lint check-contracts contracts-lint seed-check` |
+| `static` | compose files for every profile, shell syntax, Hurl formatting, generated gateway error mappers; cross-checks of OpenAPI/GraphQL/Avro/proto/i18n/gateway against each other and the README; Spectral, buf lint, Avro and GraphQL conventions; the seed data is up to date and valid against the Mongo/Elasticsearch/Redis schemas; the Bruno collection is up to date with the contracts and the seed data | `make lint check-contracts contracts-lint seed-check bruno-check` |
 | `seed` | a Postgres service container: the canonical schema, then `seed/out/account.sql` and `media.sql` twice (CHECK constraints hold, the second load adds nothing) | `make seed-test-sql` |
 | `breaking` (pull requests) | `contracts/` against the point where the branch left its base branch: oasdiff, `buf breaking`, Avro BACKWARD compatibility, GraphQL breaking changes | `make contracts-breaking BASE=$(git merge-base origin/master HEAD)` |
 | `gateway` | `make up-mocks` (Envoy, Keycloak, Redis, Prism mocks, about 2 GB), `make e2e`, then `make conformance-selftest`: the conformance suite must pass the reference stub as all four services and catch five deliberately broken ones | `make up-mocks e2e conformance-selftest` |

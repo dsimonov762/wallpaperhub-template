@@ -1,0 +1,33 @@
+meta {
+  name: Delete an asset
+  type: http
+  seq: 4
+  tags: [
+    owner
+    write
+  ]
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/media/{{uploadedAssetId}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Delete an asset (deleteMedia)
+
+  Deletes the asset, its original and all its variants from object storage. Owner only.
+
+  Access: `owner`.
+  Works on `{{uploadedAssetId}}`, which an earlier request of this collection creates, so seed data stays untouched.
+  Error codes: `media.asset-not-found`, `media.asset-not-owned`.
+}

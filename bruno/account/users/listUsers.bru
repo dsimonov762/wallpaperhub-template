@@ -1,0 +1,40 @@
+meta {
+  name: List users
+  type: http
+  seq: 2
+  tags: [
+    admin
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/users
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~page: 0
+  ~size: 20
+  ~sort: createdAt,desc
+  ~q: 
+  ~status: ACTIVE
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  List users (listUsers)
+
+  Paged, filterable list of all users. Administrators only.
+
+  Access: `admin`.
+  Error codes: `pagination.size-too-large`, `pagination.sort-not-allowed`.
+}

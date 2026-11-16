@@ -1,0 +1,36 @@
+meta {
+  name: Get a one-time ticket for SSE or WebSocket
+  type: http
+  seq: 3
+  tags: [
+    authenticated
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/notifications/stream-tickets
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+script:post-response {
+  if (res.status < 300 && res.body && res.body.ticket) bru.setVar("streamTicket", res.body.ticket);
+}
+
+assert {
+  res.status: eq 201
+}
+
+docs {
+  Get a one-time ticket for SSE or WebSocket (createStreamTicket)
+
+  Returns a ticket for `GET /notifications/stream?ticket=...` or `GET /notifications/ws?ticket=...`.
+  The ticket is stored in Redis, expires after 30 seconds and works once.
+
+  Access: `authenticated`.
+}

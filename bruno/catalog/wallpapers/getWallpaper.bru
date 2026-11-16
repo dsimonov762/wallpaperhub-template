@@ -1,0 +1,33 @@
+meta {
+  name: Get a wallpaper
+  type: http
+  seq: 4
+  tags: [
+    authenticated
+    read
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallpapers/{{wallpaperId}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Get a wallpaper (getWallpaper)
+
+  `PUBLISHED` wallpapers are visible to everyone; wallpapers in any other status only to their author and to
+  moderators. For everybody else the answer is `404`.
+
+  Access: `authenticated`.
+  Error codes: `wallpaper.not-found`.
+}

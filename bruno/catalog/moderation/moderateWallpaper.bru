@@ -1,0 +1,41 @@
+meta {
+  name: Moderate a wallpaper
+  type: http
+  seq: 10
+  tags: [
+    moderator
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallpapers/{{wallpaperId}}/moderation
+  body: json
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+body:json {
+  {
+    "decision": "REMOVED",
+    "reason": "Contains a visible watermark of another site."
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Moderate a wallpaper (moderateWallpaper)
+
+  Records a moderator decision. `APPROVED` makes the wallpaper `PUBLISHED`, `REJECTED` and `REMOVED` take it
+  out of the catalog and the search index. A `catalog.wallpaper.moderated` event tells the author.
+  Moderators only.
+
+  Access: `moderator`.
+  Error codes: `wallpaper.not-found`.
+}

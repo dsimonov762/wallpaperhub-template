@@ -1,0 +1,54 @@
+meta {
+  name: Register a new user
+  type: http
+  seq: 1
+  tags: [
+    public
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations
+  body: json
+  auth: none
+}
+
+headers {
+  ~Accept-Language: de
+  Idempotency-Key: {{$guid}}
+}
+
+body:json {
+  {
+    "username": "{{newUsername}}",
+    "email": "{{newUsername}}@example.test",
+    "password": "correct-horse-battery",
+    "displayName": "Alice Example",
+    "locale": "en"
+  }
+}
+
+script:pre-request {
+  bru.setVar("newUsername", "dev" + Date.now().toString(36));
+}
+
+script:post-response {
+  if (res.status < 300 && res.body && res.body.id) bru.setVar("newUserId", res.body.id);
+}
+
+assert {
+  res.status: eq 201
+}
+
+docs {
+  Register a new user (registerUser)
+
+  Creates the user in Keycloak (with the service's client-credentials token) and the profile in this service.
+  The profile row and a `UserRegistered` outbox event are written in one transaction (README 4.3); the event
+  triggers the welcome email. Public and rate-limited.
+  The password must satisfy the realm policy (at least 8 characters, not equal to the username).
+
+  Access: `public`.
+  Error codes: `user.username-taken`, `user.email-taken`, `idempotency.key-reused`, `idempotency.in-progress`.
+}

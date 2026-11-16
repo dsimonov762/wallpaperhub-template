@@ -1,0 +1,45 @@
+meta {
+  name: Set the caller's banner
+  type: http
+  seq: 6
+  tags: [
+    authenticated
+    write
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/users/me/banner
+  body: json
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+  If-Match: {{etag}}
+}
+
+body:json {
+  {
+    "assetId": "{{bannerAssetId}}"
+  }
+}
+
+script:pre-request {
+  if (!bru.getEnvVar("bannerAssetId")) bru.runner.skipRequest(); // this user has no seeded image of that kind
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Set the caller's banner (setBanner)
+
+  Same as the avatar, for a media asset with purpose `BANNER`: the asset is verified with media-service first
+  (exists, owned by the caller, purpose `BANNER`, not `REJECTED`).
+
+  Access: `authenticated`.
+  Uses an image of the active user from the seed (`{{bannerAssetId}}`); skipped for users that have none.
+  Error codes: `user.not-found`, `media.asset-not-found`, `media.asset-not-owned`, `media.asset-rejected`, `media.asset-purpose-mismatch`, `request.version-conflict`.
+}

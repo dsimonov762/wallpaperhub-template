@@ -1,0 +1,69 @@
+meta {
+  name: WallpapersPage
+  type: graphql
+  seq: 5
+  tags: [
+    authenticated
+    read
+  ]
+}
+
+post {
+  url: {{baseUrl}}/graphql
+  body: graphql
+  auth: inherit
+}
+
+body:graphql {
+  query WallpapersPage($filter: WallpaperFilter, $first: Int = 20, $after: String) {
+    wallpapers(filter: $filter, first: $first, after: $after) {
+      totalCount
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      edges {
+        cursor
+        node {
+          id
+          title
+          tags
+          category
+          favoriteCount
+          favoritedByMe
+          dimensions {
+            width
+            height
+          }
+          variants {
+            kind
+            url
+            width
+            height
+          }
+          author {
+            id
+            username
+            displayName
+            avatarUrl
+          }
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {}
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isUndefined
+}
+
+docs {
+  Query `WallpapersPage` from contracts/graphql/examples/wallpapers-page.graphql.
+
+  GraphQL answers 200 even for errors, so the assertion also checks that `errors` is absent.
+}

@@ -1,0 +1,43 @@
+meta {
+  name: Exchange a refresh token for new tokens
+  type: http
+  seq: 9
+  tags: [
+    public
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/refresh
+  body: json
+  auth: none
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 200 && res.body.refreshToken) bru.setVar("refreshToken", res.body.refreshToken);
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Exchange a refresh token for new tokens (refreshToken)
+
+  Validates the shape of the refresh token (`typ=Refresh`, `azp`, `exp`) and exchanges it at Keycloak.
+  Educational: normally the client talks to Keycloak directly. No access token is required.
+
+  Access: `public`.
+  Error codes: `auth.refresh-token-invalid`.
+}

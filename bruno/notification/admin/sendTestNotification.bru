@@ -1,0 +1,40 @@
+meta {
+  name: Send a test notification
+  type: http
+  seq: 6
+  tags: [
+    admin
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/admin/notifications/test
+  body: json
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+  Idempotency-Key: {{$guid}}
+}
+
+body:json {
+  {
+    "message": "Hello from the admin API"
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+docs {
+  Send a test notification (sendTestNotification)
+
+  Creates an in-app notification of type `TEST` for a user (the caller by default) and pushes it to the open
+  streams. Administrators only.
+
+  Access: `admin`.
+  Error codes: `user.not-found`, `idempotency.key-reused`, `idempotency.in-progress`.
+}

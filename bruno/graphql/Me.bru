@@ -1,0 +1,57 @@
+meta {
+  name: Me
+  type: graphql
+  seq: 3
+  tags: [
+    authenticated
+    read
+  ]
+}
+
+post {
+  url: {{baseUrl}}/graphql
+  body: graphql
+  auth: inherit
+}
+
+body:graphql {
+  query Me {
+    me {
+      id
+      roles
+      favorites(first: 10) {
+        totalCount
+        edges {
+          node {
+            id
+            title
+          }
+        }
+      }
+      wallpapers(first: 10) {
+        edges {
+          node {
+            id
+            title
+            status
+          }
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {}
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isUndefined
+}
+
+docs {
+  Query `Me` from contracts/graphql/examples/me.graphql.
+
+  GraphQL answers 200 even for errors, so the assertion also checks that `errors` is absent.
+}

@@ -1,0 +1,32 @@
+meta {
+  name: Remove a wallpaper from the caller's favorites
+  type: http
+  seq: 9
+  tags: [
+    authenticated
+    write
+  ]
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/wallpapers/{{wallpaperId}}/favorite
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Remove a wallpaper from the caller's favorites (unfavoriteWallpaper)
+
+  Idempotent: removing a wallpaper that is not a favorite changes nothing.
+
+  Access: `authenticated`.
+  Error codes: `wallpaper.not-found`.
+}

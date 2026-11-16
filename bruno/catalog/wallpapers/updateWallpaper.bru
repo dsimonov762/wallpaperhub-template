@@ -1,0 +1,44 @@
+meta {
+  name: Change some fields of a wallpaper
+  type: http
+  seq: 6
+  tags: [
+    owner-or-moderator
+    write
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallpapers/{{createdWallpaperId}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  ~Accept-Language: de
+  If-Match: {{etag}}
+}
+
+body:json {
+  {
+    "tags": [
+      "forest",
+      "fog",
+      "mist"
+    ]
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Change some fields of a wallpaper (updateWallpaper)
+
+  Partial update: only the given fields change. Author or moderator only.
+
+  Access: `owner-or-moderator`.
+  Works on `{{createdWallpaperId}}`, which an earlier request of this collection creates, so seed data stays untouched.
+  Error codes: `wallpaper.not-found`, `wallpaper.not-owner`, `wallpaper.too-many-tags`, `request.version-conflict`.
+}
