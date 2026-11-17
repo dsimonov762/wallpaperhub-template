@@ -1,0 +1,17 @@
+title: media-service unreachable from account-service
+readme: "contracts/openapi/account.yaml setAvatar: while media-service is unreachable the answer is 503 and nothing is changed"
+faults:
+  - { edge: "account-media", fault: down }
+probes:
+  - name: set avatar (account verifies the asset with media)
+    request: PUT /api/v1/users/me/avatar
+    body: { assetId: "{alice_avatar}" }
+    expect: [200]
+    expect_during: [503]
+    max_ms_during: 3000          # a clean, fast 503, not a hang
+  - name: own profile (account alone, must not notice)
+    request: GET /api/v1/users/me
+    expect: [200]
+watch:
+  - "Service dashboard, account-service: http.client errors towards media; the circuit breaker opens after a few failures"
+  - "the 503 body is the common problem document upstream.unavailable (contracts/openapi/common.yaml)"

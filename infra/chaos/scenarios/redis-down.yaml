@@ -1,0 +1,19 @@
+title: Redis down (caches, rate limits, idempotency keys)
+readme: "not in the README section 8 matrix; this states the rule 'a cache outage makes things slower, never makes reads fail'. Adjust expect_during if your policy for the rate limiter is fail-closed"
+faults:
+  - { edge: "*-redis", fault: down }
+probes:
+  - name: own profile
+    request: GET /api/v1/users/me
+    expect: [200]
+    max_ms_during: 4000
+  - name: wallpaper
+    request: GET /api/v1/wallpapers/{wallpaper_id}
+    expect: [200]
+    max_ms_during: 4000
+  - name: notifications
+    request: GET /api/v1/notifications
+    expect: [200]
+    max_ms_during: 4000
+watch:
+  - "cache_hit_ratio drops to 0 while it lasts (Business and async dashboard)"

@@ -1,0 +1,108 @@
+# Every connection a service opens to something it depends on, as a Toxiproxy proxy: <service>-<dependency>.
+# Single source: `make chaos-gen` turns this file into infra/chaos/toxiproxy.json (the proxies) and
+# infra/docker-compose.chaos.yml (the environment of each service pointing at its proxies), `make chaos-check` fails when they differ.
+#
+#   <service>:
+#     <dependency>:
+#       port:     listening port of the proxy (15000-15099, published on localhost for services run from the IDE)
+#       upstream: host:port the proxy forwards to (a service name of infra/docker-compose.yml)
+#       env:      the environment variables of <service> that must point at the proxy. {host} and {port} are the proxy.
+#                 Everything else in a value (path, credentials, ${VARIABLE:-default}) is kept as in the base compose file,
+#                 and `make chaos-check` verifies that the base file really has the upstream host in that variable.
+#
+# One proxy per service and dependency, not one per dependency: "catalog cannot reach Redis" and "everybody cannot reach Redis"
+# are different experiments (the second is the glob '*-redis').
+#
+# Not here: Kafka (clients are redirected to the broker's advertised address after the first connection, so a proxy in front
+# of the bootstrap address changes nothing; the kafka-down scenario pauses the container instead), and the gateway's upstreams
+# (the Envoy config has fixed host names; pause a service with `docker compose pause` to see the gateway's side).
+services:
+  account:
+    postgres:
+      port: 15010
+      upstream: postgres-account:5432
+      env: { DB_HOST: "{host}", DB_PORT: "{port}" }
+    redis:
+      port: 15011
+      upstream: redis:6379
+      env: { REDIS_HOST: "{host}", REDIS_PORT: "{port}" }
+    keycloak:
+      port: 15012
+      upstream: keycloak:8080
+      env:
+        KEYCLOAK_BASE_URL: "http://{host}:{port}"
+        OIDC_JWKS_URI: "http://{host}:{port}/realms/wallpaperhub/protocol/openid-connect/certs"
+        OIDC_TOKEN_URI: "http://{host}:{port}/realms/wallpaperhub/protocol/openid-connect/token"
+    media:
+      port: 15013
+      upstream: media:8080
+      env: { MEDIA_BASE_URL: "http://{host}:{port}" }
+  media:
+    postgres:
+      port: 15020
+      upstream: postgres-media:5432
+      env: { DB_HOST: "{host}", DB_PORT: "{port}" }
+    redis:
+      port: 15021
+      upstream: redis:6379
+      env: { REDIS_HOST: "{host}", REDIS_PORT: "{port}" }
+    s3:
+      port: 15022
+      upstream: s3:9000
+      env: { S3_ENDPOINT: "http://{host}:{port}" }
+    keycloak:
+      port: 15023
+      upstream: keycloak:8080
+      env:
+        OIDC_JWKS_URI: "http://{host}:{port}/realms/wallpaperhub/protocol/openid-connect/certs"
+        OIDC_TOKEN_URI: "http://{host}:{port}/realms/wallpaperhub/protocol/openid-connect/token"
+  catalog:
+    mongo:
+      port: 15030
+      upstream: mongo:27017
+      env: { MONGO_URI: "mongodb://root:${MONGO_PASSWORD:-root}@{host}:{port}/catalog?authSource=admin" }
+    elasticsearch:
+      port: 15031
+      upstream: elasticsearch:9200
+      env: { ELASTICSEARCH_URL: "http://{host}:{port}" }
+    redis:
+      port: 15032
+      upstream: redis:6379
+      env: { REDIS_HOST: "{host}", REDIS_PORT: "{port}" }
+    account:
+      port: 15033
+      upstream: account:9090
+      env: { ACCOUNT_GRPC_ADDR: "{host}:{port}" }
+    media:
+      port: 15034
+      upstream: media:8080
+      env: { MEDIA_BASE_URL: "http://{host}:{port}" }
+    keycloak:
+      port: 15035
+      upstream: keycloak:8080
+      env:
+        OIDC_JWKS_URI: "http://{host}:{port}/realms/wallpaperhub/protocol/openid-connect/certs"
+        OIDC_TOKEN_URI: "http://{host}:{port}/realms/wallpaperhub/protocol/openid-connect/token"
+  notification:
+    redis:
+      port: 15040
+      upstream: redis-notification:6379
+      env: { REDIS_HOST: "{host}", REDIS_PORT: "{port}" }
+    smtp:
+      port: 15041
+      upstream: mailpit:1025
+      env: { SMTP_HOST: "{host}", SMTP_PORT: "{port}" }
+    account:
+      port: 15042
+      upstream: account:9090
+      env: { ACCOUNT_GRPC_ADDR: "{host}:{port}" }
+    catalog:
+      port: 15043
+      upstream: catalog:8080
+      env: { CATALOG_BASE_URL: "http://{host}:{port}" }
+    keycloak:
+      port: 15044
+      upstream: keycloak:8080
+      env:
+        OIDC_JWKS_URI: "http://{host}:{port}/realms/wallpaperhub/protocol/openid-connect/certs"
+        OIDC_TOKEN_URI: "http://{host}:{port}/realms/wallpaperhub/protocol/openid-connect/token"

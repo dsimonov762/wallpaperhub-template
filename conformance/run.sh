@@ -39,9 +39,9 @@ HURL_CMD=(); HURL_API="$API_URL"; HURL_MGMT="$MGMT_URL"
 if [ -n "${HURL:-}" ]; then HURL_CMD=("$HURL")
 elif command -v hurl >/dev/null 2>&1; then HURL_CMD=(hurl)
 elif command -v docker >/dev/null 2>&1; then
-  echo "hurl not found, using the container ghcr.io/orange-opensource/hurl:7.1.0 (install hurl for speed: winget install hurl)"
+  echo "hurl not found, using the container ghcr.io/orange-opensource/hurl:8.1.0 (install hurl for speed: winget install hurl)"
   HURL_API="${API_URL//localhost/host.docker.internal}"; HURL_MGMT="${MGMT_URL//localhost/host.docker.internal}"
-  HURL_CMD=(docker run --rm --add-host=host.docker.internal:host-gateway -v "$HERE:/c" -w /c ghcr.io/orange-opensource/hurl:7.1.0)
+  HURL_CMD=(docker run --rm --add-host=host.docker.internal:host-gateway -v "$HERE:/c" -w /c ghcr.io/orange-opensource/hurl:8.1.0)
 else echo "need hurl (https://hurl.dev) or docker" >&2; exit 2; fi
 
 # ---- tokens ------------------------------------------------------------------------------------------------------------

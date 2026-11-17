@@ -45,6 +45,11 @@ schemas: ## (re)apply the canonical DB schema: Postgres migrations, Mongo collec
 up-apps: env ## infra + schemas + the real services and gateway (needs services/<name>/<impl> to exist)
 	$(COMPOSE) $(INFRA) $(APPS) --profile schemas up -d --build $$(for s in $$(cat .host 2>/dev/null); do printf -- '--scale %s=0 ' $$s; done)
 
+up-chaos: env ## like up-apps, with every service's connections to its databases/Redis/Keycloak/ES/S3/other services going through Toxiproxy (failure injection: make chaos-run) - +64 MB
+	$(MAKE) --no-print-directory chaos-gen
+	$(COMPOSE) -f infra/docker-compose.chaos.yml $(INFRA) $(APPS) --profile schemas up -d --build $$(for s in $$(cat .host 2>/dev/null); do printf -- '--scale %s=0 ' $$s; done)
+	@echo "Toxiproxy API: http://localhost:$${PORT_TOXIPROXY:-8474}   try: make chaos-run S=media-down   (back to direct connections: make up-apps)"
+
 up-tools: env ## web UIs: Kafka UI, Adminer (Postgres), Mongoku (MongoDB); starts only the stores they show; one UI: make up-tools T=adminer - ~0.9 GB
 	$(COMPOSE) $(INFRA) --profile tools up -d $(or $(T),$(TOOLS))
 	@bash scripts/wait-healthy.sh 600
@@ -169,10 +174,34 @@ bruno-check: ## fail when bruno/ is out of date with contracts/ or seed/out
 seed-test-sql: ## load the seed SQL twice into a throw-away Postgres (docker) on top of the canonical schema: proves constraints and idempotency
 	@bash scripts/ci/seed-sql-test.sh
 
+# ---- failure injection (docs/CHAOS.md) -------------------------------------------------------------------------------
+VENV = @[ -d .venv-validate ] || python3 -m venv .venv-validate; .venv-validate/bin/pip install -q -r scripts/validate/requirements.txt
+
+chaos: ## break a connection: make chaos C="down catalog-elasticsearch" | "latency 'catalog-*' 800" | "timeout media-s3" | reset | status (default)
+	$(VENV)
+	.venv-validate/bin/python scripts/chaos.py $(or $(C),status)
+
+chaos-run: ## run a failure scenario and check the README-8 behaviour: make chaos-run S=media-down (S=all for every one; make chaos-list)
+	$(VENV)
+	.venv-validate/bin/python scripts/chaos.py run $(or $(S),$(error give a scenario: make chaos-run S=media-down  (make chaos-list)))
+
+chaos-list: ## the failure scenarios
+	$(VENV)
+	@.venv-validate/bin/python scripts/chaos.py list
+
+chaos-gen: ## regenerate infra/chaos/toxiproxy.json and infra/docker-compose.chaos.yml from infra/chaos/edges.yaml
+	$(VENV)
+	.venv-validate/bin/python scripts/chaos.py gen
+
+chaos-check: ## chaos config is up to date and fits docker-compose.yml and the scenarios (CI runs it)
+	$(VENV)
+	.venv-validate/bin/python scripts/chaos.py gen --check
+
 # ---- static checks (no containers needed) ----------------------------------------------------------------------------
 lint: ## compose config for every profile combination, shell syntax, Hurl formatting
 	@for p in "$(INFRA)" "$(INFRA) --profile schemas" "$(INFRA) --profile data" "$(INFRA) --profile tools" "$(INFRA) $(OBS) $(APPS) --profile schemas" "$(INFRA) --profile mocks" "--profile host-account --profile host-media --profile host-catalog --profile host-notification"; do \
 	  $(COMPOSE) $$p config -q && echo "  ok  compose $$p" || exit 1; done
+	@$(COMPOSE) -f infra/docker-compose.chaos.yml $(INFRA) $(APPS) --profile schemas config -q && echo "  ok  compose with the chaos overlay"
 	@for f in infra/db-init/*.sh infra/data/*.sh; do bash -n $$f && echo "  ok  sh -n $$f" || exit 1; done
 	@for f in e2e/run.sh scripts/*.sh scripts/ci/*.sh conformance/run.sh conformance/selftest.sh conformance/checks/*.sh infra/host-proxy/forward.sh; do bash -n $$f && echo "  ok  bash -n $$f" || exit 1; done
 	@python3 scripts/gen-gateway-errors.py --check
@@ -185,4 +214,4 @@ check-contracts: ## cross-check OpenAPI, GraphQL, Avro, proto, i18n and the gate
 	.venv-validate/bin/python scripts/validate/validate_contracts2.py
 	.venv-validate/bin/python scripts/validate/validate_host_env.py
 
-.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen
+.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-chaos chaos chaos-run chaos-list chaos-gen chaos-check up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen

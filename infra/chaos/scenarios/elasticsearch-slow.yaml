@@ -1,0 +1,12 @@
+title: Elasticsearch hangs (accepts the connection, never answers)
+readme: "README section 8: the 2 s timeout must end the wait; one retry, then the Mongo fallback. Without a timeout the search hangs until the gateway cuts it"
+faults:
+  - { edge: "catalog-elasticsearch", fault: timeout, ms: 0 }
+probes:
+  - name: search
+    request: GET /api/v1/wallpapers/search?q={wallpaper_word}
+    expect: [200]
+    max_ms_during: 6500          # 2 s + 1 retry of 2 s + the Mongo query
+    timeout: 20
+settle: 3
+repeat: 2

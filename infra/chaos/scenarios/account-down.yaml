@@ -1,0 +1,20 @@
+title: account-service gRPC unreachable from catalog and notification
+readme: "README section 8: catalog -> account 300 ms deadline, 2 retries, circuit breaker; fallback = the denormalized author snapshot"
+faults:
+  - { edge: "catalog-account", fault: down }
+  - { edge: "notification-account", fault: down }
+probes:
+  - name: wallpaper with its author (snapshot instead of a live lookup)
+    request: GET /api/v1/wallpapers/{wallpaper_id}
+    expect: [200]
+    max_ms_during: 2500
+  - name: search (authors in the results come from the snapshot)
+    request: GET /api/v1/wallpapers/search?q={wallpaper_word}
+    expect: [200]
+    max_ms_during: 2500
+  - name: notifications of the caller
+    request: GET /api/v1/notifications
+    expect: [200]
+    max_ms_during: 2500
+watch:
+  - "catalog's circuit breaker for account: circuit_breaker_state on the Business and async dashboard"

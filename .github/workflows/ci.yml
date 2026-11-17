@@ -60,6 +60,8 @@ jobs:
         run: make bruno-check
       - name: Grafana dashboards are valid (structure, datasources, PromQL)
         run: make dashboards-check
+      - name: Failure-injection config is up to date and fits the compose file and the scenarios
+        run: make chaos-check
 
   seed:
     name: seed data loads into Postgres

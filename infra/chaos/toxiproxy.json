@@ -1,0 +1,116 @@
+[
+  {
+    "name": "account-postgres",
+    "listen": "0.0.0.0:15010",
+    "upstream": "postgres-account:5432",
+    "enabled": true
+  },
+  {
+    "name": "account-redis",
+    "listen": "0.0.0.0:15011",
+    "upstream": "redis:6379",
+    "enabled": true
+  },
+  {
+    "name": "account-keycloak",
+    "listen": "0.0.0.0:15012",
+    "upstream": "keycloak:8080",
+    "enabled": true
+  },
+  {
+    "name": "account-media",
+    "listen": "0.0.0.0:15013",
+    "upstream": "media:8080",
+    "enabled": true
+  },
+  {
+    "name": "media-postgres",
+    "listen": "0.0.0.0:15020",
+    "upstream": "postgres-media:5432",
+    "enabled": true
+  },
+  {
+    "name": "media-redis",
+    "listen": "0.0.0.0:15021",
+    "upstream": "redis:6379",
+    "enabled": true
+  },
+  {
+    "name": "media-s3",
+    "listen": "0.0.0.0:15022",
+    "upstream": "s3:9000",
+    "enabled": true
+  },
+  {
+    "name": "media-keycloak",
+    "listen": "0.0.0.0:15023",
+    "upstream": "keycloak:8080",
+    "enabled": true
+  },
+  {
+    "name": "catalog-mongo",
+    "listen": "0.0.0.0:15030",
+    "upstream": "mongo:27017",
+    "enabled": true
+  },
+  {
+    "name": "catalog-elasticsearch",
+    "listen": "0.0.0.0:15031",
+    "upstream": "elasticsearch:9200",
+    "enabled": true
+  },
+  {
+    "name": "catalog-redis",
+    "listen": "0.0.0.0:15032",
+    "upstream": "redis:6379",
+    "enabled": true
+  },
+  {
+    "name": "catalog-account",
+    "listen": "0.0.0.0:15033",
+    "upstream": "account:9090",
+    "enabled": true
+  },
+  {
+    "name": "catalog-media",
+    "listen": "0.0.0.0:15034",
+    "upstream": "media:8080",
+    "enabled": true
+  },
+  {
+    "name": "catalog-keycloak",
+    "listen": "0.0.0.0:15035",
+    "upstream": "keycloak:8080",
+    "enabled": true
+  },
+  {
+    "name": "notification-redis",
+    "listen": "0.0.0.0:15040",
+    "upstream": "redis-notification:6379",
+    "enabled": true
+  },
+  {
+    "name": "notification-smtp",
+    "listen": "0.0.0.0:15041",
+    "upstream": "mailpit:1025",
+    "enabled": true
+  },
+  {
+    "name": "notification-account",
+    "listen": "0.0.0.0:15042",
+    "upstream": "account:9090",
+    "enabled": true
+  },
+  {
+    "name": "notification-catalog",
+    "listen": "0.0.0.0:15043",
+    "upstream": "catalog:8080",
+    "enabled": true
+  },
+  {
+    "name": "notification-keycloak",
+    "listen": "0.0.0.0:15044",
+    "upstream": "keycloak:8080",
+    "enabled": true
+  }
+]

@@ -1,0 +1,17 @@
+title: account's PostgreSQL unreachable
+readme: "a database outage is a clean, fast 503 (upstream.unavailable), never a 500 or a hang; services using other stores are unaffected; the pool reconnects by itself"
+faults:
+  - { edge: "account-postgres", fault: down }
+probes:
+  - name: own profile (needs the account database)
+    request: GET /api/v1/users/me
+    expect: [200]
+    expect_during: [503]
+    max_ms_during: 6000
+  - name: wallpaper (catalog uses MongoDB)
+    request: GET /api/v1/wallpapers/{wallpaper_id}
+    expect: [200]
+    max_ms_during: 2500
+    recover_within: 60
+watch:
+  - "no restart needed: after the fault the connection pool must heal within seconds (recovery above)"

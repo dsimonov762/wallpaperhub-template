@@ -1,0 +1,15 @@
+title: Keycloak unreachable from the services
+readme: "services validate JWTs with cached signing keys: tokens that were already valid keep working while the identity provider is down (new logins are not possible, and are not probed here)"
+faults:
+  - { edge: "*-keycloak", fault: down }
+probes:
+  - name: own profile with an existing token
+    request: GET /api/v1/users/me
+    expect: [200]
+    max_ms_during: 3000
+  - name: wallpaper with an existing token
+    request: GET /api/v1/wallpapers/{wallpaper_id}
+    expect: [200]
+    max_ms_during: 3000
+watch:
+  - "this holds for a service whose JWKS cache is warm. A service restarted during the outage cannot fetch the keys: that is expected and documented in docs/CHAOS.md"

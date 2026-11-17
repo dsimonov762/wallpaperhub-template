@@ -1,0 +1,18 @@
+title: Kafka paused (the broker stops answering)
+readme: "README section 8: account outbox relay -> Kafka retries forever and the row stays unpublished: writes must still succeed, the lag is visible and drains after the broker is back"
+faults:
+  - { docker: pause, service: kafka }
+probes:
+  - name: set avatar (profile change + outbox event in one transaction)
+    request: PUT /api/v1/users/me/avatar
+    body: { assetId: "{alice_avatar}" }
+    expect: [200]
+    max_ms_during: 3000
+  - name: own profile
+    request: GET /api/v1/users/me
+    expect: [200]
+    max_ms_during: 3000
+settle: 5
+watch:
+  - "outbox_pending and outbox_oldest_age_seconds climb during the fault and return to 0 after it (Business and async dashboard)"
+  - "Kafka cannot be put behind Toxiproxy (clients reconnect to the broker's advertised address), so this scenario pauses the container"

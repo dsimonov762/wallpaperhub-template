@@ -1,0 +1,15 @@
+title: catalog's MongoDB unreachable
+readme: "a database outage is a clean, fast 503, never a 500 or a hang; the other services keep working"
+faults:
+  - { edge: "catalog-mongo", fault: down }
+probes:
+  - name: wallpaper (needs MongoDB)
+    request: GET /api/v1/wallpapers/{wallpaper_id}
+    expect: [200]
+    expect_during: [503]
+    max_ms_during: 6000
+  - name: own profile (account, PostgreSQL)
+    request: GET /api/v1/users/me
+    expect: [200]
+    max_ms_during: 2500
+    recover_within: 60

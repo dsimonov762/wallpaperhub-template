@@ -1,0 +1,22 @@
+title: Object storage unreachable from media-service
+readme: "README section 8: media -> S3 10 s, 3 retries, circuit breaker. An upload must fail cleanly instead of hanging"
+faults:
+  - { edge: "media-s3", fault: down }
+probes:
+  - name: upload an image
+    request: POST /api/v1/media
+    file: "{sample_image}"
+    fields: { purpose: WALLPAPER }
+    expect: [202]
+    expect_during: [503, 504]
+    max_ms_during: 40000
+    timeout: 60
+  - name: asset metadata (PostgreSQL only)
+    request: GET /api/v1/media/{alice_avatar}
+    expect: [200]
+    max_ms_during: 2500
+settle: 3
+repeat: 1
+watch:
+  - "the 10 s x 3 retries of the table is the worst case; the gateway's per-route timeout may answer first (504)"
+  - "after the fault: a failed upload must not leave an asset stuck in PROCESSING (look at make seed-check or the media database)"

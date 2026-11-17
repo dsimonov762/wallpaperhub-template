@@ -1,0 +1,14 @@
+title: Elasticsearch down
+readme: "README section 8: catalog -> Elasticsearch 2 s, 1 retry, circuit breaker; fallback = degraded Mongo query"
+faults:
+  - { edge: "catalog-elasticsearch", fault: down }
+probes:
+  - name: search still works (degraded)
+    request: GET /api/v1/wallpapers/search?q={wallpaper_word}
+    expect: [200]
+    max_ms_during: 4000
+  - name: browse (Mongo only)
+    request: GET /api/v1/wallpapers
+    expect: [200]
+watch:
+  - "the degraded result may lack facets and relevance order; the contract only requires it to answer"

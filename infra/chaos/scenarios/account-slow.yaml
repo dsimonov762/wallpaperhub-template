@@ -1,0 +1,11 @@
+title: account-service answers slowly (1.5 s per call)
+readme: "README section 8: the 300 ms deadline must fire, the call is retried and then the snapshot is used; a slow dependency must not make catalog slow"
+faults:
+  - { edge: "catalog-account", fault: latency, ms: 1500, jitter: 200 }
+probes:
+  - name: wallpaper with its author
+    request: GET /api/v1/wallpapers/{wallpaper_id}
+    expect: [200]
+    max_ms_during: 2000          # 3 attempts x 300 ms plus backoff, well under the injected 1500 ms per call
+watch:
+  - "latency of catalog's gRPC client towards account on the Service dashboard: capped near the deadline, not 1.5 s"

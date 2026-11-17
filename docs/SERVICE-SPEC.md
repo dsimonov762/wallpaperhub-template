@@ -184,5 +184,5 @@ accepted for runtimes that cannot map SIGTERM to a clean exit). `/health/ready` 
 ## 13. What `conformance/` does not check
 
 The business behavior of the endpoints (that is `e2e/system` and your own unit and integration tests), resilience
-policies (README section 8), security of authorization rules beyond A1-A4, performance. A service that passes the
+policies (README section 8; those are checked by the failure scenarios of `docs/CHAOS.md`), security of authorization rules beyond A1-A4, performance. A service that passes the
 conformance suite is a good citizen of the platform, not a correct implementation of its domain.

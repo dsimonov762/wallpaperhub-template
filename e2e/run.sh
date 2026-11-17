@@ -22,10 +22,10 @@ HURL_CMD=()
 if [ -n "${HURL:-}" ]; then HURL_CMD=("$HURL")
 elif command -v hurl >/dev/null 2>&1; then HURL_CMD=(hurl)
 elif command -v docker >/dev/null 2>&1; then
-  echo "hurl not found, using the container ghcr.io/orange-opensource/hurl:7.1.0 (install hurl for speed: winget install hurl)"
+  echo "hurl not found, using the container ghcr.io/orange-opensource/hurl:8.1.0 (install hurl for speed: winget install hurl)"
   # Inside the container localhost is the container: reach the host through Docker Desktop's alias.
   BASE_URL="${BASE_URL//localhost/host.docker.internal}"; KEYCLOAK_URL="${KEYCLOAK_URL//localhost/host.docker.internal}"
-  HURL_CMD=(docker run --rm --add-host=host.docker.internal:host-gateway -v "$HERE:/e2e" -w /e2e ghcr.io/orange-opensource/hurl:7.1.0)
+  HURL_CMD=(docker run --rm --add-host=host.docker.internal:host-gateway -v "$HERE:/e2e" -w /e2e ghcr.io/orange-opensource/hurl:8.1.0)
 else echo "need hurl (https://hurl.dev) or docker" >&2; exit 2; fi
 
 mkdir -p .run
