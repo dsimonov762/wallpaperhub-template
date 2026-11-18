@@ -508,6 +508,8 @@ services:
       - --storage.tsdb.retention.time=3d
       # Alloy pushes OTLP metrics to /api/v1/otlp/v1/metrics
       - --web.enable-otlp-receiver
+      # k6 load tests write their metrics here (make load-run, docs/LOAD.md)
+      - --web.enable-remote-write-receiver
       # Exemplars link metrics to traces in Grafana
       - --enable-feature=exemplar-storage
     ports:

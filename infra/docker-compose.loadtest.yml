@@ -1,0 +1,10 @@
+# Overlay for infra/docker-compose.yml (make up-load / make up-load-mocks): the Envoy gateway with its rate limits raised
+# and more worker threads, for load tests (loadtest/, docs/LOAD.md). Without this file the gateway keeps the production limits.
+# The file mounted below is GENERATED from services/gateway/envoy/envoy.yaml by scripts/loadtest-gateway.py (make up-load does it).
+# Envoy only: for a hand-written gateway (GATEWAY_DIR) raise its limits yourself and do not use this overlay.
+services:
+  gateway:
+    mem_limit: ${LOAD_GATEWAY_MEMORY:-768m}
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--concurrency", "${LOAD_GATEWAY_CONCURRENCY:-4}"]
+    volumes:
+      - ./loadtest/envoy.generated.yaml:/etc/envoy/envoy.yaml:ro

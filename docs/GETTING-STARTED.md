@@ -88,7 +88,8 @@ For clicking through the whole API there is a [Bruno collection](../bruno/README
 4. `make up-apps && make e2e-system` - README 4.1 user flows (register, upload, publish, search, favorite, moderate, notify).
 5. `make conformance SVC=account` (or `make conformance-all`) - does one service obey [docs/SERVICE-SPEC.md](SERVICE-SPEC.md) (health endpoints, JWT validation, problem+json and localization, JSON logs, traces/logs/metrics arriving in Tempo/Loki/Prometheus, graceful shutdown, fail-fast config)? Same checks for every language: [conformance/README.md](../conformance/README.md). Run it the first day of a new service, before there is any business logic.
 6. `make up-chaos && make chaos-run S=all` - does a service keep the promises of README section 8 when a dependency is down, slow or hanging (clean 503, deadlines, fallbacks, recovery without a restart)? Toxiproxy between every service and its dependencies: [docs/CHAOS.md](CHAOS.md). Run it once the services do real work.
-7. CI runs the static checks on every pull request, see [CI.md](CI.md).
+7. `make up-load && make load-run P=load` - how much traffic can it take, which operation leaves its latency budget first, does it recover from a spike, does it hold for an hour (k6; the gateway's rate limits raised for the test): [docs/LOAD.md](LOAD.md).
+8. CI runs the static checks on every pull request, see [CI.md](CI.md).
 
 ### Development data
 
@@ -109,6 +110,10 @@ The contracts are the source of truth, so changing them is the risky part. Three
 | `make codegen TARGET=typescript` | `gen/typescript/<service>.d.ts` from the four OpenAPI specs, type-checked with `tsc --strict`. `TARGET=openapi GEN="spring account"` runs any openapi-generator generator for one service into `gen/spring/account/`; `TARGET=proto GEN=buf.gen.yaml` runs `buf generate` with a template you write for your language. `gen/` is not committed. |
 
 Evolving a contract: an additive change passes (new optional response field, new endpoint, new optional Avro field with a default, new GraphQL field). A breaking change needs a new version (`/v2`, `*.v2.avsc`, `account/v2/`) and the old one kept until its consumers are gone; there is no override flag on purpose. In CI run `make contracts-lint contracts-breaking BASE=origin/${GITHUB_BASE_REF}` on pull requests. Database schemas (`contracts/db-schema/`) are not compared: their migrations are forward-only and reviewed by hand.
+
+### Load tests
+
+`make up-load` is `make up-apps` with the gateway's rate limits raised (otherwise the per-IP limit caps a local test at 10 requests per second). `make load-smoke` runs every user journey once, `make load-run P=load RATE=20` holds 20 journeys per second for five minutes with a latency budget per operation, `stress`, `spike`, `soak`, `uploads` and `ratelimit` are the other profiles, and the Grafana dashboard *Load test (k6)* shows the run next to the server's own numbers. [LOAD.md](LOAD.md).
 
 ### Failure injection
 
@@ -136,7 +141,7 @@ Verified with the real binaries in a Linux sandbox (no Docker daemon was availab
 
 Not verified (needs your Docker): image behavior of Kafka/Schema Registry/Elasticsearch/MongoDB/Silo, `kafka-init`, `schema-registry-init`, `s3-init`, `catalog-db-init`
 (mongosh), `catalog-search-init`, the Alloy pipeline at runtime, the mock `Dockerfile`, the Hurl container fallback, `make` targets that call the daemon,
-**oasdiff** (`make contracts-breaking` only exercised its call plumbing with a stand-in, the real tool could not be downloaded here, image `tufin/oasdiff:v1.33.0`), the tools image build (`tools/contract-tools/Dockerfile`: buf's binary on Alpine), `TARGET=openapi` (image `openapitools/openapi-generator-cli:v7.27.0`) and `TARGET=proto` (buf plugins need network access), **the workflows on GitHub itself** (never run: action versions, runner memory, the Docker steps, `make up-mocks` and `make e2e` in the runner, artifact upload), the host-mode forwarder image build, `docker compose` `--scale <hosted service>=0`, whether Docker Desktop reaches a host process through `host.docker.internal` on your machine (bind `0.0.0.0`; allow the Windows firewall prompt), the Docker modes of `conformance/checks/lifecycle.sh` (`CONTAINER=`), the container fallback of `conformance/run.sh` when Hurl is not installed, and **all `system/*.hurl` assertions** - they describe the contract and have never run against an implementation. Expect to adjust them with the first real service.
+**oasdiff** (`make contracts-breaking` only exercised its call plumbing with a stand-in, the real tool could not be downloaded here, image `tufin/oasdiff:v1.33.0`), the tools image build (`tools/contract-tools/Dockerfile`: buf's binary on Alpine), `TARGET=openapi` (image `openapitools/openapi-generator-cli:v7.10.0`) and `TARGET=proto` (buf plugins need network access), **the workflows on GitHub itself** (never run: action versions, runner memory, the Docker steps, `make up-mocks` and `make e2e` in the runner, artifact upload), the host-mode forwarder image build, `docker compose` `--scale <hosted service>=0`, whether Docker Desktop reaches a host process through `host.docker.internal` on your machine (bind `0.0.0.0`; allow the Windows firewall prompt), the Docker modes of `conformance/checks/lifecycle.sh` (`CONTAINER=`), the container fallback of `conformance/run.sh` when Hurl is not installed, and **all `system/*.hurl` assertions** - they describe the contract and have never run against an implementation. Expect to adjust them with the first real service.
 
 Also not verified: the **`data` jobs and `make seed`/`reset`** against Docker (the scripts were exercised one by one, `scripts/data.sh` with a fake `docker`), the Mongo upserts against a real MongoDB with the validators, `mcli mirror --attr` and `mcli rm` in the Silo image, and the **`tools` profile**: nothing of it was started. The tags `ghcr.io/kafbat/kafka-ui:v1.5.0` (taken from the release list, not confirmed on the registry), `adminer:5.5.1` and `huggingface/mongoku:2.11.5` (seen on Docker Hub), the Kafka UI variable names (`KAFKA_CLUSTERS_0_*`, from its documentation as I remember it) and Adminer's pre-filled `?pgsql=...` links are the likely places for a first-start surprise. A wrong tag shows up as a pull error: set `KAFKA_UI_IMAGE`, `ADMINER_IMAGE` or `MONGO_UI_IMAGE` in `infra/.env`.
 
@@ -163,7 +168,9 @@ Also not verified: the **`data` jobs and `make seed`/`reset`** against Docker (t
 README.md                 design document (v1.1)
 contracts/                openapi/ proto/ avro/ graphql/ i18n/ db-schema/     the source of truth, language-agnostic
 infra/                    docker-compose.yml, .env.example, db-init/, data/ (seed and reset jobs), keycloak/, kafka-init/, observability configs,
-                          chaos/ (Toxiproxy: edges.yaml, scenarios/, generated config) and docker-compose.chaos.yml (generated overlay)
+                          chaos/ (Toxiproxy: edges.yaml, scenarios/, generated config) and docker-compose.chaos.yml (generated overlay),
+                          docker-compose.loadtest.yml (gateway with raised rate limits for k6)
+loadtest/                 k6 suite: main.js, journeys.js, lib/ (profiles, latency budget, auth, data), see docs/LOAD.md
 services/gateway/envoy/   the Envoy gateway (config, Dockerfile, CHEATSHEET.md)
 services/_mock/           Prism mock of a service (Dockerfile, mock.js)
 conformance/              language-agnostic conformance suite (run.sh, selftest.sh, http/, checks/, reference-stub/); spec: docs/SERVICE-SPEC.md

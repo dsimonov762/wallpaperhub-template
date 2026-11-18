@@ -11,6 +11,7 @@ the **Overview** dashboard; the others are in the folder *Wallpaper Hub* and lin
 | **Business and async** | Is the product working: uploads, image processing, emails, outbox, Kafka lag, SSE, circuit breakers, caches? | the business metrics below |
 | **Logs** | What did the services say? Filter by service, level, text. | Loki |
 | **Observability stack** | Why is a dashboard empty? | Prometheus, Alloy, Loki, Tempo self-metrics |
+| **Load test (k6)** | What did a k6 run send and measure, and what did the system say at the same time? | k6 metrics (remote write into Prometheus, only while a run is pushed) next to the gateway and service metrics; [LOAD.md](LOAD.md) |
 
 Correlation works in both directions: a latency percentile has **exemplars** (dots) that open the trace; a log line has a `TraceID`
 link; a trace has "logs for this span". So the usual path is Overview → Service (a spike) → an exemplar or a failed trace → the logs of that span.
@@ -19,7 +20,7 @@ link; a trace has "logs for this span". So the usual path is Overview → Servic
 
 1. Open **Observability stack**. Alloy *accepted* points, but *sent on* zero: Alloy or the backend behind it is down. *Accepted* zero: nothing arrives, the service
    does not export (check `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_METRIC_EXPORT_INTERVAL`) or is not running.
-2. `make dashboards-coverage` compares every metric the dashboards use with what Prometheus really has and lists the missing ones. A panel of a business metric stays
+2. `make dashboards-coverage` compares every metric the dashboards use with what Prometheus really has and lists the missing ones. The `k6_*` metrics exist only after a load test (`make load-run`); `make dashboards-coverage` lists them as missing until then. A panel of a business metric stays
    empty until the service that owns it emits it; that is expected in a template with no business code yet.
 3. The `service` list of the Service dashboard shows only services that sent `http_server_request_duration_seconds_count`: a service that never took a request is not in it.
 
