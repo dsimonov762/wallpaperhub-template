@@ -133,6 +133,12 @@ jobs:
             sudo ldconfig
           fi
           hurl --version
+      # A native k6 makes scripts/k6.sh talk to the gateway on localhost. Without it the script falls back to the
+      # grafana/k6 container, which reaches the host through the docker0 bridge, and the gateway only listens on 127.0.0.1.
+      # Keep the version in step with K6_IMAGE in scripts/k6.sh.
+      - uses: grafana/setup-k6-action@c47136d33d365efbeb9ae7266908b5dcf98cdece # v1.3.0
+        with:
+          k6-version: "1.6.0"
       - run: make env
       - name: Gateway, Keycloak, Redis and the four Prism mocks (about 2 GB)
         run: make up-mocks

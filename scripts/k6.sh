@@ -52,7 +52,9 @@ elif command -v docker >/dev/null 2>&1; then
   echo "k6 not found, using the container $K6_IMAGE (install k6 for less overhead: winget install k6)"
   # inside the container localhost is the container: reach the host through Docker Desktop's alias
   BASE_URL="${BASE_URL//localhost/host.docker.internal}"; KEYCLOAK_URL="${KEYCLOAK_URL//localhost/host.docker.internal}"; PROM_URL="${PROM_URL//localhost/host.docker.internal}"
-  CMD=(docker run --rm -i --add-host=host.docker.internal:host-gateway -v "$ROOT:/repo" -w /repo
+  # --user: the image's default uid (12345) cannot write the summary into loadtest/.run, which this script creates as the caller.
+  # On Linux the gateway must be reachable on the docker0 bridge (BIND_ADDRESS=0.0.0.0) or, simpler, use an installed k6.
+  CMD=(docker run --rm -i --user "$(id -u):$(id -g)" --add-host=host.docker.internal:host-gateway -v "$ROOT:/repo" -w /repo
        -e K6_PROMETHEUS_RW_SERVER_URL="$PROM_URL/api/v1/write" -e K6_PROMETHEUS_RW_TREND_STATS -e K6_PROMETHEUS_RW_PUSH_INTERVAL "$K6_IMAGE")
 else echo "need k6 (https://k6.io) or docker" >&2; exit 2; fi
 
