@@ -101,6 +101,13 @@ repos:
         pass_filenames: false
         files: ^(services/gateway/envoy/envoy\.yaml$|scripts/(loadtest|https)-gateway\.py$)
 
+      - id: wh-renovate
+        name: Renovate configuration is valid
+        entry: make renovate-check
+        language: system
+        pass_filenames: false
+        files: ^(\.github/renovate\.json5|scripts/renovate-check\.sh)$
+
       # Before a push: what needs Docker or builds a tool image, so it is too slow for every commit.
       - id: wh-lint
         name: compose files for every profile, shell syntax, Hurl formatting

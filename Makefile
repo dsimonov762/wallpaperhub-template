@@ -45,6 +45,9 @@ schemas: ## (re)apply the canonical DB schema: Postgres migrations, Mongo collec
 up-apps: env ## infra + schemas + the real services and gateway (needs services/<name>/<impl> to exist)
 	$(COMPOSE) $(INFRA) $(APPS) --profile schemas up -d --build $$(for s in $$(cat .host 2>/dev/null); do printf -- '--scale %s=0 ' $$s; done)
 
+renovate-check: ## .github/renovate.json5 is a valid Renovate configuration (strict; needs Node 24.11+ or Docker; CI runs it)
+	@bash scripts/renovate-check.sh
+
 hooks: ## install the git hooks of this clone (pre-commit: hygiene and quick checks on commit, Docker-based ones on push); needs: pipx install pre-commit
 	@command -v pre-commit >/dev/null 2>&1 || { echo "pre-commit is not installed: pipx install pre-commit  (or: pip install --user pre-commit)   details: docs/PRE-COMMIT.md"; exit 1; }
 	pre-commit install
@@ -272,4 +275,4 @@ check-contracts: ## cross-check OpenAPI, GraphQL, Avro, proto, i18n and the gate
 	.venv-validate/bin/python scripts/validate/validate_contracts2.py
 	.venv-validate/bin/python scripts/validate/validate_host_env.py
 
-.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-chaos certs up-https up-https-mocks https-check up-load up-load-mocks load-run load-smoke load-data load-check chaos chaos-run chaos-list chaos-gen chaos-check up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen hooks precommit
+.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-chaos certs up-https up-https-mocks https-check up-load up-load-mocks load-run load-smoke load-data load-check chaos chaos-run chaos-list chaos-gen chaos-check up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen hooks precommit renovate-check

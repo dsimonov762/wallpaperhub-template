@@ -91,7 +91,8 @@ For clicking through the whole API there is a [Bruno collection](../bruno/README
 7. `make up-load && make load-run P=load` - how much traffic can it take, which operation leaves its latency budget first, does it recover from a spike, does it hold for an hour (k6; the gateway's rate limits raised for the test): [docs/LOAD.md](LOAD.md).
 8. `make certs ARGS=--install && make up-https` - the gateway on `https://localhost:8443` with a certificate your browser trusts (mkcert), for a front end that needs https; `HTTPS_ISSUER=1` also puts Keycloak on https: [docs/HTTPS.md](HTTPS.md).
 9. `pipx install pre-commit && make hooks` - the same static checks as git hooks, so a stale generated file or a shell mistake stops the commit instead of the pull request: [docs/PRE-COMMIT.md](PRE-COMMIT.md).
-10. CI runs the static checks on every pull request, see [CI.md](CI.md).
+10. Install the Renovate GitHub App on the repository: it opens a weekly batch of pull requests for new image, action, npm, pip and hook versions, and keeps a dashboard issue; majors wait for your decision: [docs/RENOVATE.md](RENOVATE.md).
+11. CI runs the static checks on every pull request, see [CI.md](CI.md).
 
 ### Development data
 
@@ -120,6 +121,10 @@ Evolving a contract: an additive change passes (new optional response field, new
 ### Git hooks
 
 `make hooks` installs [pre-commit](https://pre-commit.com) hooks into your clone (install the tool once with `pipx install pre-commit`, in Ubuntu/WSL, and commit from there). On every commit: whitespace and file checks, shellcheck, actionlint, hadolint, and, for the files you touched, the repo's own checks (contracts, seed data, Bruno collection, dashboards, generated gateway and chaos configs). Before a push: `make lint` and the contract style rules. `make precommit` runs everything on all files, `git commit --no-verify` skips the hooks (CI runs all of it anyway). What is in it and why some things are not: [docs/PRE-COMMIT.md](PRE-COMMIT.md).
+
+### Dependency updates
+
+Every pin of the repository (images in compose files, Dockerfiles, scripts and docs; GitHub Actions; npm and pip packages; pre-commit hooks; the k6 and Hurl versions) is read by [Renovate](https://docs.renovatebot.com), configured in `.github/renovate.json5`. Updates that must move together are one pull request (observability stack, Confluent Platform, k6, Hurl ...), a new major version of a database or of Keycloak waits on the Dependency Dashboard until you tick it, and CI is the test. `make renovate-check` validates the configuration. What is watched, how to mark a pin it cannot see, and what was tested: [docs/RENOVATE.md](RENOVATE.md).
 
 ### HTTPS
 
@@ -151,9 +156,9 @@ Verified with the real binaries in a Linux sandbox (no Docker daemon was availab
 
 Not verified (needs your Docker): image behavior of Kafka/Schema Registry/Elasticsearch/MongoDB/Silo, `kafka-init`, `schema-registry-init`, `s3-init`, `catalog-db-init`
 (mongosh), `catalog-search-init`, the Alloy pipeline at runtime, the mock `Dockerfile`, the Hurl container fallback, `make` targets that call the daemon,
-**oasdiff** (`make contracts-breaking` only exercised its call plumbing with a stand-in, the real tool could not be downloaded here, image `tufin/oasdiff:v1.33.0`), the tools image build (`tools/contract-tools/Dockerfile`: buf's binary on Alpine), `TARGET=openapi` (image `openapitools/openapi-generator-cli:v7.10.0`) and `TARGET=proto` (buf plugins need network access), **the workflows on GitHub itself** (never run: action versions, runner memory, the Docker steps, `make up-mocks` and `make e2e` in the runner, artifact upload), the host-mode forwarder image build, `docker compose` `--scale <hosted service>=0`, whether Docker Desktop reaches a host process through `host.docker.internal` on your machine (bind `0.0.0.0`; allow the Windows firewall prompt), the Docker modes of `conformance/checks/lifecycle.sh` (`CONTAINER=`), the container fallback of `conformance/run.sh` when Hurl is not installed, and **all `system/*.hurl` assertions** - they describe the contract and have never run against an implementation. Expect to adjust them with the first real service.
+**oasdiff** (`make contracts-breaking` only exercised its call plumbing with a stand-in, the real tool could not be downloaded here, image `tufin/oasdiff:v1.33.0`), the tools image build (`tools/contract-tools/Dockerfile`: buf's binary on Alpine), `TARGET=openapi` (image `openapitools/openapi-generator-cli:v7.27.0`) and `TARGET=proto` (buf plugins need network access), **the workflows on GitHub itself** (never run: action versions, runner memory, the Docker steps, `make up-mocks` and `make e2e` in the runner, artifact upload), the host-mode forwarder image build, `docker compose` `--scale <hosted service>=0`, whether Docker Desktop reaches a host process through `host.docker.internal` on your machine (bind `0.0.0.0`; allow the Windows firewall prompt), the Docker modes of `conformance/checks/lifecycle.sh` (`CONTAINER=`), the container fallback of `conformance/run.sh` when Hurl is not installed, and **all `system/*.hurl` assertions** - they describe the contract and have never run against an implementation. Expect to adjust them with the first real service.
 
-Also not verified: the **`data` jobs and `make seed`/`reset`** against Docker (the scripts were exercised one by one, `scripts/data.sh` with a fake `docker`), the Mongo upserts against a real MongoDB with the validators, `mcli mirror --attr` and `mcli rm` in the Silo image, and the **`tools` profile**: nothing of it was started. The tags `ghcr.io/kafbat/kafka-ui:v1.5.0` (taken from the release list, not confirmed on the registry), `adminer:5.5.1` and `huggingface/mongoku:2.11.5` (seen on Docker Hub), the Kafka UI variable names (`KAFKA_CLUSTERS_0_*`, from its documentation as I remember it) and Adminer's pre-filled `?pgsql=...` links are the likely places for a first-start surprise. A wrong tag shows up as a pull error: set `KAFKA_UI_IMAGE`, `ADMINER_IMAGE` or `MONGO_UI_IMAGE` in `infra/.env`.
+Also not verified: the **`data` jobs and `make seed`/`reset`** against Docker (the scripts were exercised one by one, `scripts/data.sh` with a fake `docker`), the Mongo upserts against a real MongoDB with the validators, `mcli mirror --attr` and `mcli rm` in the Silo image, and the **`tools` profile**: nothing of it was started. The tags `ghcr.io/kafbat/kafka-ui:v1.5.0` (taken from the release list, not confirmed on the registry), `adminer:6.3.0` and `huggingface/mongoku:2.11.5` (seen on Docker Hub), the Kafka UI variable names (`KAFKA_CLUSTERS_0_*`, from its documentation as I remember it) and Adminer's pre-filled `?pgsql=...` links are the likely places for a first-start surprise. A wrong tag shows up as a pull error: set `KAFKA_UI_IMAGE`, `ADMINER_IMAGE` or `MONGO_UI_IMAGE` in `infra/.env`.
 
 ## 6. Troubleshooting
 
@@ -193,6 +198,7 @@ e2e/                      Hurl tests: gateway/ (any backend) and system/ (real s
 scripts/                  doctor.sh, wait-healthy.sh, validate/ (contract cross-checks), contracts.sh + contracts/ (lint, breaking), codegen.sh, ct.sh
 tools/contract-tools/     pinned Spectral, buf, openapi-typescript (package.json, Dockerfile)
 .pre-commit-config.yaml   git hooks (pre-commit), see docs/PRE-COMMIT.md; .hadolint.yaml and .github/actionlint.yaml configure two of them
+.github/renovate.json5    dependency updates (Renovate), see docs/RENOVATE.md
 Makefile                  make help
 ```
 

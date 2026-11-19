@@ -72,6 +72,8 @@ jobs:
         run: make load-check
       - name: The HTTPS gateway config can still be derived from envoy.yaml
         run: make https-check
+      - name: Renovate configuration is valid
+        run: make renovate-check
 
   seed:
     name: seed data loads into Postgres

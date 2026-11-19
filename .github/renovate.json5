@@ -1,0 +1,191 @@
+// Renovate (https://docs.renovatebot.com) keeps the pinned versions of this repository current: container images, GitHub Actions, npm and pip packages, pre-commit hooks.
+// What it watches, why it groups the way it does, how to install it and check this file: docs/RENOVATE.md
+//
+// A pin that no built-in manager reads (an image in a shell script, a version in a workflow input) is read by the regex managers below.
+// A new pin of that kind needs either to look like one of those patterns or an annotation comment, see docs/RENOVATE.md.
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:recommended"],
+
+  // One batch of pull requests a week, early Monday (UTC), instead of a stream of them.
+  schedule: ["before 8am on monday"],
+  prConcurrentLimit: 10,
+  labels: ["dependencies"],
+  semanticCommits: "disabled",           // plain "Update dependency x to vY" titles; switch on when the team adopts Conventional Commits
+
+  // The pre-commit manager is off by default. It reads the `rev:` of every hook in .pre-commit-config.yaml.
+  "pre-commit": { enabled: true },
+
+  // tools/contract-tools/package-lock.json: refresh the transitive dependencies once a month (package.json itself is pinned exactly).
+  lockFileMaintenance: { enabled: true, schedule: ["before 8am on the first day of the month"] },
+
+  customManagers: [
+    {
+      // Images written in shell scripts, Python generators, the Makefile, .env.example and the documentation:
+      //   grafana/k6:1.6.0   ghcr.io/orange-opensource/hurl:8.1.0   tufin/oasdiff:v1.33.0   python:3.13-slim   adminer:6.3.0
+      // Matches   registry.host/path:tag   and   owner/name:tag   (the tag must contain a dot: 1.6.0, v1.33.0, 18.6-trixie; that keeps host:port, file:line and
+      // URLs out), and a short list of official one-word images. An official image that is not in the list (nginx, busybox ...) needs an annotation, see below.
+      // Renovate uses RE2: no lookbehind, no lookahead.
+      // The compose files and Dockerfiles are read by Renovate itself; the same image in both places is one dependency and one pull request.
+      customType: "regex",
+      description: "container images in scripts, docs and env examples",
+      managerFilePatterns: ["/\\.(sh|py|md)$/", "/(^|\\/)Makefile$/", "/\\.env\\.example$/"],
+      matchStrings: [
+        "(?:^|[\\s\"'=(\\[,`-])(?<depName>(?:[a-z0-9-]+\\.)+[a-z]{2,}/[a-z0-9._/-]+|[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*|alpine|python|postgres|mongo|redis|elasticsearch|adminer|node):(?<currentValue>v?\\d+\\.\\d+[A-Za-z0-9._-]*)",
+      ],
+      datasourceTemplate: "docker",
+    },
+    {
+      // Annotation for anything else, in any file: put a comment on the line before the pin, for example
+      //   # renovate: datasource=docker depName=redis
+      //   REDIS_IMAGE=8.10.3-trixie
+      // (datasource=npm, pypi, github-releases, github-tags ... depName=<package or owner/repo>; optional versioning=... extractVersion=...)
+      customType: "regex",
+      description: "any pin marked with a `renovate:` comment",
+      managerFilePatterns: ["/\\.(sh|py|ya?ml|env|example)$/", "/(^|\\/)Makefile$/", "/(^|\\/)Dockerfile$/"],
+      matchStrings: [
+        "renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>\\S+?)(?: versioning=(?<versioning>\\S+?))?(?: extractVersion=(?<extractVersion>\\S+?))?\\s*\\n[^\\n]*?[=:]\\s*[\"']?(?<currentValue>[A-Za-z0-9._-]+)[\"']?",
+      ],
+    },
+    {
+      // .pre-commit-config.yaml:  additional_dependencies: [shellcheck-py==0.11.0.1]   (the actionlint hook runs this shellcheck on the workflows' scripts;
+      // it is meant to be the version of the shellcheck hook above it, which the pre-commit manager reads from `rev:`; they move in one pull request)
+      customType: "regex",
+      description: "shellcheck-py inside the actionlint hook",
+      managerFilePatterns: ["/^\\.pre-commit-config\\.yaml$/"],
+      matchStrings: ["shellcheck-py==(?<currentValue>\\d+(?:\\.\\d+)+)"],
+      depNameTemplate: "shellcheck-py",
+      datasourceTemplate: "pypi",
+    },
+    {
+      // scripts/ci/install-hurl.sh:  V="${HURL_VERSION:-8.1.0}"   (the release tag has no "v")
+      customType: "regex",
+      description: "Hurl binary installed in CI",
+      managerFilePatterns: ["/^scripts\\/ci\\/install-hurl\\.sh$/"],
+      matchStrings: ["HURL_VERSION:-(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      depNameTemplate: "Orange-OpenSource/hurl",
+      datasourceTemplate: "github-releases",
+    },
+    {
+      // .github/workflows/ci.yml:  k6-version: "1.6.0"   (the release tag is v1.6.0)
+      customType: "regex",
+      description: "k6 installed by setup-k6-action",
+      managerFilePatterns: ["/^\\.github\\/workflows\\/.+\\.ya?ml$/"],
+      matchStrings: ["k6-version:\\s*[\"']?(?<currentValue>\\d+\\.\\d+\\.\\d+)[\"']?"],
+      depNameTemplate: "grafana/k6",
+      datasourceTemplate: "github-releases",
+      extractVersionTemplate: "^v(?<version>.+)$",
+    },
+    {
+      // services/_mock/Dockerfile:  RUN npm install -g --omit=dev @stoplight/prism-cli@5.16.0
+      customType: "regex",
+      description: "npm packages installed globally in a Dockerfile",
+      managerFilePatterns: ["/(^|\\/)Dockerfile$/"],
+      matchStrings: ["npm (?:install|i) -g (?:--\\S+ )*(?<depName>(?:@[a-z0-9._-]+/)?[a-z0-9._-]+)@(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      datasourceTemplate: "npm",
+    },
+    {
+      // scripts/renovate-check.sh:  RENOVATE_VERSION="${RENOVATE_VERSION:-44.255.0}"   (the validator this file is checked with is kept current by Renovate itself)
+      customType: "regex",
+      description: "the Renovate version used by make renovate-check",
+      managerFilePatterns: ["/^scripts\\/renovate-check\\.sh$/"],
+      matchStrings: ["RENOVATE_VERSION:-(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      depNameTemplate: "renovate",
+      datasourceTemplate: "npm",
+    },
+  ],
+
+  // Later rules win over earlier ones.
+  packageRules: [
+    // ---- what is not a dependency ----------------------------------------------------------------------------------------------------------------------
+    {
+      // Images this repository builds itself (wallpaperhub/account:local ...): there is nothing on a registry to look up.
+      matchPackageNames: ["wallpaperhub/**"],
+      enabled: false,
+    },
+
+    // ---- major versions are a decision, not a Monday chore -------------------------------------------------------------------------------------------
+    {
+      // A new major of Postgres, Elasticsearch, Keycloak, Kafka, Grafana ... changes data formats or configuration. It is listed on the Dependency Dashboard
+      // (an issue Renovate keeps in this repository) and becomes a pull request only when someone ticks its box.
+      matchUpdateTypes: ["major"],
+      dependencyDashboardApproval: true,
+      addLabels: ["major"],
+    },
+
+    // ---- one pull request per family, so that things that must move together do ----------------------------------------------------------------------
+    {
+      groupName: "observability images",       // Alloy writes to Loki, Tempo and Prometheus: bump them in one go, test them in one go
+      matchPackageNames: ["grafana/grafana", "grafana/loki", "grafana/tempo", "grafana/alloy", "prom/prometheus"],
+      matchUpdateTypes: ["minor", "patch"],
+    },
+    {
+      groupName: "Confluent Platform",          // cp-kafka and cp-schema-registry are released together under one version number
+      matchPackageNames: ["confluentinc/**"],
+    },
+    {
+      groupName: "data store images",
+      matchPackageNames: ["postgres", "mongo", "redis", "elasticsearch", "pgsty/silo"],
+      matchUpdateTypes: ["minor", "patch"],
+    },
+    {
+      groupName: "dev tool images",              // Kafka UI, Adminer, Mongoku, Mailpit: nothing depends on them
+      matchPackageNames: ["ghcr.io/kafbat/kafka-ui", "adminer", "huggingface/mongoku", "axllent/mailpit"],
+      matchUpdateTypes: ["minor", "patch"],
+    },
+    {
+      groupName: "k6",                           // the image of scripts/k6.sh and the version that CI installs must stay equal ("keep in step" in ci.yml)
+      matchPackageNames: ["grafana/k6"],
+    },
+    {
+      groupName: "Hurl",                         // the CI binary and the container used when Hurl is not installed
+      matchPackageNames: ["Orange-OpenSource/hurl", "/^ghcr\\.io\\/orange-opensource\\/hurl$/i"],
+    },
+    {
+      groupName: "npm contract tools",
+      matchManagers: ["npm"],
+      matchUpdateTypes: ["minor", "patch"],
+    },
+    {
+      groupName: "pip validation tooling",
+      matchManagers: ["pip_requirements"],
+      matchUpdateTypes: ["minor", "patch"],
+    },
+    {
+      groupName: "pre-commit hooks",
+      matchManagers: ["pre-commit"],
+      matchUpdateTypes: ["minor", "patch"],
+    },
+    {
+      groupName: "shellcheck",                   // the shellcheck hook and the copy inside the actionlint hook (this rule must stay after "pre-commit hooks")
+      matchPackageNames: ["shellcheck-py", "shellcheck-py/shellcheck-py"],
+    },
+    {
+      // Actions are pinned to a major tag (and k6's to a digest with the version in a comment): every update, major ones included, goes into one pull request;
+      // CI is the test. This does not apply to the Python and Node versions that the setup actions install, see the next rule.
+      groupName: "GitHub Actions",
+      matchManagers: ["github-actions"],
+      matchDepTypes: ["action"],
+      dependencyDashboardApproval: false,
+    },
+    {
+      groupName: "CI runtimes",                  // python-version and node-version of the setup actions; a new major is a decision (dashboard)
+      matchManagers: ["github-actions"],
+      matchDepNames: ["python", "node"],
+      matchUpdateTypes: ["minor", "patch"],
+    },
+
+    // ---- exceptions ------------------------------------------------------------------------------------------------------------------------------------
+    {
+      // PGSTY Silo (MinIO fork) is versioned by date: RELEASE.2026-10-26T00-00-00Z. The "major" is the year, which breaks nothing.
+      matchPackageNames: ["pgsty/silo"],
+      versioning: "regex:^RELEASE\\.(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})T(?<build>\\d{2}-\\d{2}-\\d{2})Z$",
+      dependencyDashboardApproval: false,
+    },
+    {
+      // Supply chain: do not take a package version in its first days. (Only for registries that report the publication time.)
+      matchDatasources: ["npm", "pypi"],
+      minimumReleaseAge: "3 days",
+    },
+  ],
+}

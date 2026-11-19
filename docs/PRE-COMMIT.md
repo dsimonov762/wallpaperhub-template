@@ -38,6 +38,7 @@ The first run clones the hook repositories and builds their environments (needs 
 | `wh-dashboards` | `make dashboards-check` | `infra/grafana/` |
 | `wh-chaos` | `make chaos-check` | `infra/chaos/`, `infra/docker-compose.yml` and the chaos overlay |
 | `wh-gateway-overlays` | `make load-check https-check` | `envoy.yaml`, the two generators |
+| `wh-renovate` | `make renovate-check` | `.github/renovate.json5` (needs Node 24.11+ or Docker, see [RENOVATE.md](RENOVATE.md)) |
 
 They need `make` and Python 3, so they run in WSL, Linux and macOS; they create `.venv-validate` on first use. Each takes a few seconds once that exists.
 
@@ -53,6 +54,7 @@ SKIP=wh-seed git commit ...        # skip one hook (several: SKIP=wh-seed,shellc
 git commit --no-verify             # skip all commit hooks      git push --no-verify   skip the push hooks
 pre-commit run --files path/to/file             # try the hooks on one file without committing
 pre-commit autoupdate              # move the pinned hook versions (rev:) to the latest releases; review the diff, then make precommit
+                                   # (Renovate does this as a weekly pull request once installed: RENOVATE.md)
 ```
 
 `--no-verify` is allowed: CI is the gate. A branch that skipped a hook and breaks the check fails there, with the same message.
