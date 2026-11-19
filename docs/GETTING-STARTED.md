@@ -90,7 +90,8 @@ For clicking through the whole API there is a [Bruno collection](../bruno/README
 6. `make up-chaos && make chaos-run S=all` - does a service keep the promises of README section 8 when a dependency is down, slow or hanging (clean 503, deadlines, fallbacks, recovery without a restart)? Toxiproxy between every service and its dependencies: [docs/CHAOS.md](CHAOS.md). Run it once the services do real work.
 7. `make up-load && make load-run P=load` - how much traffic can it take, which operation leaves its latency budget first, does it recover from a spike, does it hold for an hour (k6; the gateway's rate limits raised for the test): [docs/LOAD.md](LOAD.md).
 8. `make certs ARGS=--install && make up-https` - the gateway on `https://localhost:8443` with a certificate your browser trusts (mkcert), for a front end that needs https; `HTTPS_ISSUER=1` also puts Keycloak on https: [docs/HTTPS.md](HTTPS.md).
-9. CI runs the static checks on every pull request, see [CI.md](CI.md).
+9. `pipx install pre-commit && make hooks` - the same static checks as git hooks, so a stale generated file or a shell mistake stops the commit instead of the pull request: [docs/PRE-COMMIT.md](PRE-COMMIT.md).
+10. CI runs the static checks on every pull request, see [CI.md](CI.md).
 
 ### Development data
 
@@ -115,6 +116,10 @@ Evolving a contract: an additive change passes (new optional response field, new
 ### Load tests
 
 `make up-load` is `make up-apps` with the gateway's rate limits raised (otherwise the per-IP limit caps a local test at 10 requests per second). `make load-smoke` runs every user journey once, `make load-run P=load RATE=20` holds 20 journeys per second for five minutes with a latency budget per operation, `stress`, `spike`, `soak`, `uploads` and `ratelimit` are the other profiles, and the Grafana dashboard *Load test (k6)* shows the run next to the server's own numbers. [LOAD.md](LOAD.md).
+
+### Git hooks
+
+`make hooks` installs [pre-commit](https://pre-commit.com) hooks into your clone (install the tool once with `pipx install pre-commit`, in Ubuntu/WSL, and commit from there). On every commit: whitespace and file checks, shellcheck, actionlint, hadolint, and, for the files you touched, the repo's own checks (contracts, seed data, Bruno collection, dashboards, generated gateway and chaos configs). Before a push: `make lint` and the contract style rules. `make precommit` runs everything on all files, `git commit --no-verify` skips the hooks (CI runs all of it anyway). What is in it and why some things are not: [docs/PRE-COMMIT.md](PRE-COMMIT.md).
 
 ### HTTPS
 
@@ -187,6 +192,7 @@ services/<name>/<impl>/   YOUR implementations go here (account, media, catalog,
 e2e/                      Hurl tests: gateway/ (any backend) and system/ (real services), fixtures/, run.sh
 scripts/                  doctor.sh, wait-healthy.sh, validate/ (contract cross-checks), contracts.sh + contracts/ (lint, breaking), codegen.sh, ct.sh
 tools/contract-tools/     pinned Spectral, buf, openapi-typescript (package.json, Dockerfile)
+.pre-commit-config.yaml   git hooks (pre-commit), see docs/PRE-COMMIT.md; .hadolint.yaml and .github/actionlint.yaml configure two of them
 Makefile                  make help
 ```
 

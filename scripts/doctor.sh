@@ -53,6 +53,13 @@ if command -v mkcert >/dev/null 2>&1 || command -v mkcert.exe >/dev/null 2>&1; t
   else warn "mkcert is installed but infra/certs has no current certificate: make certs   (only needed for make up-https)"; fi
 else warn "mkcert not installed: only needed for make up-https. Windows: winget install FiloSottile.mkcert, Ubuntu: sudo apt install mkcert, then make certs"; fi
 
+echo "Git hooks (optional, make hooks)"
+if command -v pre-commit >/dev/null 2>&1; then
+  hooks_dir="$(git rev-parse --git-path hooks 2>/dev/null)"
+  if [ -n "$hooks_dir" ] && grep -qs 'pre-commit' "$hooks_dir/pre-commit" 2>/dev/null; then ok "pre-commit hooks are installed in this clone"
+  else warn "pre-commit is installed but this clone has no hooks: make hooks"; fi
+else warn "pre-commit not installed (optional, CI runs the same checks): pipx install pre-commit, then make hooks"; fi
+
 echo "Ports (host side, loopback)"
 if [ -f infra/.env ]; then set -a; . infra/.env 2>/dev/null; set +a; fi
 # Host ports published by running containers, one per line. 'docker ps' prints consecutive ports as a range

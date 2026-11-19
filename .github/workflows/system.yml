@@ -36,7 +36,7 @@ jobs:
         run: |
           ready=true
           for svc in account media catalog notification; do
-            up="$(echo "$svc" | tr a-z A-Z)"; var="${up}_DIR_VAR"; dir="${!var:-services/$svc/java-spring}"
+            up="$(echo "$svc" | tr '[:lower:]' '[:upper:]')"; var="${up}_DIR_VAR"; dir="${!var:-services/$svc/java-spring}"
             if [ -f "$dir/Dockerfile" ]; then
               echo "$svc: $dir"; echo "${up}_DIR=../$dir" >> "$GITHUB_ENV"
             else

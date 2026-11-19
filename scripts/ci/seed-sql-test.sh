@@ -8,7 +8,8 @@ cleanup() { [ -z "${CONTAINER:-}" ] || docker rm -f "$CONTAINER" >/dev/null 2>&1
 if [ -z "${PGHOST:-}" ]; then
   trap cleanup EXIT
   CONTAINER="$(docker run -d --rm -e POSTGRES_PASSWORD=seedtest -p 127.0.0.1::5432 postgres:18.6-trixie)"
-  export PGHOST=127.0.0.1 PGPORT="$(docker port "$CONTAINER" 5432/tcp | head -1 | sed 's/.*://')" PGUSER=postgres PGPASSWORD=seedtest
+  PGPORT="$(docker port "$CONTAINER" 5432/tcp | head -1 | sed 's/.*://')"
+  export PGHOST=127.0.0.1 PGPORT PGUSER=postgres PGPASSWORD=seedtest
   for _ in $(seq 1 60); do pg_isready -q 2>/dev/null || docker exec "$CONTAINER" pg_isready -q -h 127.0.0.1 && break; sleep 1; done
   sleep 2
 fi

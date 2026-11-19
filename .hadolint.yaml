@@ -1,0 +1,4 @@
+# hadolint (pre-commit hook). Every Dockerfile here builds from a pinned base image tag; the packages added on top come from that Alpine release's own repository,
+# which only ever carries one build of each, so pinning them again (DL3018) adds an edit on every point release and no reproducibility.
+ignored:
+  - DL3018

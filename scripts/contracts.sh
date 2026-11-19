@@ -12,7 +12,7 @@
 #               OASDIFF_FAIL_ON            ERR (default) or WARN: what makes oasdiff fail
 #               AVRO_MODE                  BACKWARD (default, what Schema Registry enforces) or FULL
 set -u
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT" || exit 1
 CT="$ROOT/scripts/ct.sh"
 SPECS=(account media catalog notification)
 rc=0

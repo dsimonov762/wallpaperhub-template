@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Prints where the web UIs of `make up-tools` are, with the connection details already in the links.   scripts/tools-info.sh [kafka-ui adminer mongo-ui]
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 [ -f infra/.env ] && { set -a; . infra/.env 2>/dev/null; set +a; }
 want=" ${*:-kafka-ui adminer mongo-ui} "
 host="localhost"

@@ -59,7 +59,7 @@ elif command -v docker >/dev/null 2>&1; then
   # --user: the image's default uid (12345) cannot write the summary into loadtest/.run, which this script creates as the caller.
   # On Linux the gateway must be reachable on the docker0 bridge (BIND_ADDRESS=0.0.0.0) or, simpler, use an installed k6.
   CMD=(docker run --rm -i --user "$(id -u):$(id -g)" --add-host=host.docker.internal:host-gateway -v "$ROOT:/repo" -w /repo
-       -e K6_PROMETHEUS_RW_SERVER_URL="$PROM_URL/api/v1/write" -e K6_PROMETHEUS_RW_TREND_STATS -e K6_PROMETHEUS_RW_PUSH_INTERVAL "$K6_IMAGE")
+       -e K6_PROMETHEUS_RW_SERVER_URL="$PROM_URL/api/v1/write" ${CA_ENV[@]+"${CA_ENV[@]}"} -e K6_PROMETHEUS_RW_TREND_STATS -e K6_PROMETHEUS_RW_PUSH_INTERVAL "$K6_IMAGE")
 else echo "need k6 (https://k6.io) or docker" >&2; exit 2; fi
 
 export K6_PROMETHEUS_RW_TREND_STATS="${K6_PROMETHEUS_RW_TREND_STATS:-p(95),p(99),avg,max,min,med}" K6_PROMETHEUS_RW_PUSH_INTERVAL="${K6_PROMETHEUS_RW_PUSH_INTERVAL:-5s}"

@@ -6,7 +6,7 @@
 #              JWKS_URI   (default <KEYCLOAK_URL>/realms/wallpaperhub/protocol/openid-connect/certs)   HURL
 # Not covered (needs the observability stack): T1-T3. Run `make conformance SVC=...` against a service started with make up-obs.
 set -u
-HERE="$(cd "$(dirname "$0")" && pwd)"; cd "$HERE"
+HERE="$(cd "$(dirname "$0")" && pwd)"; cd "$HERE" || exit 1
 KC="${KEYCLOAK_URL:-http://localhost:8180}"
 ISSUER="${ISSUER:-http://localhost:8180/realms/wallpaperhub}"
 JWKS="${JWKS_URI:-$KC/realms/wallpaperhub/protocol/openid-connect/certs}"

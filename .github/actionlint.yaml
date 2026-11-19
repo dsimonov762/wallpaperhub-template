@@ -1,0 +1,4 @@
+# actionlint (the pre-commit hook and CI) only knows the runner labels of the version it was built with.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04

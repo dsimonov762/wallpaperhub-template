@@ -48,6 +48,11 @@ def build(issuer=None):
     if text.count(HSTS) < 1:
         sys.exit("envoy.yaml has no HSTS header with the expected value: update scripts/https-gateway.py")
     text = text.replace(HSTS, "max-age=0")
+    # Every place that sets the header must have been neutralised: an edited value that no longer matches HSTS would otherwise reach the
+    # browser as a one-year HSTS entry for localhost (docs/HTTPS.md).
+    stale = [ln.strip() for ln in text.splitlines() if "strict-transport-security" in ln.lower() and "max-age=0" not in ln]
+    if stale:
+        sys.exit("envoy.yaml sets the HSTS header with a value this script does not know: update scripts/https-gateway.py\n  " + "\n  ".join(stale))
     # CORS: https twins of the allowed localhost origins (a front end served over https calls the gateway over https)
     cors = re.compile(r'^(?P<ind>\s*)- \{ exact: "http://localhost:8080" \}\n', re.M)
     if not cors.search(text):

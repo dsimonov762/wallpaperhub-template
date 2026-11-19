@@ -20,7 +20,10 @@ SVC="${1:-}"; [ $# -gt 0 ] && shift
 [ -f "$HERE/services/$SVC.env" ] || { sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 
 NO_LOGS=0; NO_TEL=0; LIFECYCLE=0; REQUIRE=OIDC_ISSUER_URI; LOG_FILE=""
-set -a; . "$HERE/services/$SVC.env"; set +a
+set -a
+# shellcheck source=/dev/null
+. "$HERE/services/$SVC.env"
+set +a
 API_URL="${API_URL:-$API_URL_DEFAULT}"; MGMT_URL="${MGMT_URL:-$MGMT_URL_DEFAULT}"; CONTAINER="${CONTAINER:-$LOG_CONTAINER_DEFAULT}"
 while [ $# -gt 0 ]; do
   case "$1" in

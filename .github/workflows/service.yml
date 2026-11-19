@@ -59,7 +59,7 @@ jobs:
         run: |
           [ -f "$DIR/Dockerfile" ] || { echo "::error::$DIR/Dockerfile not found"; exit 1; }
           case "$SERVICE" in account|media|catalog|notification) ;; *) echo "::error::unknown service $SERVICE"; exit 1;; esac
-          echo "$(echo "$SERVICE" | tr a-z A-Z)_DIR=../$DIR" >> "$GITHUB_ENV"
+          echo "$(echo "$SERVICE" | tr '[:lower:]' '[:upper:]')_DIR=../$DIR" >> "$GITHUB_ENV"
           # GitHub Actions expressions have no replace(); build the artifact name in bash (services/account/go -> logs-services-account-go)
           echo "log_artifact=logs-${DIR//\//-}" >> "$GITHUB_OUTPUT"
       - run: make env
@@ -72,9 +72,9 @@ jobs:
         env:
           TELEMETRY: ${{ inputs.telemetry }}
         run: |
-          profiles="--profile infra --profile apps"
-          [ "$TELEMETRY" = true ] && profiles="$profiles --profile observability"
-          docker compose --project-directory infra -f infra/docker-compose.yml $profiles up -d --build --no-deps "$SERVICE"
+          profiles=(--profile infra --profile apps)
+          [ "$TELEMETRY" = true ] && profiles+=(--profile observability)
+          docker compose --project-directory infra -f infra/docker-compose.yml "${profiles[@]}" up -d --build --no-deps "$SERVICE"
           bash scripts/wait-healthy.sh 300
       - name: Conformance
         env:

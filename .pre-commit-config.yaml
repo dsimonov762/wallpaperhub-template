@@ -1,0 +1,118 @@
+# Git hooks with pre-commit (https://pre-commit.com).   Setup, what runs when, how to skip: docs/PRE-COMMIT.md
+#
+#   pipx install pre-commit      (or: pip install --user pre-commit)      once per machine
+#   make hooks                   installs the git hooks of this clone     once per clone
+#   make precommit               every hook on every file (what CI runs)
+#
+# On commit: file hygiene, shell scripts, workflows, Dockerfiles, and the repo's own generated-file and contract checks for the files you touched.
+# On push:   what needs Docker (compose files for every profile, Hurl formatting). CI repeats all of it: a hook is a faster way to hear about a failure, not the gate.
+# Every hook that runs a `make` target of this repo has an id that starts with `wh-`; CI skips those in its pre-commit job because its own steps already run them.
+minimum_pre_commit_version: "4.0.0"
+default_install_hook_types: [pre-commit, pre-push]
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # Line endings need no hook: .gitattributes makes git store LF whatever the editor on Windows saved.
+      # The two that rewrite files leave generated content alone: its generators decide the bytes and the `wh-*` hooks below compare them.
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+        exclude: &generated |
+          (?x)^(
+            seed/out/ | seed/s3/ | bruno/ | gen/ |
+            infra/chaos/toxiproxy\.json | infra/docker-compose\.chaos\.yml |
+            infra/grafana/dashboards/ | e2e/fixtures/
+          )
+      - id: end-of-file-fixer
+        exclude: *generated
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-case-conflict       # two files that differ only by case: fine on Linux, a broken checkout on Windows
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: detect-private-key        # dev certificates and keys are generated into git-ignored folders (make certs); none belongs in a commit
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        args: [--severity=warning]
+
+  - repo: https://github.com/Mateusz-Grzelinski/actionlint-py
+    rev: v1.7.12.25
+    hooks:
+      - id: actionlint                # also shellchecks the `run:` scripts of the workflows
+        additional_dependencies: [shellcheck-py==0.11.0.1]
+
+  - repo: https://github.com/AleksaC/hadolint-py
+    rev: v2.15.1
+    hooks:
+      - id: hadolint
+        args: [--failure-threshold, warning]
+
+  # The repo's own checks (Makefile). The `files` filter decides when a hook has something to say, so a typo in a doc runs none of them.
+  # They are the same commands CI runs (docs/CI.md): fixing a failure here is fixing it there. Needs `make` and Python 3 (WSL, Linux, macOS).
+  - repo: local
+    hooks:
+      - id: wh-contracts
+        name: contracts agree with each other, the gateway and the README
+        entry: make check-contracts
+        language: system
+        pass_filenames: false
+        files: ^(contracts/|services/gateway/envoy/|scripts/validate/|infra/host/|conformance/services/|README\.md$)
+      - id: wh-gateway-errors
+        name: gateway error mappers match the i18n bundles
+        entry: python3 scripts/gen-gateway-errors.py --check
+        language: system
+        pass_filenames: false
+        files: ^(contracts/i18n/|services/gateway/envoy/|scripts/gen-gateway-errors\.py$)
+      - id: wh-seed
+        name: seed data is up to date and fits the DB schemas
+        entry: make seed-check
+        language: system
+        pass_filenames: false
+        files: ^(seed/|contracts/db-schema/|scripts/validate/)
+      - id: wh-bruno
+        name: Bruno collection is up to date
+        entry: make bruno-check
+        language: system
+        pass_filenames: false
+        files: ^(bruno/|contracts/openapi/|seed/|scripts/bruno-gen\.py$)
+      - id: wh-dashboards
+        name: Grafana dashboards are valid
+        entry: make dashboards-check
+        language: system
+        pass_filenames: false
+        files: ^(infra/grafana/|scripts/validate/validate_dashboards\.py$)
+      - id: wh-chaos
+        name: failure-injection config is up to date
+        entry: make chaos-check
+        language: system
+        pass_filenames: false
+        files: ^(infra/chaos/|infra/docker-compose(\.chaos)?\.yml$|scripts/chaos\.py$)
+      - id: wh-gateway-overlays
+        name: load-test and HTTPS gateway configs still derive from envoy.yaml
+        entry: make load-check https-check
+        language: system
+        pass_filenames: false
+        files: ^(services/gateway/envoy/envoy\.yaml$|scripts/(loadtest|https)-gateway\.py$)
+
+      # Before a push: what needs Docker or builds a tool image, so it is too slow for every commit.
+      - id: wh-lint
+        name: compose files for every profile, shell syntax, Hurl formatting
+        entry: make lint
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        files: ^(infra/|e2e/|conformance/|scripts/|services/gateway/|Makefile$)
+      - id: wh-contracts-lint
+        name: contract style rules (Spectral, buf, Avro, GraphQL)
+        entry: make contracts-lint
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        files: ^contracts/

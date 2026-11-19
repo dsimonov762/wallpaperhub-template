@@ -2,7 +2,7 @@
 # make seed | make reset | make reseed : runs the one-shot jobs of the compose profile `data` (infra/data/*.sh).
 #   scripts/data.sh seed|reset|reseed      YES=1 skips the question before a reset
 set -u
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 ACTION="${1:-}"
 COMPOSE=(docker compose --project-directory infra -f infra/docker-compose.yml --profile infra --profile data)
 JOBS=(data-keycloak data-account-db data-media-db data-catalog-db data-catalog-search data-redis data-s3)

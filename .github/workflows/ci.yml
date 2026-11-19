@@ -33,6 +33,12 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: tools/contract-tools/package-lock.json
+      # The hooks of .pre-commit-config.yaml (file hygiene, shellcheck, actionlint, hadolint). The wh-* hooks run make targets that the steps below
+      # already run one by one, so they are skipped here: the list comes from the config, a new wh-* hook needs no edit of this file.
+      - name: Pre-commit hooks on every file
+        run: |
+          pip install -q pre-commit==4.7.0
+          SKIP="$(grep -oE '^ *- id: wh-[a-z-]+' .pre-commit-config.yaml | sed 's/.*id: //' | paste -sd, -)" pre-commit run --all-files --show-diff-on-failure --color always
       - name: Install Hurl (hurlfmt checks the formatting of the .hurl files)
         run: scripts/ci/install-hurl.sh
       - name: Hurl needs libxml2.so.2 (Ubuntu 26.04 only ships libxml2.so.16)
