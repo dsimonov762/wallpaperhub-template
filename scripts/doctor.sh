@@ -47,6 +47,12 @@ if [ -n "$crlf" ]; then warn "CRLF line endings in: $(echo $crlf | tr '\n' ' ').
 else ok "no CRLF line endings in scripts and configs"; fi
 [ -f infra/.env ] && ok "infra/.env present" || warn "infra/.env missing (optional, defaults apply): make env"
 
+echo "HTTPS (optional, make certs)"
+if command -v mkcert >/dev/null 2>&1 || command -v mkcert.exe >/dev/null 2>&1; then
+  if bash scripts/certs.sh --check >/dev/null 2>&1; then ok "mkcert certificate in infra/certs is current (make up-https)"
+  else warn "mkcert is installed but infra/certs has no current certificate: make certs   (only needed for make up-https)"; fi
+else warn "mkcert not installed: only needed for make up-https. Windows: winget install FiloSottile.mkcert, Ubuntu: sudo apt install mkcert, then make certs"; fi
+
 echo "Ports (host side, loopback)"
 if [ -f infra/.env ]; then set -a; . infra/.env 2>/dev/null; set +a; fi
 # Host ports published by running containers, one per line. 'docker ps' prints consecutive ports as a range

@@ -25,3 +25,5 @@ conformance/.run/
 infra/loadtest/
 loadtest/.run/
 loadtest/.data/
+infra/certs/
+infra/https/

@@ -45,6 +45,28 @@ schemas: ## (re)apply the canonical DB schema: Postgres migrations, Mongo collec
 up-apps: env ## infra + schemas + the real services and gateway (needs services/<name>/<impl> to exist)
 	$(COMPOSE) $(INFRA) $(APPS) --profile schemas up -d --build $$(for s in $$(cat .host 2>/dev/null); do printf -- '--scale %s=0 ' $$s; done)
 
+certs: ## local HTTPS certificates with mkcert (once per machine and every ~2 years); ARGS=--install also trusts the CA, ARGS=--check only reports
+	@bash scripts/certs.sh $(ARGS)
+
+up-https: env ## like up-apps + the gateway on https://localhost:8443 (mkcert certificate: make certs); HTTPS_ISSUER=1 also serves Keycloak over https and moves the token issuer there (+0 MB)
+	@bash scripts/certs.sh --check >/dev/null || { echo "no current certificate: make certs"; exit 1; }
+	$(VENV)
+	.venv-validate/bin/python scripts/https-gateway.py $(if $(HTTPS_ISSUER),--keycloak-https)
+	$(COMPOSE) -f infra/docker-compose.https.yml $(if $(HTTPS_ISSUER),-f infra/docker-compose.https-issuer.yml) $(INFRA) $(APPS) --profile schemas up -d --build $$(for s in $$(cat .host 2>/dev/null); do printf -- '--scale %s=0 ' $$s; done)
+	@echo "gateway: https://localhost:$${PORT_GATEWAY_TLS:-8443}  (http://localhost:$${PORT_GATEWAY:-8080} still works)$(if $(HTTPS_ISSUER),; Keycloak: https://localhost:$${PORT_KEYCLOAK_TLS:-8543})   details: docs/HTTPS.md"
+
+up-https-mocks: env ## up-mocks with the https gateway: tries the TLS setup without the services (also HTTPS_ISSUER=1)
+	@bash scripts/certs.sh --check >/dev/null || { echo "no current certificate: make certs"; exit 1; }
+	$(VENV)
+	.venv-validate/bin/python scripts/https-gateway.py $(if $(HTTPS_ISSUER),--keycloak-https)
+	$(COMPOSE) -f infra/docker-compose.https.yml $(if $(HTTPS_ISSUER),-f infra/docker-compose.https-issuer.yml) $(INFRA) --profile mocks up -d --build gateway
+	@bash scripts/wait-healthy.sh 600
+
+https-check: ## the TLS listener can still be derived from envoy.yaml, with and without the https issuer (CI runs it; make lint checks the overlays)
+	$(VENV)
+	.venv-validate/bin/python scripts/https-gateway.py --check
+	.venv-validate/bin/python scripts/https-gateway.py --keycloak-https --check
+
 up-load: env ## like up-apps, with the gateway's rate limits raised x100 and more threads, for load tests (make load-run P=load); WITH_OBS=1 adds Grafana & co (+6 GB)
 	$(VENV)
 	.venv-validate/bin/python scripts/loadtest-gateway.py --factor $(or $(LOAD_RL_FACTOR),100)
@@ -229,6 +251,7 @@ lint: ## compose config for every profile combination, shell syntax, Hurl format
 	  $(COMPOSE) $$p config -q && echo "  ok  compose $$p" || exit 1; done
 	@$(COMPOSE) -f infra/docker-compose.chaos.yml $(INFRA) $(APPS) --profile schemas config -q && echo "  ok  compose with the chaos overlay"
 	@$(COMPOSE) -f infra/docker-compose.loadtest.yml $(INFRA) $(APPS) --profile schemas config -q && echo "  ok  compose with the load-test overlay"
+	@$(COMPOSE) -f infra/docker-compose.https.yml -f infra/docker-compose.https-issuer.yml $(INFRA) $(APPS) --profile schemas config -q && echo "  ok  compose with the https overlays"
 	@for f in infra/db-init/*.sh infra/data/*.sh; do bash -n $$f && echo "  ok  sh -n $$f" || exit 1; done
 	@for f in e2e/run.sh scripts/*.sh scripts/ci/*.sh conformance/run.sh conformance/selftest.sh conformance/checks/*.sh infra/host-proxy/forward.sh; do bash -n $$f && echo "  ok  bash -n $$f" || exit 1; done
 	@python3 scripts/gen-gateway-errors.py --check
@@ -241,4 +264,4 @@ check-contracts: ## cross-check OpenAPI, GraphQL, Avro, proto, i18n and the gate
 	.venv-validate/bin/python scripts/validate/validate_contracts2.py
 	.venv-validate/bin/python scripts/validate/validate_host_env.py
 
-.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-chaos up-load up-load-mocks load-run load-smoke load-data load-check chaos chaos-run chaos-list chaos-gen chaos-check up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen
+.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-chaos certs up-https up-https-mocks https-check up-load up-load-mocks load-run load-smoke load-data load-check chaos chaos-run chaos-list chaos-gen chaos-check up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen

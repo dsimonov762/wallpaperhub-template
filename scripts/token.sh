@@ -45,13 +45,17 @@ CACHE_DIR="$ROOT/.token-cache"; CACHE_FILE="$CACHE_DIR/$KEY-$(printf '%s' "$KEYC
 field() { sed -n "s/.*\"$1\":\"\([^\"]*\)\".*/\1/p"; }          # string field of a flat JSON answer
 numfield() { sed -n "s/.*\"$1\":\([0-9]*\).*/\1/p"; }
 
+# Keycloak over https (make up-https HTTPS_ISSUER=1): trust the mkcert CA of this repo (make certs)
+CACERT=()
+case "${TOK_URL:-}" in https://*) [ -f "$(dirname "$0")/../infra/certs/rootCA.pem" ] && CACERT=(--cacert "$(dirname "$0")/../infra/certs/rootCA.pem");; esac
+
 fetch() {  # fetch -> full JSON answer of Keycloak on stdout
   if [ -n "$CLIENT" ]; then
     local name="${CLIENT%-svc}" var secret
     var="$(echo "$name" | tr 'a-z-' 'A-Z_')_SVC_SECRET"; secret="${!var:-$name-svc-dev-secret}"
-    curl -sS --max-time 15 -X POST "$TOK_URL" -d grant_type=client_credentials -d "client_id=$CLIENT" --data-urlencode "client_secret=$secret"
+    curl -sS ${CACERT[@]+"${CACERT[@]}"} --max-time 15 -X POST "$TOK_URL" -d grant_type=client_credentials -d "client_id=$CLIENT" --data-urlencode "client_secret=$secret"
   else
-    curl -sS --max-time 15 -X POST "$TOK_URL" -d grant_type=password -d "client_id=$CLIENT_ID" --data-urlencode "username=$WHO" --data-urlencode "password=$PASSWORD"
+    curl -sS ${CACERT[@]+"${CACERT[@]}"} --max-time 15 -X POST "$TOK_URL" -d grant_type=password -d "client_id=$CLIENT_ID" --data-urlencode "username=$WHO" --data-urlencode "password=$PASSWORD"
   fi
 }
 
@@ -61,7 +65,10 @@ if [ "$CACHE" = 1 ] && [ "$MODE" != json ] && [ -f "$CACHE_FILE" ]; then
   [ -n "${exp:-}" ] && [ "$exp" -gt $((now + 30)) ] 2>/dev/null && token="$cached"
 fi
 if [ -z "$token" ]; then
-  answer="$(fetch)" || { echo "cannot reach Keycloak at $KEYCLOAK_URL (make up, then make ps)" >&2; exit 1; }
+  answer="$(fetch)" || {
+    echo "cannot reach Keycloak at $KEYCLOAK_URL (make up, then make ps)" >&2
+    case "$KEYCLOAK_URL" in https://*) [ ${#CACERT[@]} -gt 0 ] || echo "https needs the local CA: make certs (infra/certs/rootCA.pem is missing)" >&2;; esac
+    exit 1; }
   token="$(printf '%s' "$answer" | field access_token)"
   if [ -z "$token" ]; then
     err="$(printf '%s' "$answer" | field error_description)"; [ -n "$err" ] || err="$(printf '%s' "$answer" | head -c 300)"

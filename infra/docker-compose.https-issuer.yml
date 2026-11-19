@@ -1,0 +1,29 @@
+# Second overlay (make up-https HTTPS_ISSUER=1): Keycloak itself is served over https and its public URL, therefore the `iss` claim of every token,
+# becomes https://localhost:${PORT_KEYCLOAK_TLS:-8543}/realms/wallpaperhub. The gateway (generated config) and the four services are told the new issuer.
+# Use it together with docker-compose.https.yml. Inside the network nothing changes: JWKS and token endpoints stay http://keycloak:8080 (backchannel).
+# Why: a front end on https needs a Keycloak on https (secure SSO cookies, no mixed content, the real redirect flow). Cost: tokens differ from the
+# default stack, so tools that check the issuer, and services you run on the host, need OIDC_ISSUER_URI (see docs/HTTPS.md).
+services:
+  keycloak:
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_KEYCLOAK_TLS:-8543}:8443"
+    volumes:
+      - ./certs:/opt/keycloak/certs:ro
+    environment:
+      KC_HOSTNAME: https://localhost:${PORT_KEYCLOAK_TLS:-8543}
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/certs/wallpaperhub.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/certs/wallpaperhub-key.pem
+      # the management port (9000, health check of the compose file) would inherit https; keep it plain
+      KC_HTTP_MANAGEMENT_SCHEME: http
+  account:
+    environment:
+      OIDC_ISSUER_URI: https://localhost:${PORT_KEYCLOAK_TLS:-8543}/realms/wallpaperhub
+  media:
+    environment:
+      OIDC_ISSUER_URI: https://localhost:${PORT_KEYCLOAK_TLS:-8543}/realms/wallpaperhub
+  catalog:
+    environment:
+      OIDC_ISSUER_URI: https://localhost:${PORT_KEYCLOAK_TLS:-8543}/realms/wallpaperhub
+  notification:
+    environment:
+      OIDC_ISSUER_URI: https://localhost:${PORT_KEYCLOAK_TLS:-8543}/realms/wallpaperhub

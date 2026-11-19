@@ -64,6 +64,8 @@ jobs:
         run: make chaos-check
       - name: The load-test gateway config can still be derived from envoy.yaml
         run: make load-check
+      - name: The HTTPS gateway config can still be derived from envoy.yaml
+        run: make https-check
 
   seed:
     name: seed data loads into Postgres

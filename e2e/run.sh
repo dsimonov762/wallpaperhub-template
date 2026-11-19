@@ -17,6 +17,13 @@ set -a; . ./env/local.env; set +a
 BASE_URL="${BASE_URL:-$base_url}"; KEYCLOAK_URL="${KEYCLOAK_URL:-$keycloak_url}"
 REALM="${REALM:-$realm}"; CLIENT_ID="${CLIENT_ID:-$client_id}"
 
+# ---- https (make up-https): trust the mkcert CA of this repo (make certs) ------------------------------------------------
+CA="$HERE/../infra/certs/rootCA.pem"; CURL_CA=(); HURL_CA=(); CA_MOUNT=()
+case "$BASE_URL $KEYCLOAK_URL" in *https://*)
+  if [ -f "$CA" ]; then CURL_CA=(--cacert "$CA"); HURL_CA=(--cacert "$CA"); CA_MOUNT=(-v "$CA:/rootCA.pem:ro")
+  else echo "https target but infra/certs/rootCA.pem is missing: make certs" >&2; fi ;;
+esac
+
 # ---- hurl: installed binary, else the official container ---------------------------------------------------------
 HURL_CMD=()
 if [ -n "${HURL:-}" ]; then HURL_CMD=("$HURL")
@@ -25,19 +32,20 @@ elif command -v docker >/dev/null 2>&1; then
   echo "hurl not found, using the container ghcr.io/orange-opensource/hurl:8.1.0 (install hurl for speed: winget install hurl)"
   # Inside the container localhost is the container: reach the host through Docker Desktop's alias.
   BASE_URL="${BASE_URL//localhost/host.docker.internal}"; KEYCLOAK_URL="${KEYCLOAK_URL//localhost/host.docker.internal}"
-  HURL_CMD=(docker run --rm --add-host=host.docker.internal:host-gateway -v "$HERE:/e2e" -w /e2e ghcr.io/orange-opensource/hurl:8.1.0)
+  [ ${#HURL_CA[@]} -gt 0 ] && HURL_CA=(--cacert /rootCA.pem)   # inside the container the CA file is mounted here
+  HURL_CMD=(docker run --rm --add-host=host.docker.internal:host-gateway -v "$HERE:/e2e" ${CA_MOUNT[@]+"${CA_MOUNT[@]}"} -w /e2e ghcr.io/orange-opensource/hurl:8.1.0)
 else echo "need hurl (https://hurl.dev) or docker" >&2; exit 2; fi
 
 mkdir -p .run
 RUN_ID="$(date +%s | tail -c 7)$RANDOM"   # unique per run: usernames, titles, idempotency keys
 
 token() {   # token <user> -> access token of a seeded realm user (password grant is enabled for the e2e-tests client)
-  curl -sS --fail-with-body -X POST "$KEYCLOAK_URL/realms/$REALM/protocol/openid-connect/token" \
+  curl -sS --fail-with-body ${CURL_CA[@]+"${CURL_CA[@]}"} -X POST "$KEYCLOAK_URL/realms/$REALM/protocol/openid-connect/token" \
     -d grant_type=password -d "client_id=$CLIENT_ID" -d "username=$1" -d password=password \
     | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p'
 }
 
-COMMON=(--test --jobs 1 --file-root . --variables-file env/local.env
+COMMON=(--test --jobs 1 --file-root . ${HURL_CA[@]+"${HURL_CA[@]}"} --variables-file env/local.env
         --variable "base_url=$BASE_URL" --variable "keycloak_url=$KEYCLOAK_URL" --variable "realm=$REALM"
         --variable "client_id=$CLIENT_ID" --variable "run_id=$RUN_ID"
         --report-junit ".run/junit-$GROUP.xml")

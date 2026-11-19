@@ -1,0 +1,11 @@
+# Overlay for infra/docker-compose.yml (make up-https / make up-https-mocks): the gateway also listens on https://localhost:${PORT_GATEWAY_TLS:-8443}
+# with a certificate from your local mkcert CA (make certs; docs/HTTPS.md). Plain http://localhost:8080 keeps working.
+# The file mounted below is GENERATED from services/gateway/envoy/envoy.yaml by scripts/https-gateway.py (make up-https does it).
+# Envoy only: for a hand-written gateway, terminate TLS in it yourself and do not use this overlay.
+services:
+  gateway:
+    volumes:
+      - ./https/envoy.generated.yaml:/etc/envoy/envoy.yaml:ro
+      - ./certs:/etc/envoy/certs:ro
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT_GATEWAY_TLS:-8443}:8443"

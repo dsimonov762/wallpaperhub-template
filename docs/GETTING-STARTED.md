@@ -18,7 +18,7 @@ open, what was actually tested, and what to do when something breaks.
    ```
    `max_map_count` is what Elasticsearch needs; without it the `elasticsearch` container restarts forever.
    `autoMemoryReclaim` hands page cache back to Windows; without it WSL keeps growing towards `memory` and the whole PC slows down.
-   Sizes: see the footprint table in section 2. In practice 6 GB plus 4 GB swap was tolerable/bearable for `make up-mocks` and `make up`; 13 GB was not enough
+   Sizes: see the footprint table in section 2. In practice 6 GB plus 4 GB swap was fine for `make up-mocks` and `make up`; 13 GB was not enough
    to run `make up-mocks` and `make up-obs` together comfortably (measured 9.4 GB in use), because `up-obs` already contains everything `up-mocks` needs
    plus Kafka, Elasticsearch, MongoDB and the observability stack.
 3. **Clone/copy the repo into the WSL filesystem** (`~/wallpaper-hub`), not under `C:\` (`/mnt/c/...`). Bind mounts from the Windows drive are slow
@@ -89,7 +89,8 @@ For clicking through the whole API there is a [Bruno collection](../bruno/README
 5. `make conformance SVC=account` (or `make conformance-all`) - does one service obey [docs/SERVICE-SPEC.md](SERVICE-SPEC.md) (health endpoints, JWT validation, problem+json and localization, JSON logs, traces/logs/metrics arriving in Tempo/Loki/Prometheus, graceful shutdown, fail-fast config)? Same checks for every language: [conformance/README.md](../conformance/README.md). Run it the first day of a new service, before there is any business logic.
 6. `make up-chaos && make chaos-run S=all` - does a service keep the promises of README section 8 when a dependency is down, slow or hanging (clean 503, deadlines, fallbacks, recovery without a restart)? Toxiproxy between every service and its dependencies: [docs/CHAOS.md](CHAOS.md). Run it once the services do real work.
 7. `make up-load && make load-run P=load` - how much traffic can it take, which operation leaves its latency budget first, does it recover from a spike, does it hold for an hour (k6; the gateway's rate limits raised for the test): [docs/LOAD.md](LOAD.md).
-8. CI runs the static checks on every pull request, see [CI.md](CI.md).
+8. `make certs ARGS=--install && make up-https` - the gateway on `https://localhost:8443` with a certificate your browser trusts (mkcert), for a front end that needs https; `HTTPS_ISSUER=1` also puts Keycloak on https: [docs/HTTPS.md](HTTPS.md).
+9. CI runs the static checks on every pull request, see [CI.md](CI.md).
 
 ### Development data
 
@@ -114,6 +115,10 @@ Evolving a contract: an additive change passes (new optional response field, new
 ### Load tests
 
 `make up-load` is `make up-apps` with the gateway's rate limits raised (otherwise the per-IP limit caps a local test at 10 requests per second). `make load-smoke` runs every user journey once, `make load-run P=load RATE=20` holds 20 journeys per second for five minutes with a latency budget per operation, `stress`, `spike`, `soak`, `uploads` and `ratelimit` are the other profiles, and the Grafana dashboard *Load test (k6)* shows the run next to the server's own numbers. [LOAD.md](LOAD.md).
+
+### HTTPS
+
+`make certs ARGS=--install` creates a local certificate authority that your machine trusts (mkcert; on Windows + WSL it uses the Windows trust store, so Windows browsers accept it) and a certificate for `localhost`, `*.wallpaperhub.localhost` and the Docker names. `make up-https` is `make up-apps` with the gateway also listening on `https://localhost:8443` (HTTP/2, the same routes and CORS; `http://localhost:8080` keeps working); `make up-https HTTPS_ISSUER=1` also serves Keycloak on `https://localhost:8543` and moves the token issuer there. `make e2e`, `make token`, `make load-run` and `make conformance` trust the CA by themselves; for curl, Node, Java and the rest see [docs/HTTPS.md](HTTPS.md), which also explains why the local gateway does not send HSTS.
 
 ### Failure injection
 
@@ -169,7 +174,8 @@ README.md                 design document (v1.1)
 contracts/                openapi/ proto/ avro/ graphql/ i18n/ db-schema/     the source of truth, language-agnostic
 infra/                    docker-compose.yml, .env.example, db-init/, data/ (seed and reset jobs), keycloak/, kafka-init/, observability configs,
                           chaos/ (Toxiproxy: edges.yaml, scenarios/, generated config) and docker-compose.chaos.yml (generated overlay),
-                          docker-compose.loadtest.yml (gateway with raised rate limits for k6)
+                          docker-compose.loadtest.yml (gateway with raised rate limits for k6),
+                          docker-compose.https.yml + https-issuer.yml (TLS overlays; certs/ and https/ are generated and git-ignored), see docs/HTTPS.md
 loadtest/                 k6 suite: main.js, journeys.js, lib/ (profiles, latency budget, auth, data), see docs/LOAD.md
 services/gateway/envoy/   the Envoy gateway (config, Dockerfile, CHEATSHEET.md)
 services/_mock/           Prism mock of a service (Dockerfile, mock.js)

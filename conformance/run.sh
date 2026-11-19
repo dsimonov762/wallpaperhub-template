@@ -46,12 +46,18 @@ else echo "need hurl (https://hurl.dev) or docker" >&2; exit 2; fi
 
 # ---- tokens ------------------------------------------------------------------------------------------------------------
 tok_url="$KEYCLOAK_URL/realms/$REALM/protocol/openid-connect/token"
+# Keycloak over https (make up-https HTTPS_ISSUER=1): trust the mkcert CA of this repo (make certs)
+CURL_CA=()
+case "$KEYCLOAK_URL" in https://*)
+  if [ -f "$ROOT/infra/certs/rootCA.pem" ]; then CURL_CA=(--cacert "$ROOT/infra/certs/rootCA.pem")
+  else echo "KEYCLOAK_URL is https but infra/certs/rootCA.pem is missing: make certs" >&2; fi ;;
+esac
 json_field() { sed -n "s/.*\"$1\":\"\([^\"]*\)\".*/\1/p"; }
 user_token() {  # user_token <user>
-  curl -sS -X POST "$tok_url" -d grant_type=password -d "client_id=$CLIENT_ID" -d "username=$1" -d password=password | json_field access_token; }
+  curl -sS ${CURL_CA[@]+"${CURL_CA[@]}"} -X POST "$tok_url" -d grant_type=password -d "client_id=$CLIENT_ID" -d "username=$1" -d password=password | json_field access_token; }
 client_token() {  # client_token <client id> : client credentials, secret from the compose defaults
   local var; var="$(echo "${1%-svc}" | tr a-z A-Z)_SVC_SECRET"
-  curl -sS -X POST "$tok_url" -d grant_type=client_credentials -d "client_id=$1" -d "client_secret=${!var:-$1-dev-secret}" | json_field access_token; }
+  curl -sS ${CURL_CA[@]+"${CURL_CA[@]}"} -X POST "$tok_url" -d grant_type=client_credentials -d "client_id=$1" -d "client_secret=${!var:-$1-dev-secret}" | json_field access_token; }
 GOOD="$(user_token alice)"; LIST_TOKEN="$(user_token "$LIST_USER")"; VAL_TOKEN="$(user_token "$VALIDATION_USER")"
 WRONG_AUD="$(client_token "$BAD_AUD_CLIENT")"
 if [ -z "$GOOD" ] || [ -z "$LIST_TOKEN" ] || [ -z "$VAL_TOKEN" ] || [ -z "$WRONG_AUD" ]; then
