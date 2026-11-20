@@ -183,6 +183,15 @@
       dependencyDashboardApproval: false,
     },
     {
+      // The Python image of scripts/seed-build.sh is not built by CI (make seed-check runs on the CI's own Python), so a pull request for a new minor tests nothing about it,
+      // and a minor is where a pinned package can lose its wheel (PyYAML 6.0.3 had none for 3.15 in November 2026). It waits on the Dependency Dashboard: tick it,
+      // run make seed-build on the branch, then merge. This is only the Docker image: the python-version of the CI workflows is tested by its own pull request.
+      matchDatasources: ["docker"],
+      matchPackageNames: ["python"],
+      matchUpdateTypes: ["minor"],
+      dependencyDashboardApproval: true,
+    },
+    {
       // Supply chain: do not take a package version in its first days. (Only for registries that report the publication time.)
       matchDatasources: ["npm", "pypi"],
       minimumReleaseAge: "3 days",

@@ -67,6 +67,9 @@ One batch a week (Monday before 08:00 UTC, at most 10 open at a time) instead of
 They are listed on the Dependency Dashboard and Renovate opens the pull request (labelled `major`) when you tick its box. Exceptions: GitHub Actions (above), and PGSTY Silo, whose version is a date
 (`RELEASE.2026-10-26T00-00-00Z`): its configuration tells Renovate to read year, month, day as major, minor, patch and not to treat the next year as a breaking change.
 
+One minor waits as well: the Python image of `scripts/seed-build.sh`. CI does not build it, so a pull request would test nothing about it, and a minor is where a pinned package can lose its wheel (PyYAML 6.0.3 has none for
+Python 3.15 on PyPI). Tick it on the dashboard, run `make seed-build` on the branch, then merge. The `python-version` of the CI workflows is not gated: its own pull request is the test.
+
 Also set: an npm or PyPI release younger than 3 days waits (the dashboard lists it under *Pending Status Checks* until it is old enough; a compromised release is usually pulled within days); the lock file of `tools/contract-tools` is refreshed monthly; no automatic merge; commit
 messages are plain ("Update dependency x to vY"), because nothing here has chosen Conventional Commits.
 
@@ -109,6 +112,8 @@ Verified in the sandbox with Renovate 44.253.0 itself (Node 24):
 - **Rules**, against a stand-in Docker registry serving made-up newer tags (the sandbox cannot reach Docker Hub or GitHub): every grouping in the table above, the Confluent group including its major, the
   `-trixie` and `-alpine` suffixes of Postgres and Redis (no cross-variant updates), the date version of Silo (parsed; its next year is not a major to approve), Keycloak's `-0` suffix, and, with real npm and PyPI data,
   the npm and pip groups. The approval gate for majors was tested **by proxy** (a visible marker on the same rule shows it lands on every major and not on Silo's year change), not by watching a Dependency Dashboard.
+- The Python image gate (added after the first dashboard): Renovate's own rule engine, fed the real `packageRules`, puts the Docker image's minor and major updates behind approval and leaves the CI `python-version`
+  (grouped as "CI runtimes"), other images and look-alike names alone; without the rule the first case fails.
 - The annotation comment manager on shell, YAML and Dockerfile samples, with `versioning=` and `extractVersion=`.
 - The Hurl package matcher (container image and GitHub release both match; look-alikes do not), with Renovate's own matcher code.
 
@@ -122,4 +127,6 @@ The second look (20 November, after the hook change): a Postgres 19 major waits 
 Hurl 8.1.0, Toxiproxy 2.13.0, Kafka UI 1.5.0, `actions/*` v7 and `setup-k6-action` 1.3.0 are listed under Detected Dependencies with no update, and the release tags on GitHub show they are the latest, so there was nothing to find.
 The Dockerfile `apk add` packages (`socat`, `nodejs`, `npm`) are listed with the version `undefined`: they are not pinned (hadolint's DL3018 is ignored on purpose), so there is nothing to update.
 
-Not verified: that the app turns these into pull requests (the schedule is Monday before 08:00 UTC, so none existed yet) and that CI passes on them.
+Pull requests work end to end: ticking the k6 update on the dashboard created a branch and a pull request that changed the places k6 is pinned, CI ran green and it merged.
+
+Not verified: the scheduled Monday run (the pull requests of the groups above), and the Python image gate on a real dashboard (tested with Renovate's rule engine only).
