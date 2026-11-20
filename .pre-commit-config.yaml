@@ -103,23 +103,26 @@ repos:
 
       - id: wh-renovate
         name: Renovate configuration is valid
-        entry: make renovate-check
+        entry: bash scripts/renovate-check.sh --if-possible    # no Node 24.11+ and no Docker: says so and passes, CI is the gate
         language: system
         pass_filenames: false
+        verbose: true
         files: ^(\.github/renovate\.json5|scripts/renovate-check\.sh)$
 
       # Before a push: what needs Docker or builds a tool image, so it is too slow for every commit.
       - id: wh-lint
         name: compose files for every profile, shell syntax, Hurl formatting
-        entry: make lint
+        entry: bash scripts/hook-docker.sh make lint           # no docker compose (Docker Desktop not running): says so and passes
         language: system
         pass_filenames: false
+        verbose: true
         stages: [pre-push]
         files: ^(infra/|e2e/|conformance/|scripts/|services/gateway/|Makefile$)
       - id: wh-contracts-lint
         name: contract style rules (Spectral, buf, Avro, GraphQL)
-        entry: make contracts-lint
+        entry: bash scripts/hook-docker.sh --daemon make contracts-lint
         language: system
         pass_filenames: false
+        verbose: true
         stages: [pre-push]
         files: ^contracts/

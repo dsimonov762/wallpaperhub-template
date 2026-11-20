@@ -92,15 +92,15 @@ When an update is wrong for you: close the pull request (Renovate does not re-op
 make renovate-check          # strict validation with the Renovate release pinned in scripts/renovate-check.sh
 ```
 
-It needs Node 24.11+ (runs it with `npx`) or a running Docker (the official image). CI runs it, and so does a hook when you touch `.github/renovate.json5`. It catches an unknown key, a wrong option, a regular
+It needs Node 24.11+ (runs it with `npx`) or a running Docker (the official image). CI runs it, and so does a hook when you touch `.github/renovate.json5`; the hook does not fail a commit when neither is available (it says so and passes, CI is the gate), while `make renovate-check` itself exits with an error then. It catches an unknown key, a wrong option, a regular
 expression Renovate cannot compile. Renovate uses the RE2 engine: **no lookahead and no lookbehind** in `matchStrings`; this has already caught one mistake while writing the file.
 
-To see what Renovate finds without opening any pull request (the way this configuration was tested): `npx renovate@44.255.0 --platform=local --dry-run=lookup` in the repository, with `LOG_LEVEL=debug` for the details
+To see what Renovate finds without opening any pull request (the way this configuration was tested): `npx renovate --platform=local --dry-run=lookup` in the repository, with `LOG_LEVEL=debug` for the details
 and `GITHUB_COM_TOKEN` set so that it can read GitHub releases.
 
 ## What is verified, what is not
 
-Verified with Renovate 44.255.0 itself (Node 24):
+Verified in the sandbox with Renovate 44.253.0 itself (Node 24):
 
 - The configuration passes the strict validator; a misspelled option and an invalid regular expression are both caught by `make renovate-check`.
 - **Extraction** on a copy of this repository: 37 compose images, 9 Dockerfile entries, 28 workflow entries, 4 npm and 14 pip packages, 4 pre-commit hooks and 34 pins found by the regex managers, across 19 files (scripts, generators, `.env.example`, the documents).
@@ -112,6 +112,10 @@ Verified with Renovate 44.255.0 itself (Node 24):
 - The annotation comment manager on shell, YAML and Dockerfile samples, with `versioning=` and `extractVersion=`.
 - The Hurl package matcher (container image and GitHub release both match; look-alikes do not), with Renovate's own matcher code.
 
-Not verified: that the app creates these pull requests and the dashboard on GitHub (never run against your repository); the lookups for GitHub-hosted data (actions, k6 and Hurl releases, `python-version`, `runs-on`, the `ghcr.io`
-images: Hurl, Toxiproxy, Kafka UI), so the grouping of those rests on the matching rules above and not on a run; the `dependencyDashboardApproval` flag itself (the rule that sets it matched correctly, see above);
-`minimumReleaseAge` (it is only a setting here); and the container fallback of `make renovate-check` (no Docker daemon).
+Confirmed on the first real run against the repository (the Dependency Dashboard of 19 November 2026, with real registries): the major updates wait under *Pending Approval* (k6 v2, Node 26, Pillow 13, TypeScript 7),
+the rest under *Awaiting Schedule* in the groups above (Confluent Platform, data store images with Postgres, Mongo and the Silo date tags, observability images), the k6 updates are found in all four places the version
+appears (the image in the script and the documents, and the version CI installs, two different datasources), lock file maintenance is scheduled, and `make renovate-check` passes through the container.
+A group with a single update that week is titled by that dependency ("Update axllent/mailpit Docker tag to v1.34.0" and not "dev tool images").
+
+Not verified: that the app turns these into pull requests (none had been created at the time); the updates of GitHub Actions, Hurl, `runs-on` and the `ghcr.io` images (Hurl, Toxiproxy, Kafka UI): the dashboard shows none,
+which means they were current or that the lookup found nothing, and the stand-in registry could not tell; and `minimumReleaseAge` (it is only a setting here).

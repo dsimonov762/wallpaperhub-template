@@ -45,6 +45,9 @@ They need `make` and Python 3, so they run in WSL, Linux and macOS; they create 
 **Before a push** (they need Docker or build the tool image, too slow for every commit): `wh-lint` (`make lint`: the compose files of every profile, shell syntax, Hurl formatting) when `infra/`, `e2e/`,
 `conformance/`, `scripts/`, the gateway or the Makefile changed, and `wh-contracts-lint` (`make contracts-lint`: Spectral, buf, Avro, GraphQL conventions) when `contracts/` changed.
 
+**When the tool a hook needs is not there** the hook says so and passes, it does not fail the commit or the push: `wh-lint` and `wh-contracts-lint` without Docker (on Windows + WSL the `docker` command only
+exists while Docker Desktop is running), `wh-renovate` without Node 24.11+ and without Docker. You see `skipped '...': ...` in the output; CI runs the same check. The `make` target run by hand fails instead, as it should.
+
 When a generated-file hook fails, its message says what to run (`make bruno-gen`, `make chaos-gen`, `make seed-build`), and you commit the result.
 
 ## Skipping, bypassing, updating
