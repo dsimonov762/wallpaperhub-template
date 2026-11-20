@@ -126,6 +126,10 @@ Evolving a contract: an additive change passes (new optional response field, new
 
 Every pin of the repository (images in compose files, Dockerfiles, scripts and docs; GitHub Actions; npm and pip packages; pre-commit hooks; the k6 and Hurl versions) is read by [Renovate](https://docs.renovatebot.com), configured in `.github/renovate.json5`. Updates that must move together are one pull request (observability stack, Confluent Platform, k6, Hurl ...), a new major version of a database or of Keycloak waits on the Dependency Dashboard until you tick it, and CI is the test. `make renovate-check` validates the configuration. What is watched, how to mark a pin it cannot see, and what was tested: [docs/RENOVATE.md](RENOVATE.md).
 
+### Decision records
+
+`docs/adr/` holds one short file per decision: what was decided, why, and what it costs. The nine decisions of the README's decision log are there, and ten more about the principles and the tooling of this repository (Envoy, the conformance suite, HTTPS, failure injection, CI and hooks, Renovate, the S3 image). `make adr-new T="Title"` starts the next one (`SUPERSEDES=0012` when it replaces one), `make adr-check` checks form, numbering, links and the index; CI and a git hook run it. Details: [docs/adr/README.md](adr/README.md).
+
 ### HTTPS
 
 `make certs ARGS=--install` creates a local certificate authority that your machine trusts (mkcert; on Windows + WSL it uses the Windows trust store, so Windows browsers accept it) and a certificate for `localhost`, `*.wallpaperhub.localhost` and the Docker names. `make up-https` is `make up-apps` with the gateway also listening on `https://localhost:8443` (HTTP/2, the same routes and CORS; `http://localhost:8080` keeps working); `make up-https HTTPS_ISSUER=1` also serves Keycloak on `https://localhost:8543` and moves the token issuer there. `make e2e`, `make token`, `make load-run` and `make conformance` trust the CA by themselves; for curl, Node, Java and the rest see [docs/HTTPS.md](HTTPS.md), which also explains why the local gateway does not send HSTS.
@@ -195,7 +199,8 @@ infra/host/, host-proxy/  host mode: env files for the IDE, TCP forwarder
 seed/                     development dataset: dataset.yaml, build.py, generated out/ and s3/ (make seed / reset / reseed)
 services/<name>/<impl>/   YOUR implementations go here (account, media, catalog, notification)
 e2e/                      Hurl tests: gateway/ (any backend) and system/ (real services), fixtures/, run.sh
-scripts/                  doctor.sh, wait-healthy.sh, validate/ (contract cross-checks), contracts.sh + contracts/ (lint, breaking), codegen.sh, ct.sh
+docs/adr/                 architecture decision records (what was decided and why), see docs/adr/README.md
+scripts/                  adr.py (decision records), doctor.sh, wait-healthy.sh, validate/ (contract cross-checks), contracts.sh + contracts/ (lint, breaking), codegen.sh, ct.sh
 tools/contract-tools/     pinned Spectral, buf, openapi-typescript (package.json, Dockerfile)
 .pre-commit-config.yaml   git hooks (pre-commit), see docs/PRE-COMMIT.md; .hadolint.yaml and .github/actionlint.yaml configure two of them
 .github/renovate.json5    dependency updates (Renovate), see docs/RENOVATE.md

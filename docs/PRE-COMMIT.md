@@ -38,6 +38,7 @@ The first run clones the hook repositories and builds their environments (needs 
 | `wh-dashboards` | `make dashboards-check` | `infra/grafana/` |
 | `wh-chaos` | `make chaos-check` | `infra/chaos/`, `infra/docker-compose.yml` and the chaos overlay |
 | `wh-gateway-overlays` | `make load-check https-check` | `envoy.yaml`, the two generators |
+| `wh-adr` | `python3 scripts/adr.py check` (`make adr-check`) | `docs/`, `README.md`, `scripts/adr.py`: records, their links and the index, see [adr/README.md](adr/README.md) |
 | `wh-renovate` | `make renovate-check` | `.github/renovate.json5` (needs Node 24.11+ or Docker, see [RENOVATE.md](RENOVATE.md)) |
 
 They need `make` and Python 3, so they run in WSL, Linux and macOS; they create `.venv-validate` on first use. Each takes a few seconds once that exists.

@@ -685,6 +685,7 @@ wallpaper-hub/
 │   └── notification/       {...}
 ├── e2e/                    language-agnostic scenario suite (k6, Hurl or pytest)
 └── docs/
+    ├── adr/                architecture decision records: what was decided and why (make adr-new)
     └── CHEATSHEET.md       per service: concept -> file path (one per implementation)
 ```
 
@@ -783,14 +784,17 @@ Each `services/<name>/<language>/` folder follows the template in section 12 and
 
 ## 18. Decision log
 
-| # | Decision | Reason |
-|---|---|---|
-| 1 | Contract-first with a shared `contracts/` folder | Enables mixing languages per service and one shared e2e suite |
-| 2 | Four domain services plus a gateway | The domain fits four services; the gateway is edge infrastructure |
-| 3 | Outbox stores JSON, Avro-serializes at publish time | Keeps Schema Registry compatibility enforced and the table readable |
-| 4 | Outbox only in account-service | Other services publish directly, which gives a deliberate contrast |
-| 5 | SSE as the primary push transport, WebSocket as an alternative | SSE is simpler and fits one-way notifications; WebSocket shown for comparison |
-| 6 | One-time ticket for SSE/WebSocket auth | Browsers cannot set `Authorization` on `EventSource`/`WebSocket` |
-| 7 | Redis as the primary DB in notification-service | Demonstrates Redis beyond caching |
-| 8 | Both OTLP metrics and optional `/metrics` | Shows push and pull side by side |
-| 9 | Gateway validates tokens, services validate again | Zero trust inside the network |
+Decisions are recorded as architecture decision records in [`docs/adr/`](docs/adr/README.md): context, decision, consequences and alternatives, one file each. A new decision gets a new record (`make adr-new`),
+and a changed one a record that supersedes the old; this table is the summary of the first nine.
+
+| # | Decision | Reason | Record |
+|---|---|---|---|
+| 1 | Contract-first with a shared `contracts/` folder | Enables mixing languages per service and one shared e2e suite | [0001](docs/adr/0001-contract-first-with-a-shared-contracts-folder.md) |
+| 2 | Four domain services plus a gateway | The domain fits four services; the gateway is edge infrastructure | [0002](docs/adr/0002-four-domain-services-and-an-api-gateway.md) |
+| 3 | Outbox stores JSON, Avro-serializes at publish time | Keeps Schema Registry compatibility enforced and the table readable | [0003](docs/adr/0003-outbox-stores-json-and-serializes-avro-at-publish-time.md) |
+| 4 | Outbox only in account-service | Other services publish directly, which gives a deliberate contrast | [0004](docs/adr/0004-transactional-outbox-only-in-account-service.md) |
+| 5 | SSE as the primary push transport, WebSocket as an alternative | SSE is simpler and fits one-way notifications; WebSocket shown for comparison | [0005](docs/adr/0005-sse-as-the-primary-push-transport.md) |
+| 6 | One-time ticket for SSE/WebSocket auth | Browsers cannot set `Authorization` on `EventSource`/`WebSocket` | [0006](docs/adr/0006-one-time-ticket-authenticates-sse-and-websocket.md) |
+| 7 | Redis as the primary DB in notification-service | Demonstrates Redis beyond caching | [0007](docs/adr/0007-redis-as-the-primary-database-of-notification-service.md) |
+| 8 | Both OTLP metrics and optional `/metrics` | Shows push and pull side by side | [0008](docs/adr/0008-otlp-metrics-and-an-optional-metrics-endpoint.md) |
+| 9 | Gateway validates tokens, services validate again | Zero trust inside the network | [0009](docs/adr/0009-the-gateway-validates-tokens-and-services-validate-them-again.md) |

@@ -101,6 +101,13 @@ repos:
         pass_filenames: false
         files: ^(services/gateway/envoy/envoy\.yaml$|scripts/(loadtest|https)-gateway\.py$)
 
+      - id: wh-adr
+        name: architecture decision records are well formed, linked and indexed
+        entry: python3 scripts/adr.py check
+        language: system
+        pass_filenames: false
+        files: ^(docs/|README\.md$|scripts/adr\.py$)
+
       - id: wh-renovate
         name: Renovate configuration is valid
         entry: bash scripts/renovate-check.sh --if-possible    # no Node 24.11+ and no Docker: says so and passes, CI is the gate

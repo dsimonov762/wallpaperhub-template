@@ -275,4 +275,17 @@ check-contracts: ## cross-check OpenAPI, GraphQL, Avro, proto, i18n and the gate
 	.venv-validate/bin/python scripts/validate/validate_contracts2.py
 	.venv-validate/bin/python scripts/validate/validate_host_env.py
 
-.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-chaos certs up-https up-https-mocks https-check up-load up-load-mocks load-run load-smoke load-data load-check chaos chaos-run chaos-list chaos-gen chaos-check up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen hooks precommit renovate-check
+adr-check: ## architecture decision records (docs/adr): form, numbering, links, supersessions, index (CI runs it)
+	@python3 scripts/adr.py check
+
+adr-selftest: ## test scripts/adr.py itself on a fixture (what it catches; new and --supersedes keep the records consistent)
+	@bash scripts/ci/adr-selftest.sh
+
+adr-index: ## rewrite the table in docs/adr/README.md from the records
+	@python3 scripts/adr.py index
+
+adr-new: ## a new decision record:  make adr-new T="Use gRPC between catalog and account" [SUPERSEDES=0007]
+	@[ -n "$(T)" ] || { echo 'usage: make adr-new T="Title of the decision" [SUPERSEDES=0007]'; exit 1; }
+	@python3 scripts/adr.py new "$(T)" $(if $(SUPERSEDES),--supersedes $(SUPERSEDES))
+
+.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-chaos certs up-https up-https-mocks https-check up-load up-load-mocks load-run load-smoke load-data load-check chaos chaos-run chaos-list chaos-gen chaos-check up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen hooks precommit renovate-check adr-check adr-selftest adr-index adr-new
