@@ -148,7 +148,7 @@ jobs:
       # Keep the version in step with K6_IMAGE in scripts/k6.sh.
       - uses: grafana/setup-k6-action@c47136d33d365efbeb9ae7266908b5dcf98cdece # v1.3.0
         with:
-          k6-version: "1.6.0"
+          k6-version: "2.4.0"
       - run: make env
       - name: Gateway, Keycloak, Redis and the four Prism mocks (about 2 GB)
         run: make up-mocks

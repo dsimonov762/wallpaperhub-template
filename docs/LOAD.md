@@ -93,4 +93,4 @@ smoke, load at 40 journeys/s, stress, uploads, ratelimit: exactly 60 searches se
 through the `rate_limited` threshold as designed; the remote-write output into a real Prometheus 3.16 and every query of the *Load test (k6)* dashboard against the series it produced.
 
 Not verified: any of it against the real services (there are none in the template yet, so the budgets are untested guesses, and the GraphQL journey only ran as far as the mocks go: they serve no GraphQL),
-Grafana's rendering of the new dashboard, the `grafana/k6:1.6.0` container and the `host.docker.internal` path of `scripts/k6.sh`, `make up-load` in Docker (the overlay, the 4-thread gateway), and the CI smoke step.
+Grafana's rendering of the new dashboard, the `grafana/k6:2.4.0` container and the `host.docker.internal` path of `scripts/k6.sh`, `make up-load` in Docker (the overlay, the 4-thread gateway), and the CI smoke step.
