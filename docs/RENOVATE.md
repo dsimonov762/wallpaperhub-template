@@ -67,7 +67,7 @@ One batch a week (Monday before 08:00 UTC, at most 10 open at a time) instead of
 They are listed on the Dependency Dashboard and Renovate opens the pull request (labelled `major`) when you tick its box. Exceptions: GitHub Actions (above), and PGSTY Silo, whose version is a date
 (`RELEASE.2026-10-26T00-00-00Z`): its configuration tells Renovate to read year, month, day as major, minor, patch and not to treat the next year as a breaking change.
 
-Also set: npm and PyPI releases younger than 3 days are not proposed (a compromised release is usually pulled within days); the lock file of `tools/contract-tools` is refreshed monthly; no automatic merge; commit
+Also set: an npm or PyPI release younger than 3 days waits (the dashboard lists it under *Pending Status Checks* until it is old enough; a compromised release is usually pulled within days); the lock file of `tools/contract-tools` is refreshed monthly; no automatic merge; commit
 messages are plain ("Update dependency x to vY"), because nothing here has chosen Conventional Commits.
 
 ## What a pull request has to pass
@@ -93,7 +93,7 @@ make renovate-check          # strict validation with the Renovate release pinne
 ```
 
 It needs Node 24.11+ (runs it with `npx`) or a running Docker (the official image). CI runs it, and so does a hook when you touch `.github/renovate.json5`; the hook does not fail a commit when neither is available (it says so and passes, CI is the gate), while `make renovate-check` itself exits with an error then. It catches an unknown key, a wrong option, a regular
-expression Renovate cannot compile. Renovate uses the RE2 engine: **no lookahead and no lookbehind** in `matchStrings`; this has already caught one mistake while writing the file.
+expression Renovate cannot compile. Renovate uses the RE2 engine: **no lookahead and no lookbehind** in `matchStrings`; this has already caught one mistake while writing the file. The hosted app runs its own Renovate release (the Mend page of the repository shows it: 44.249.1 on 20 November), a few days behind the one pinned here, so an option that only the newer release knows would be reported by the app as a configuration warning.
 
 To see what Renovate finds without opening any pull request (the way this configuration was tested): `npx renovate --platform=local --dry-run=lookup` in the repository, with `LOG_LEVEL=debug` for the details
 and `GITHUB_COM_TOKEN` set so that it can read GitHub releases.
@@ -117,5 +117,9 @@ the rest under *Awaiting Schedule* in the groups above (Confluent Platform, data
 appears (the image in the script and the documents, and the version CI installs, two different datasources), lock file maintenance is scheduled, and `make renovate-check` passes through the container.
 A group with a single update that week is titled by that dependency ("Update axllent/mailpit Docker tag to v1.34.0" and not "dev tool images").
 
-Not verified: that the app turns these into pull requests (none had been created at the time); the updates of GitHub Actions, Hurl, `runs-on` and the `ghcr.io` images (Hurl, Toxiproxy, Kafka UI): the dashboard shows none,
-which means they were current or that the lookup found nothing, and the stand-in registry could not tell; and `minimumReleaseAge` (it is only a setting here).
+The second look (20 November, after the hook change): a Postgres 19 major waits under *Pending Approval* (one entry for all nine places it is pinned) while the 18.x updates are in the data store group;
+`renovate 44.256.1`, published that morning, is under *Pending Status Checks* and `numpy 2.5.5`, published five days earlier, under *Awaiting Schedule*: the 3-day wait works (publication dates checked on npm and PyPI).
+Hurl 8.1.0, Toxiproxy 2.13.0, Kafka UI 1.5.0, `actions/*` v7 and `setup-k6-action` 1.3.0 are listed under Detected Dependencies with no update, and the release tags on GitHub show they are the latest, so there was nothing to find.
+The Dockerfile `apk add` packages (`socat`, `nodejs`, `npm`) are listed with the version `undefined`: they are not pinned (hadolint's DL3018 is ignored on purpose), so there is nothing to update.
+
+Not verified: that the app turns these into pull requests (the schedule is Monday before 08:00 UTC, so none existed yet) and that CI passes on them.
