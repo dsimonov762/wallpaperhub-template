@@ -19,7 +19,7 @@ if [ -f infra/.env ]; then set -a; . infra/.env; set +a; fi
 BASE_URL="${BASE_URL:-http://localhost:${PORT_GATEWAY:-8080}}"
 KEYCLOAK_URL="${KEYCLOAK_URL:-http://localhost:${PORT_KEYCLOAK:-8180}}"
 PROM_URL="${PROM_URL:-http://localhost:${PORT_PROMETHEUS:-9090}}"
-K6_IMAGE="${K6_IMAGE:-grafana/k6:1.6.0}"
+K6_IMAGE="${K6_IMAGE:-grafana/k6:2.4.0}"
 
 [ -f seed/out/manifest.json ] || { echo "seed/out/manifest.json is missing (the load test takes ids and users from the seed data): make seed-build, and make seed to load it into the stack" >&2; exit 1; }
 if [ "$PROFILE" = uploads ] || [ "${WITH_UPLOADS:-0}" = 1 ]; then

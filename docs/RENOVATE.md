@@ -23,7 +23,7 @@ fine-grained token (contents, pull requests, issues, workflows: write). The conf
 | `.github/workflows/*.yml`: actions, `python-version`, `node-version`, `runs-on`, service images | `github-actions` |
 | `tools/contract-tools/package.json` and its lock file, `scripts/validate/`, `seed/`, `conformance/reference-stub/` requirements | `npm`, `pip_requirements` |
 | `.pre-commit-config.yaml` (`rev:` of every hook) | `pre-commit`, switched on in the config |
-| Images in shell scripts, Python generators, the Makefile, `.env.example` and these documents (`grafana/k6:1.6.0`, `tufin/oasdiff:v1.33.0`, `python:3.13-slim` ...) | a regex manager: any `registry.host/path:tag` or `owner/name:tag` whose tag has a dot, and `alpine`, `python`, `postgres`, `mongo`, `redis`, `elasticsearch`, `adminer`, `node` |
+| Images in shell scripts, Python generators, the Makefile, `.env.example` and these documents (`grafana/k6:2.4.0`, `tufin/oasdiff:v1.33.0`, `python:3.13-slim` ...) | a regex manager: any `registry.host/path:tag` or `owner/name:tag` whose tag has a dot, and `alpine`, `python`, `postgres`, `mongo`, `redis`, `elasticsearch`, `adminer`, `node` |
 | Hurl in `scripts/ci/install-hurl.sh`, k6 in `ci.yml`, Prism in `services/_mock/Dockerfile`, `shellcheck-py` in the actionlint hook, the Renovate version of `make renovate-check` | one small regex manager each |
 | Anything else | a comment on the line before the pin, see below |
 
