@@ -1,0 +1,6 @@
+apiVersion: v2
+name: wallpaperhub-service
+description: One Wallpaper Hub service (account, media, catalog, notification), the Envoy gateway or a Prism mock. Any image that obeys docs/SERVICE-SPEC.md fits.
+type: application
+version: 0.1.0
+appVersion: "local"

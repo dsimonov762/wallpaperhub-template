@@ -53,6 +53,13 @@ if command -v mkcert >/dev/null 2>&1 || command -v mkcert.exe >/dev/null 2>&1; t
   else warn "mkcert is installed but infra/certs has no current certificate: make certs   (only needed for make up-https)"; fi
 else warn "mkcert not installed: only needed for make up-https. Windows: winget install FiloSottile.mkcert, Ubuntu: sudo apt install mkcert, then make certs"; fi
 
+echo "Kubernetes (optional, make k8s-up-mocks)"
+k8s_missing=""
+for t in kind kubectl helm; do command -v "$t" >/dev/null 2>&1 || k8s_missing="$k8s_missing $t"; done
+if [ -z "$k8s_missing" ]; then ok "kind, kubectl and helm are installed ($(helm version --short 2>/dev/null | head -1))"
+else warn "not installed:$k8s_missing. Only needed for make k8s-up-mocks / k8s-up-apps (docs/KUBERNETES.md); make k8s-check needs none of them"; fi
+command -v kubeconform >/dev/null 2>&1 && ok "kubeconform is installed (make k8s-lint)" || warn "kubeconform not installed: make k8s-lint (and its hook) is skipped; scripts/ci/install-kubeconform.sh ~/.local/bin"
+
 echo "Git hooks (optional, make hooks)"
 if command -v pre-commit >/dev/null 2>&1; then
   hooks_dir="$(git rev-parse --git-path hooks 2>/dev/null)"

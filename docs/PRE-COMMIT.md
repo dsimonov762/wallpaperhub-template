@@ -39,6 +39,8 @@ The first run clones the hook repositories and builds their environments (needs 
 | `wh-chaos` | `make chaos-check` | `infra/chaos/`, `infra/docker-compose.yml` and the chaos overlay |
 | `wh-gateway-overlays` | `make load-check https-check` | `envoy.yaml`, the two generators |
 | `wh-adr` | `python3 scripts/adr.py check` (`make adr-check`) | `docs/`, `README.md`, `scripts/adr.py`: records, their links and the index, see [adr/README.md](adr/README.md) |
+| `wh-k8s` | `make k8s-check` | `deploy/`, `infra/docker-compose.yml`, `envoy.yaml`, `scripts/k8s-gen.py`: Helm values current, cluster names fit envoy.yaml, kind config, see [KUBERNETES.md](KUBERNETES.md) |
+| `wh-k8s-lint` | `scripts/k8s-lint.sh --if-possible` | `deploy/helm/`: `helm lint`, `helm template`, kubeconform; skips with a note when `helm` or `kubeconform` is missing |
 | `wh-renovate` | `make renovate-check` | `.github/renovate.json5` (needs Node 24.11+ or Docker, see [RENOVATE.md](RENOVATE.md)) |
 
 They need `make` and Python 3, so they run in WSL, Linux and macOS; they create `.venv-validate` on first use. Each takes a few seconds once that exists.
@@ -47,7 +49,7 @@ They need `make` and Python 3, so they run in WSL, Linux and macOS; they create 
 `conformance/`, `scripts/`, the gateway or the Makefile changed, and `wh-contracts-lint` (`make contracts-lint`: Spectral, buf, Avro, GraphQL conventions) when `contracts/` changed.
 
 **When the tool a hook needs is not there** the hook says so and passes, it does not fail the commit or the push: `wh-lint` and `wh-contracts-lint` without Docker (on Windows + WSL the `docker` command only
-exists while Docker Desktop is running), `wh-renovate` without Node 24.11+ and without Docker. You see `skipped '...': ...` in the output; CI runs the same check. The `make` target run by hand fails instead, as it should.
+exists while Docker Desktop is running), `wh-renovate` without Node 24.11+ and without Docker, `wh-k8s-lint` without `helm` or `kubeconform`. (`check-yaml` leaves `deploy/helm/service/templates/` alone: Helm templates are not YAML until Helm renders them.) You see `skipped '...': ...` in the output; CI runs the same check. The `make` target run by hand fails instead, as it should.
 
 When a generated-file hook fails, its message says what to run (`make bruno-gen`, `make chaos-gen`, `make seed-build`), and you commit the result.
 
