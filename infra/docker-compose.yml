@@ -205,7 +205,7 @@ services:
   #   kafka:29092      inside the compose network
   #   localhost:9092   from the host (IDE / services run outside Docker)
   kafka:
-    image: confluentinc/cp-kafka:8.4.0
+    image: confluentinc/cp-kafka:8.4.1
     profiles: [infra]
     restart: unless-stopped
     hostname: kafka
@@ -242,7 +242,7 @@ services:
   # (Init jobs strip CRs from their script first, so a Windows checkout with CRLF line endings still works.)
   # Creates every topic from README 5.6 plus <topic>.retry.1, .retry.2 and <topic>.dlq
   kafka-init:
-    image: confluentinc/cp-kafka:8.4.0
+    image: confluentinc/cp-kafka:8.4.1
     profiles: [infra]
     restart: "no"
     depends_on:
@@ -256,7 +256,7 @@ services:
       - ./kafka-init/create-topics.sh:/scripts/create-topics.sh:ro
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:8.4.0
+    image: confluentinc/cp-schema-registry:8.4.1
     profiles: [infra]
     restart: unless-stopped
     hostname: schema-registry
