@@ -83,7 +83,7 @@ cmd_up() {
   # shellcheck disable=SC2046
   if [ "$build" -eq 1 ]; then
     say "building the images ($(images_for "$mode"))"
-    "${COMPOSE[@]}" --profile "$mode" build $(images_for "$mode") || die "the image build failed"
+    "${COMPOSE[@]}" --profile infra --profile "$mode" build $(images_for "$mode") || die "the image build failed"
   fi
 
   if cluster_exists; then say "cluster $CLUSTER exists, reusing it"
