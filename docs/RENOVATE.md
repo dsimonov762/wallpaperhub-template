@@ -25,7 +25,8 @@ fine-grained token (contents, pull requests, issues, workflows: write). The conf
 | `.pre-commit-config.yaml` (`rev:` of every hook) | `pre-commit`, switched on in the config |
 | Images in shell scripts, Python generators, the Makefile, `.env.example` and these documents (`grafana/k6:2.4.0`, `tufin/oasdiff:v1.33.0`, `python:3.13-slim` ...) | a regex manager: any `registry.host/path:tag` or `owner/name:tag` whose tag has a dot, and `alpine`, `python`, `postgres`, `mongo`, `redis`, `elasticsearch`, `adminer`, `node` |
 | Hurl in `scripts/ci/install-hurl.sh`, k6 in `ci.yml`, Prism in `services/_mock/Dockerfile`, `shellcheck-py` in the actionlint hook, the Renovate version of `make renovate-check` | one small regex manager each |
-| Anything else | a comment on the line before the pin, see below |
+| Anything else: kubeconform in `scripts/ci/install-kubeconform.sh`, busybox in `scripts/k8s.sh` | a comment on the line before the pin, see below |
+| Helm and kind in `ci.yml` (`version:` of `azure/setup-helm` and `helm/kind-action`) | the `github-actions` manager reads these versions itself. A new kind ships a new Kubernetes: raise `K8S_VERSION` in `scripts/k8s-lint.sh` with it |
 
 An image that is written in a script and in a compose file is **one dependency**: one pull request changes both, so the documentation cannot drift from the code (it had: Adminer 5.5.1 and openapi-generator-cli 7.10.0
 in a document, 6.3.0 and 7.27.0 in the code, found while testing this configuration).

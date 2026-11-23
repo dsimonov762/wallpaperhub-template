@@ -128,7 +128,11 @@ Every pin of the repository (images in compose files, Dockerfiles, scripts and d
 
 ### Decision records
 
-`docs/adr/` holds one short file per decision: what was decided, why, and what it costs. The nine decisions of the README's decision log are there, and ten more about the principles and the tooling of this repository (Envoy, the conformance suite, HTTPS, failure injection, CI and hooks, Renovate, the S3 image). `make adr-new T="Title"` starts the next one (`SUPERSEDES=0012` when it replaces one), `make adr-check` checks form, numbering, links and the index; CI and a git hook run it. Details: [docs/adr/README.md](adr/README.md).
+`docs/adr/` holds one short file per decision: what was decided, why, and what it costs. The nine decisions of the README's decision log are there, and twelve more about the principles and the tooling of this repository (Envoy, the conformance suite, HTTPS, failure injection, CI and hooks, Renovate, the S3 image, Kubernetes). `make adr-new T="Title"` starts the next one (`SUPERSEDES=0012` when it replaces one), `make adr-check` checks form, numbering, links and the index; CI and a git hook run it. Details: [docs/adr/README.md](adr/README.md).
+
+### Kubernetes
+
+`make k8s-up-mocks` creates a local kind cluster, runs the gateway and the four mocks in it and leaves Keycloak and Redis in Compose; `make e2e` then goes through the cluster, and `make k8s-up-apps` does the same with the real services. One generic Helm chart (`deploy/helm/service`) serves every service, its values are generated from the compose file (`make k8s-gen`), and `make k8s-lint` checks the rendered manifests with kubeconform. Needs `kind`, `kubectl` and `helm` (`make doctor` lists them); the static checks (`make k8s-check`) need nothing. Details: [KUBERNETES.md](KUBERNETES.md).
 
 ### HTTPS
 
@@ -200,7 +204,8 @@ seed/                     development dataset: dataset.yaml, build.py, generated
 services/<name>/<impl>/   YOUR implementations go here (account, media, catalog, notification)
 e2e/                      Hurl tests: gateway/ (any backend) and system/ (real services), fixtures/, run.sh
 docs/adr/                 architecture decision records (what was decided and why), see docs/adr/README.md
-scripts/                  adr.py (decision records), doctor.sh, wait-healthy.sh, validate/ (contract cross-checks), contracts.sh + contracts/ (lint, breaking), codegen.sh, ct.sh
+deploy/                   Helm chart + generated values per service, kind cluster config; docs/KUBERNETES.md
+scripts/                  adr.py (decision records), k8s.sh + k8s-gen.py + k8s-lint.sh (Kubernetes), doctor.sh, wait-healthy.sh, validate/ (contract cross-checks), contracts.sh + contracts/ (lint, breaking), codegen.sh, ct.sh
 tools/contract-tools/     pinned Spectral, buf, openapi-typescript (package.json, Dockerfile)
 .pre-commit-config.yaml   git hooks (pre-commit), see docs/PRE-COMMIT.md; .hadolint.yaml and .github/actionlint.yaml configure two of them
 .github/renovate.json5    dependency updates (Renovate), see docs/RENOVATE.md

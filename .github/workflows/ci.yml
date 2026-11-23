@@ -76,6 +76,15 @@ jobs:
         run: make renovate-check
       - name: Architecture decision records are well formed, linked and indexed
         run: make adr-check adr-selftest
+      - name: Helm values are generated from the compose file; the cluster names fit envoy.yaml; kind publishes the gateway
+        run: make k8s-check
+      - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
+        with:
+          version: v4.3.2
+      - name: Install kubeconform
+        run: scripts/ci/install-kubeconform.sh
+      - name: Helm chart - helm lint --strict, helm template and kubeconform for every values file
+        run: make k8s-lint
 
   seed:
     name: seed data loads into Postgres
@@ -177,6 +186,62 @@ jobs:
         if: always()
         run: make down
 
+  kubernetes:
+    name: "kubernetes (kind: gateway and mocks in the cluster, Keycloak and Redis in Compose)"
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.15.2"
+      - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
+        with:
+          version: v4.3.2
+      # Only the kind binary: the cluster is created by scripts/k8s.sh from deploy/kind/kind-config.yaml (the same way as on a laptop).
+      - uses: helm/kind-action@ea822c7bf1874f08e5a491df991c228edffc3376 # v1.15.2
+        with:
+          install_only: true
+          version: v0.33.0
+      - name: Install Hurl
+        run: scripts/ci/install-hurl.sh
+      - name: Hurl needs libxml2.so.2 (Ubuntu 26.04 only ships libxml2.so.16)
+        run: |
+          lib="/usr/lib/$(uname -m)-linux-gnu"
+          if ! ldconfig -p | grep -q 'libxml2\.so\.2 '; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends libxml2-16
+            sudo ln -sf "$lib/libxml2.so.16" "$lib/libxml2.so.2"
+            sudo ldconfig
+          fi
+          hurl --version
+      - run: make env
+      - name: Keycloak and Redis in Compose, then the gateway and the four mocks in a kind cluster
+        run: make k8s-up-mocks
+      - name: The pods reach Keycloak and Redis by name (kind's node is on the Compose network)
+        run: make k8s-net
+      - name: "Gateway checks through the cluster (the same suite as the gateway job; the gateway is the NodePort published on localhost:8080)"
+        run: make e2e
+      - name: Collect logs
+        if: failure()
+        run: |
+          scripts/ci/collect-logs.sh ci-logs
+          scripts/k8s.sh dump ci-logs/k8s
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: kubernetes-reports
+          path: |
+            e2e/.run/*.xml
+            ci-logs/
+          if-no-files-found: ignore
+          include-hidden-files: true
+      - name: Stop
+        if: always()
+        run: |
+          make k8s-down
+          make down
+
   detect:
     name: find service implementations
     runs-on: ubuntu-26.04
@@ -211,7 +276,7 @@ jobs:
   ok:
     name: ok
     if: always()
-    needs: [static, seed, breaking, gateway, detect, services]
+    needs: [static, seed, breaking, gateway, kubernetes, detect, services]
     runs-on: ubuntu-26.04
     steps:
       - name: Every job succeeded or was skipped

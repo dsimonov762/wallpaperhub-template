@@ -256,6 +256,39 @@ chaos-check: ## chaos config is up to date and fits docker-compose.yml and the s
 	$(VENV)
 	.venv-validate/bin/python scripts/chaos.py gen --check
 
+# ---- Kubernetes (Helm chart + a local kind cluster; the infrastructure stays in Compose) - docs/KUBERNETES.md --------------------------
+k8s-gen: ## regenerate deploy/helm/values/ (the Helm values of every service) from infra/docker-compose.yml
+	$(VENV)
+	.venv-validate/bin/python scripts/k8s-gen.py
+
+k8s-check: ## deploy/helm/values is up to date, the Service names fit envoy.yaml and Compose, kind publishes the gateway (CI runs it)
+	$(VENV)
+	.venv-validate/bin/python scripts/k8s-gen.py --check
+
+k8s-lint: ## helm lint --strict + helm template + kubeconform for every values file (needs helm and kubeconform; CI runs it)
+	@bash scripts/k8s-lint.sh
+
+k8s-up-mocks: env ## kind cluster with the gateway and the 4 Prism mocks; Keycloak and Redis stay in Compose (needs docker, kind, kubectl, helm) - ~2 GB
+	$(COMPOSE) $(INFRA) up -d keycloak redis
+	@bash scripts/wait-healthy.sh 600
+	@bash scripts/k8s.sh up mocks
+	@echo "make e2e runs against the cluster now; make k8s-net proves the pods reach Compose by name"
+
+k8s-up-apps: up ## kind cluster with the real services and the gateway; the whole infrastructure stays in Compose (like make up-apps, but the services run in kind)
+	@bash scripts/k8s.sh up apps
+
+k8s-down: ## delete the kind cluster (Compose keeps running)
+	@bash scripts/k8s.sh down
+
+k8s-status: ## deployments, pods and services of the cluster
+	@bash scripts/k8s.sh status
+
+k8s-net: ## can the pods reach Keycloak, Redis (and with k8s-up-apps the databases, Kafka) by name? A probe pod tries
+	@bash scripts/k8s.sh check
+
+k8s-logs: ## logs of one service in the cluster:  make k8s-logs S=gateway
+	@bash scripts/k8s.sh logs $(or $(S),gateway)
+
 # ---- static checks (no containers needed) ----------------------------------------------------------------------------
 lint: ## compose config for every profile combination, shell syntax, Hurl formatting
 	@for p in "$(INFRA)" "$(INFRA) --profile schemas" "$(INFRA) --profile data" "$(INFRA) --profile tools" "$(INFRA) $(OBS) $(APPS) --profile schemas" "$(INFRA) --profile mocks" "--profile host-account --profile host-media --profile host-catalog --profile host-notification"; do \
@@ -288,4 +321,4 @@ adr-new: ## a new decision record:  make adr-new T="Use gRPC between catalog and
 	@[ -n "$(T)" ] || { echo 'usage: make adr-new T="Title of the decision" [SUPERSEDES=0007]'; exit 1; }
 	@python3 scripts/adr.py new "$(T)" $(if $(SUPERSEDES),--supersedes $(SUPERSEDES))
 
-.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-chaos certs up-https up-https-mocks https-check up-load up-load-mocks load-run load-smoke load-data load-check chaos chaos-run chaos-list chaos-gen chaos-check up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen hooks precommit renovate-check adr-check adr-selftest adr-index adr-new
+.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-chaos certs up-https up-https-mocks https-check up-load up-load-mocks load-run load-smoke load-data load-check chaos chaos-run chaos-list chaos-gen chaos-check up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen hooks precommit renovate-check adr-check adr-selftest adr-index adr-new k8s-gen k8s-check k8s-lint k8s-up-mocks k8s-up-apps k8s-down k8s-status k8s-net k8s-logs

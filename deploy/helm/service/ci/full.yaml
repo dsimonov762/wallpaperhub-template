@@ -1,0 +1,33 @@
+# Every optional feature of the chart at once, so that `make k8s-lint` renders and validates them (not a values file to deploy).
+fullnameOverride: full
+image: { repository: registry.example.com/wallpaperhub/account, tag: 1.2.3, pullPolicy: Always }
+imagePullSecrets: [{ name: registry }]
+replicaCount: 3
+labels: { team: platform }
+ports: { grpc: 9090 }
+service: { type: NodePort, nodePort: 30081, annotations: { example.com/note: x } }
+env: { LOG_LEVEL: debug, DB_PORT: "5432" }
+secretEnv: { DB_PASSWORD: change-me }
+extraEnv:
+  - name: POD_IP
+    valueFrom: { fieldRef: { fieldPath: status.podIP } }
+podAnnotations: { prometheus.io/scrape: "false" }
+podLabels: { tier: backend }
+podSecurityContext: { runAsNonRoot: true, runAsUser: 10001, seccompProfile: { type: RuntimeDefault } }
+extraVolumes: [{ name: contracts, hostPath: { path: /contracts, type: Directory } }]
+extraVolumeMounts: [{ name: contracts, mountPath: /contracts, readOnly: true }]
+nodeSelector: { kubernetes.io/os: linux }
+tolerations: [{ key: dedicated, operator: Equal, value: apps, effect: NoSchedule }]
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm: { topologyKey: kubernetes.io/hostname, labelSelector: { matchLabels: { app.kubernetes.io/name: full } } }
+podDisruptionBudget: { enabled: true, minAvailable: 1 }
+autoscaling: { enabled: true, minReplicas: 2, maxReplicas: 6, targetCPUUtilizationPercentage: 65 }
+ingress:
+  enabled: true
+  className: nginx
+  annotations: { nginx.ingress.kubernetes.io/proxy-buffering: "off" }
+  hosts: [{ host: api.example.com }]
+  tls: [{ secretName: api-tls, hosts: [api.example.com] }]

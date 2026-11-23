@@ -683,6 +683,9 @@ wallpaper-hub/
 │   ├── media/              {...}
 │   ├── catalog/            {...}
 │   └── notification/       {...}
+├── deploy/
+│   ├── helm/               one generic chart for every service + generated values per service (docs/KUBERNETES.md)
+│   └── kind/               local Kubernetes cluster (make k8s-up-mocks)
 ├── e2e/                    language-agnostic scenario suite (k6, Hurl or pytest)
 └── docs/
     ├── adr/                architecture decision records: what was decided and why (make adr-new)

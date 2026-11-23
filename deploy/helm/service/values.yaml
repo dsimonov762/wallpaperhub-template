@@ -1,0 +1,113 @@
+# One chart for every service of Wallpaper Hub: the four domain services, the Envoy gateway and the Prism mocks all have the same shape (docs/SERVICE-SPEC.md):
+# HTTP on 8080, management on 8081 with /health/{startup,live,ready}, gRPC on 9090 for account only, configuration by environment variables.
+# What differs between them lives in deploy/helm/values/<apps|mocks>/<name>.yaml, which scripts/k8s-gen.py generates from infra/docker-compose.yml: do not edit those.
+# docs/KUBERNETES.md explains the whole set.
+
+# The name of the Service is the DNS name the other services and envoy.yaml use (account, media, catalog, notification), so every release sets fullnameOverride.
+nameOverride: ""
+fullnameOverride: ""
+partOf: wallpaperhub
+labels: {}
+
+image:
+  repository: wallpaperhub/service
+  tag: local
+  pullPolicy: IfNotPresent          # the local images are loaded into the cluster (make k8s-up-*), never pulled
+imagePullSecrets: []
+
+replicaCount: 1
+
+ports:
+  http: 8080
+  management: 8081
+  grpc: null                        # 9090 for account
+
+service:
+  type: ClusterIP
+  nodePort: null                    # only with type NodePort; the gateway of the kind recipe uses 30080
+  annotations: {}
+
+# Plain environment variables (strings; a number is written between quotes).
+env: {}
+# Variables that hold credentials: rendered into a Secret of the same name as the Service and read from there.
+# The values in the generated files are the development defaults of infra/.env.example. A real cluster sets existingSecret instead.
+secretEnv: {}
+# A Secret that already exists and holds every key of secretEnv. When set, no Secret is rendered and the values of secretEnv are ignored.
+existingSecret: ""
+# Full container env entries for anything else (valueFrom: fieldRef ...).
+extraEnv: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 320Mi
+  limits:
+    memory: 640Mi
+
+# SERVICE-SPEC section 2. The probes use the management port by name.
+probes:
+  startup:
+    path: /health/startup
+    periodSeconds: 2
+    timeoutSeconds: 3
+    failureThreshold: 90            # three minutes for a cold JVM on a laptop
+  liveness:
+    path: /health/live
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    path: /health/ready
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# SERVICE-SPEC section 11: SIGTERM, then exit within 30 seconds. Ten more seconds before SIGKILL.
+terminationGracePeriodSeconds: 40
+
+podAnnotations: {}
+podLabels: {}
+
+# Restricted-profile defaults that every image can take. runAsNonRoot is off because the kubelet can only check it when the image's USER is a number;
+# the Envoy and Node images are not. Turn it on (and set runAsUser) for images that have a numeric user: SERVICE-SPEC section 12 asks for a non-root user.
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  automountServiceAccountToken: false   # no service talks to the Kubernetes API
+
+# Raw volume definitions (the mocks read the OpenAPI files from a host path that the kind recipe mounts into the node).
+extraVolumes: []
+extraVolumeMounts: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+# For a real cluster; the kind recipe reaches the gateway through a NodePort. Streams (SSE, WebSocket) need buffering and idle timeouts off:
+# put the annotations of your ingress controller here.
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []          # - host: api.example.com
+  tls: []            # - secretName: api-tls
+                     #     hosts: [api.example.com]

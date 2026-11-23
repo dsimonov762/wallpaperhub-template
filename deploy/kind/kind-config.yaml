@@ -1,0 +1,20 @@
+# The local cluster (scripts/k8s.sh creates it from this file).   docs/KUBERNETES.md
+#
+# @CONTRACTS@ is replaced with the absolute path of the repository's contracts/ folder when the cluster is created:
+# the Prism mocks read their OpenAPI files from there, as they do in Compose.
+# scripts/k8s-gen.py --check keeps the two mappings below in step with the gateway's NodePort and PORT_GATEWAY.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: wallpaperhub
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # the gateway's NodePort -> the host's 8080, so http://localhost:8080 (and make e2e) are the same as with Compose
+      - containerPort: 30080
+        hostPort: 8080
+        listenAddress: "127.0.0.1"
+        protocol: TCP
+    extraMounts:
+      - hostPath: "@CONTRACTS@"
+        containerPath: /contracts
+        readOnly: true

@@ -29,6 +29,7 @@ repos:
         exclude: *generated
       - id: check-yaml
         args: [--allow-multiple-documents]
+        exclude: ^deploy/helm/service/templates/    # Helm templates are Go templates, not YAML, until helm renders them (make k8s-lint does)
       - id: check-json
       - id: check-merge-conflict
       - id: check-case-conflict       # two files that differ only by case: fine on Linux, a broken checkout on Windows
@@ -107,6 +108,21 @@ repos:
         language: system
         pass_filenames: false
         files: ^(docs/|README\.md$|scripts/adr\.py$)
+
+      - id: wh-k8s
+        name: Helm values are generated from the compose file, kind publishes the gateway
+        entry: make k8s-check
+        language: system
+        pass_filenames: false
+        files: ^(deploy/|infra/docker-compose\.yml$|services/gateway/envoy/envoy\.yaml$|scripts/k8s-gen\.py$)
+
+      - id: wh-k8s-lint
+        name: Helm chart (helm lint, helm template, kubeconform)
+        entry: bash scripts/k8s-lint.sh --if-possible          # no helm or kubeconform: says so and passes, CI is the gate
+        language: system
+        pass_filenames: false
+        verbose: true
+        files: ^(deploy/helm/|scripts/k8s-lint\.sh$)
 
       - id: wh-renovate
         name: Renovate configuration is valid

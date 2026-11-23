@@ -1,0 +1,6 @@
+{{ include "svc.fullname" . }} is deployed as {{ .Values.image.repository }}:{{ .Values.image.tag }}.
+
+  kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+  kubectl -n {{ .Release.Namespace }} logs deploy/{{ include "svc.fullname" . }}
+
+Inside the cluster it answers at http://{{ include "svc.fullname" . }}.{{ .Release.Namespace }}:{{ .Values.ports.http }} (management: {{ .Values.ports.management }}).
