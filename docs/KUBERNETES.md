@@ -14,7 +14,7 @@ scripts/k8s.sh             up / down / status / check / logs / dump        scrip
 
 ## Try it
 
-You need `kind`, `kubectl` and `helm` (4, or 3.18+) next to Docker Desktop; `make doctor` says what is missing. Nothing else changes: Compose still runs the infrastructure.
+You need `kind`, `kubectl` and `helm` (4, or 3.18+) next to Docker Desktop; `make doctor` says what is missing. `scripts/k8s.sh` creates `.venv-validate` itself when it is missing. Nothing else changes: Compose still runs the infrastructure.
 
 ```
 make k8s-up-mocks      # Keycloak and Redis in Compose (started for you), the gateway and the four Prism mocks in kind   ~2 GB
@@ -108,18 +108,17 @@ docker exec wallpaperhub-control-plane getent hosts keycloak                    
 kubectl --context kind-wallpaperhub -n kube-system logs -l k8s-app=kube-dns --tail=20             # CoreDNS: timeouts to the upstream?
 ```
 
-The node missing from the network: `make k8s-up-...` attaches it. The node resolves, the pods do not: CoreDNS cannot reach Docker's resolver from the pod network; that is the part of this design that is checked only by `make k8s-net` on a real Docker Desktop
-and by the CI job, so if you hit it, keep the output of the three commands above. The alternative is to run the infrastructure in the cluster too ([0021](adr/0021-the-local-cluster-is-kind-with-the-infrastructure-left-in.md) says why that is not what the repository does); the charts for that are yours to choose.
+The node missing from the network: `make k8s-up-...` attaches it. The node resolves, the pods do not: CoreDNS cannot reach Docker's resolver from the pod network (it works on Docker Desktop with WSL2 and on GitHub runners, so a failure points at your Docker or kind version; keep the output of the three commands above). The alternative is to run the infrastructure in the cluster too ([0021](adr/0021-the-local-cluster-is-kind-with-the-infrastructure-left-in.md) says why that is not what the repository does); the charts for that are yours to choose.
 
 ## What is verified, what is not
 
-Verified in a Linux sandbox without a Docker daemon and without the `helm` binary (it could not be downloaded there): the chart templates were rendered by a Go `text/template` renderer with the Helm and Sprig functions the chart uses
-(`include`, `toYaml`, `nindent`, `quote`, `default`, `trunc`, `trimSuffix`, `replace`, `contains`, `sha256sum`, `toJson`) for all nine values files and both cases in `ci/`; every rendered object passes **kubeconform 0.7.0** against the schemas of Kubernetes 1.37
-(strict); a script checks that the selectors match the pod labels, that every probe, Service `targetPort` and Secret key refers to something that exists and that no environment variable is duplicated; `values.schema.json` accepts all of them and
-rejects an unknown key, a NodePort outside 30000-32767 and a bad name. `scripts/k8s-gen.py --check` catches a stale file, a host that does not exist and a kind configuration that no longer matches; `scripts/k8s.sh` was run against stand-ins for
-`docker`, `kind`, `kubectl` and `helm` (refusal when the Compose gateway runs or Keycloak is missing, the order of the calls, the contracts path in the generated kind configuration); `scripts/k8s-lint.sh` ran with the renderer standing in for `helm`;
-every pre-commit hook passes on a git copy; the ADR check and its self-test pass with the two new records.
+Run for real (on Docker Desktop with WSL2, and in the `kubernetes` job of CI on a GitHub runner): `make k8s-check`, `make k8s-lint`, `make k8s-up-mocks` (the cluster, the image load, the five deployments becoming ready), `make k8s-net`
+(the pods resolve and reach Keycloak and Redis in Compose through the node's second network) and `make e2e` through the gateway in the cluster. CI needed three fixes that came from those runs and are in the repository now:
+the Envoy image is told to run as the user it is given (`ENVOY_UID: "0"` in the compose file and the gateway's values: its entrypoint otherwise tries to `chown` and drop privileges, which fails when every capability is dropped),
+the Prism mocks answer `/health/startup` as the chart's startup probe asks, and `scripts/k8s.sh` uses the same virtual environment as the generators because a bare `python3` has no PyYAML.
 
-**Not verified: everything that needs the real tools.** `helm lint --strict` and `helm template` with the real Helm (a quirk of its templating that the stand-in does not share is possible), the kind cluster creation, `kind load`, the pods starting, the probes
-passing, the gateway answering in the cluster, and above all **that a pod resolves and reaches the Compose containers through the node's second network**. The first real run of all of it is your machine and the `kubernetes` job of CI. If `make k8s-lint` or the job fail,
-send the output: the likely places are a difference between real Helm and the stand-in renderer, the kind and Docker Desktop versions, and DNS.
+Also checked while the chart was written, without a cluster: the templates were rendered by a Go `text/template` stand-in for Helm and every object passes kubeconform (strict); selectors, probe ports, Service target ports and Secret keys were cross-checked;
+`values.schema.json` rejects an unknown key, a NodePort outside 30000-32767 and a bad name; `scripts/k8s-gen.py --check` catches a stale file, a host that does not exist and a kind configuration that no longer matches.
+
+**Not verified:** `make k8s-up-apps` (the template ships no real services yet, so only the mocks mode has run), the image-archive fallback of `kind load` (the direct load worked), and any real cluster other than kind. `ENVOY_UID: "0"` means Envoy runs as root without capabilities in the container;
+a cluster that forbids root needs an Envoy image or a security context that runs it as a numeric non-root user.

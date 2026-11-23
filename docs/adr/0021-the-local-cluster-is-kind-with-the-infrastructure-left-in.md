@@ -20,7 +20,7 @@ Databases and brokers are also what a team runs as managed services in productio
 
 - The cluster costs about what the gateway and four small Node processes cost, so it fits next to the infrastructure on a 16 GB machine; running the real services in it is bounded by their memory limits as in Compose.
 - The services are tested in Kubernetes (probes, restarts, rolling updates, the security context, DNS), but not the infrastructure on Kubernetes. Whether Kafka or Keycloak runs well in a cluster is a different question that this repository does not try to answer.
-- Pods reach Compose containers across two Docker networks through the node. This depends on how Docker resolves names for a container attached to two networks and on how kind forwards DNS; `make k8s-net` runs a probe pod that resolves and connects to the infrastructure and says what to check when it cannot.
+- Pods reach Compose containers across two Docker networks through the node. This depends on how Docker resolves names for a container attached to two networks and on how kind forwards DNS. It works on Docker Desktop (WSL2) and on GitHub-hosted runners (2026-11-23); `make k8s-net` runs a probe pod that resolves and connects to the infrastructure and says what to check when it cannot.
 - `kind load` copies images into the node; with Docker Desktop's containerd image store the direct load can fail, and the script falls back to an image archive.
 - Compose recreating its network (`make down` and up) detaches the node; `make k8s-up-...` attaches it again, and `make k8s-net` says when it is detached.
 - The Kubernetes version is the one that the pinned kind release ships; the schema version of `make k8s-lint` is set to match and is raised together with kind.
