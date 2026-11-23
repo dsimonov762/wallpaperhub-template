@@ -20,6 +20,7 @@ env:
   SCHEMA_REGISTRY_URL: http://schema-registry:8081
   JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=65
   OTEL_SERVICE_NAME: api-gateway
+  ENVOY_UID: '0'
   REDIS_HOST: redis
   REDIS_PORT: '6379'
   OIDC_CLIENT_ID: gateway

@@ -3,7 +3,7 @@
 // Lets the gateway, Keycloak and the e2e suite run before a real implementation exists.
 //
 //   :8080  the API, answered by Prism with the examples of the spec (Prefer: code=NNN picks another response)
-//   :8081  management: /health/live and /health/ready (what the Envoy upstream health checks and compose probe)
+//   :8081  management: /health/live, /health/ready and /health/startup (Envoy upstream health checks, compose and the Helm chart's probes)
 //
 // Environment:
 //   SPEC_FILE    path of the OpenAPI file (default /contracts/openapi/${SPEC}.yaml)
@@ -41,9 +41,9 @@ prism.on('exit', (code) => {
 });
 ['SIGINT', 'SIGTERM'].forEach((s) => process.on(s, () => { prism.kill(); process.exit(0); }));
 
-// Management: ready once Prism has loaded the spec.
+// Management: ready (and started) once Prism has loaded the spec; the Helm chart's startupProbe asks for /health/startup.
 http.createServer((req, res) => {
-  const ok = req.url.startsWith('/health/live') || (req.url.startsWith('/health/ready') && prismReady);
+  const ok = req.url.startsWith('/health/live') || (/^\/health\/(ready|startup)/.test(req.url) && prismReady);
   res.writeHead(ok ? 200 : 503, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ status: ok ? 'UP' : 'DOWN', mock: service }));
 }).listen(mgmtPort, host, () => log(`management on ${host}:${mgmtPort}`));
