@@ -28,6 +28,12 @@ busybox_version=1.37.0
 
 say()  { printf '%s\n' "$*"; }
 die()  { printf 'k8s: %s\n' "$*" >&2; exit 1; }
+
+# The same virtual environment as make k8s-gen and the other generators (the Makefile's VENV): created once, requirements kept current.
+venv_python() {
+  [ -d .venv-validate ] || python3 -m venv .venv-validate || die "cannot create .venv-validate (python3 -m venv failed)"
+  .venv-validate/bin/pip install -q -r scripts/validate/requirements.txt || die "cannot install scripts/validate/requirements.txt into .venv-validate"
+}
 kc()   { kubectl --context "$CONTEXT" -n "$NS" "$@"; }
 
 need() {
@@ -64,7 +70,8 @@ cmd_up() {
   [ "${2:-}" = "--no-build" ] && build=0
   need docker kind kubectl helm
 
-  python3 scripts/k8s-gen.py --check >/dev/null || { python3 scripts/k8s-gen.py --check; die "the values files do not match the compose file: make k8s-gen"; }
+  venv_python   # k8s-gen.py needs PyYAML, which a bare python3 (a CI runner, a fresh laptop) does not have
+  .venv-validate/bin/python scripts/k8s-gen.py --check >/dev/null || { .venv-validate/bin/python scripts/k8s-gen.py --check; die "the values files do not match the compose file: make k8s-gen"; }
 
   local running; running="$(compose_running)"
   printf '%s\n' "$running" | grep -qx gateway && die "the Compose gateway runs and holds port 8080. Stop it first:  ${COMPOSE[*]} stop gateway account-mock media-mock catalog-mock notification-mock account media catalog notification"
