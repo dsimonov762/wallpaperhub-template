@@ -130,6 +130,10 @@ Every pin of the repository (images in compose files, Dockerfiles, scripts and d
 
 `docs/adr/` holds one short file per decision: what was decided, why, and what it costs. The nine decisions of the README's decision log are there, and twelve more about the principles and the tooling of this repository (Envoy, the conformance suite, HTTPS, failure injection, CI and hooks, Renovate, the S3 image, Kubernetes). `make adr-new T="Title"` starts the next one (`SUPERSEDES=0012` when it replaces one), `make adr-check` checks form, numbering, links and the index; CI and a git hook run it. Details: [docs/adr/README.md](adr/README.md).
 
+### Documentation
+
+`make docs-check` (a git hook and a CI step too) verifies every relative link and anchor in the Markdown files, that each `make <target>` the text shows exists, and that every file in `docs/` is in the [documentation map](README.md). Who may change which files, how to hand out work to several people or AI agents, and what a finished piece of work contains: [../AGENTS.md](../AGENTS.md) and [ROADMAP.md](ROADMAP.md).
+
 ### Kubernetes
 
 `make k8s-up-mocks` creates a local kind cluster, runs the gateway and the four mocks in it and leaves Keycloak and Redis in Compose; `make e2e` then goes through the cluster, and `make k8s-up-apps` does the same with the real services. One generic Helm chart (`deploy/helm/service`) serves every service, its values are generated from the compose file (`make k8s-gen`), and `make k8s-lint` checks the rendered manifests with kubeconform. Needs `kind`, `kubectl` and `helm` (`make doctor` lists them); the static checks (`make k8s-check`) need nothing. Details: [KUBERNETES.md](KUBERNETES.md).
@@ -148,6 +152,10 @@ Every pin of the repository (images in compose files, Dockerfiles, scripts and d
 
 ## 5. What has and has not been verified
 
+**The current overview is [STATUS.md](STATUS.md)**, which gives every capability a level (Confirmed / Sandbox / Design only). This section is the detailed record of the first pass, written from the point of view of a sandbox without Docker; it is kept because it lists exactly what was exercised.
+Since then the owner has run the stack on Windows 11 with Docker Desktop and in GitHub Actions: **confirmed** are the infrastructure profiles, the gateway suite (`make e2e`), the conformance self-test, host mode, contract tooling, seed and reset, the tools profile, Bruno, dashboards, failure injection against mocks, k6 smoke, HTTPS, the pre-commit hooks, Renovate and all of CI (`ci / ok` is green), and for Kubernetes `make k8s-check`, `make k8s-up-mocks`, `make k8s-net` and `make e2e` through the cluster.
+**Still never run:** anything against a real service (there is none), `make k8s-up-apps`, `service.yml`, `system.yml`, and all `system/*.hurl` assertions. Where a bullet below says "not verified" for something in the confirmed list, the confirmation wins.
+
 Verified with the real binaries in a Linux sandbox (no Docker daemon was available there):
 
 - **Envoy 1.39.1** loads `services/gateway/envoy/envoy.yaml`; a behavior matrix passed (JWT, CORS, rate limit, problem+json, request id, body limits, forged `X-User-*` / `X-Forwarded-For` removal, per-IP and per-user rate-limit buckets, security headers on gateway 404s, de/es/en errors).
@@ -164,7 +172,7 @@ Verified with the real binaries in a Linux sandbox (no Docker daemon was availab
 
 Not verified (needs your Docker): image behavior of Kafka/Schema Registry/Elasticsearch/MongoDB/Silo, `kafka-init`, `schema-registry-init`, `s3-init`, `catalog-db-init`
 (mongosh), `catalog-search-init`, the Alloy pipeline at runtime, the mock `Dockerfile`, the Hurl container fallback, `make` targets that call the daemon,
-**oasdiff** (`make contracts-breaking` only exercised its call plumbing with a stand-in, the real tool could not be downloaded here, image `tufin/oasdiff:v1.33.0`), the tools image build (`tools/contract-tools/Dockerfile`: buf's binary on Alpine), `TARGET=openapi` (image `openapitools/openapi-generator-cli:v7.27.0`) and `TARGET=proto` (buf plugins need network access), **the workflows on GitHub itself** (never run: action versions, runner memory, the Docker steps, `make up-mocks` and `make e2e` in the runner, artifact upload), the host-mode forwarder image build, `docker compose` `--scale <hosted service>=0`, whether Docker Desktop reaches a host process through `host.docker.internal` on your machine (bind `0.0.0.0`; allow the Windows firewall prompt), the Docker modes of `conformance/checks/lifecycle.sh` (`CONTAINER=`), the container fallback of `conformance/run.sh` when Hurl is not installed, and **all `system/*.hurl` assertions** - they describe the contract and have never run against an implementation. Expect to adjust them with the first real service.
+**oasdiff** (`make contracts-breaking` only exercised its call plumbing with a stand-in, the real tool could not be downloaded here, image `tufin/oasdiff:v1.33.0`), the tools image build (`tools/contract-tools/Dockerfile`: buf's binary on Alpine), `TARGET=openapi` (image `openapitools/openapi-generator-cli:v7.27.0`) and `TARGET=proto` (buf plugins need network access), the workflows on GitHub itself (since confirmed: `ci.yml` is green; `service.yml` and `system.yml` have not run with a real service), the host-mode forwarder image build, `docker compose` `--scale <hosted service>=0`, whether Docker Desktop reaches a host process through `host.docker.internal` on your machine (bind `0.0.0.0`; allow the Windows firewall prompt), the Docker modes of `conformance/checks/lifecycle.sh` (`CONTAINER=`), the container fallback of `conformance/run.sh` when Hurl is not installed, and **all `system/*.hurl` assertions** - they describe the contract and have never run against an implementation. Expect to adjust them with the first real service.
 
 Also not verified: the **`data` jobs and `make seed`/`reset`** against Docker (the scripts were exercised one by one, `scripts/data.sh` with a fake `docker`), the Mongo upserts against a real MongoDB with the validators, `mcli mirror --attr` and `mcli rm` in the Silo image, and the **`tools` profile**: nothing of it was started. The tags `ghcr.io/kafbat/kafka-ui:v1.5.0` (taken from the release list, not confirmed on the registry), `adminer:6.3.0` and `huggingface/mongoku:2.11.5` (seen on Docker Hub), the Kafka UI variable names (`KAFKA_CLUSTERS_0_*`, from its documentation as I remember it) and Adminer's pre-filled `?pgsql=...` links are the likely places for a first-start surprise. A wrong tag shows up as a pull error: set `KAFKA_UI_IMAGE`, `ADMINER_IMAGE` or `MONGO_UI_IMAGE` in `infra/.env`.
 
@@ -201,11 +209,13 @@ conformance/              language-agnostic conformance suite (run.sh, selftest.
 .github/workflows/        ci.yml, service.yml (one implementation), system.yml (all services, nightly); scripts/ci/ helpers; docs/CI.md
 infra/host/, host-proxy/  host mode: env files for the IDE, TCP forwarder
 seed/                     development dataset: dataset.yaml, build.py, generated out/ and s3/ (make seed / reset / reseed)
-services/<name>/<impl>/   YOUR implementations go here (account, media, catalog, notification)
+services/<name>/<impl>/   YOUR implementations go here (account, media, catalog, notification); the work packages are in docs/ROADMAP.md
 e2e/                      Hurl tests: gateway/ (any backend) and system/ (real services), fixtures/, run.sh
+AGENTS.md, CLAUDE.md      the rules for working in this repository, for people and AI agents (CLAUDE.md imports AGENTS.md)
+docs/                     README.md is the map; STATUS.md (what exists), ROADMAP.md (what is left, as work packages), HISTORY.md (how we got here), guides
 docs/adr/                 architecture decision records (what was decided and why), see docs/adr/README.md
 deploy/                   Helm chart + generated values per service, kind cluster config; docs/KUBERNETES.md
-scripts/                  adr.py (decision records), k8s.sh + k8s-gen.py + k8s-lint.sh (Kubernetes), doctor.sh, wait-healthy.sh, validate/ (contract cross-checks), contracts.sh + contracts/ (lint, breaking), codegen.sh, ct.sh
+scripts/                  adr.py (decision records), docs-check.py (Markdown links, anchors, make targets), k8s.sh + k8s-gen.py + k8s-lint.sh (Kubernetes), doctor.sh, wait-healthy.sh, validate/ (contract cross-checks), contracts.sh + contracts/ (lint, breaking), codegen.sh, ct.sh
 tools/contract-tools/     pinned Spectral, buf, openapi-typescript (package.json, Dockerfile)
 .pre-commit-config.yaml   git hooks (pre-commit), see docs/PRE-COMMIT.md; .hadolint.yaml and .github/actionlint.yaml configure two of them
 .github/renovate.json5    dependency updates (Renovate), see docs/RENOVATE.md
@@ -214,8 +224,9 @@ Makefile                  make help
 
 ## 8. What is still missing for a finished template
 
-- **Service skeletons.** `services/<name>/<impl>/` does not exist yet (`conformance/reference-stub/` is a throwaway Python stand-in that passes the conformance suite, not a template): a service template per language (health endpoints on `:8081`, JWT validation, outbox relay, Avro producer, problem+json mapper, config mapping of the env vars in `infra/docker-compose.yml`).
-- **CI** is in `.github/workflows/` (GitHub Actions, see [CI.md](CI.md)); there is no GitLab/Jenkins version, the workflows only call `make` targets.
-- **Web client** (the `web-spa` Keycloak client and the CORS origins 5173/4200 are prepared).
+The list of what is missing, with a verification level for what exists, is [STATUS.md](STATUS.md#what-does-not-exist-yet); the same work cut into independent packages is [ROADMAP.md](ROADMAP.md). In short: the four services themselves (`services/<name>/<impl>/` does not exist;
+`conformance/reference-stub/` is a throwaway stand-in, not a template), a service scaffold per language, a gRPC mock of `AccountService` and an event emitter, inner-loop tooling (editorconfig, devcontainer), repository basics (license, contributing guide, code owners), security scanning, image publishing and deployment, alerts and runbooks, and an optional web client.
+CI is in `.github/workflows/` (GitHub Actions, see [CI.md](CI.md)); there is no GitLab or Jenkins version, the workflows only call `make` targets.
+
 - **Decided in the contracts:** avatar/banner assets are verified with media-service before account writes (owner, purpose, not rejected; 403/404/409/503); `size` above 100 is rejected, not clamped; one asset backs at most one wallpaper (`409 wallpaper.asset-already-used`, unique index `asset_uq`). A moderator-removed wallpaper cannot be deleted by its author (`409 wallpaper.removed-by-moderation`), so its asset cannot be reposted.
 - **Known gateway gap:** rate-limit buckets are per client (IP, or user id after sign-in) but live in each gateway instance's memory, so they multiply with the number of instances and reset on restart; shared counters (README: Redis) need Envoy's global rate limit service (`envoyproxy/ratelimit`), worth adding when you run more than one gateway. Behind a load balancer set `xff_num_trusted_hops`. Only 401, 404, 413, 429 and 502-504 are localized (de/es/en); other gateway errors are generic English.

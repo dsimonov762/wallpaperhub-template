@@ -27,7 +27,7 @@ The first run clones the hook repositories and builds their environments (needs 
 | `actionlint` | workflow mistakes (wrong expression, unknown input), plus shellcheck on the `run:` scripts of the workflows. Knows the `ubuntu-26.04` runner through `.github/actionlint.yaml` |
 | `hadolint` | Dockerfile rules (`:latest`, missing `--no-cache`, ...). `.hadolint.yaml` ignores pinning of `apk add` packages, with the reason |
 
-**The repo's own checks** (ids `wh-*`), only when files of their area changed, so a change to a document runs none of them. Each is the `make` target CI runs:
+**The repo's own checks** (ids `wh-*`), only when files of their area changed, so a change to a service's code runs none of them. Each is the `make` target CI runs:
 
 | Hook | Runs | When these paths change |
 |---|---|---|
@@ -39,6 +39,7 @@ The first run clones the hook repositories and builds their environments (needs 
 | `wh-chaos` | `make chaos-check` | `infra/chaos/`, `infra/docker-compose.yml` and the chaos overlay |
 | `wh-gateway-overlays` | `make load-check https-check` | `envoy.yaml`, the two generators |
 | `wh-adr` | `python3 scripts/adr.py check` (`make adr-check`) | `docs/`, `README.md`, `scripts/adr.py`: records, their links and the index, see [adr/README.md](adr/README.md) |
+| `wh-docs` | `python3 scripts/docs-check.py` (`make docs-check`) | every `*.md`, `Makefile`: links, anchors, `make` targets named in the text, the documentation map, see [README.md](README.md) |
 | `wh-k8s` | `make k8s-check` | `deploy/`, `infra/docker-compose.yml`, `envoy.yaml`, `scripts/k8s-gen.py`: Helm values current, cluster names fit envoy.yaml, kind config, see [KUBERNETES.md](KUBERNETES.md) |
 | `wh-k8s-lint` | `scripts/k8s-lint.sh --if-possible` | `deploy/helm/`: `helm lint`, `helm template`, kubeconform; skips with a note when `helm` or `kubeconform` is missing |
 | `wh-renovate` | `make renovate-check` | `.github/renovate.json5` (needs Node 24.11+ or Docker, see [RENOVATE.md](RENOVATE.md)) |

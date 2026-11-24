@@ -1,10 +1,12 @@
 # Wallpaper Hub: Polyglot Microservice Reference Design
 
-> **Status:** design v1.1 · **Purpose:** an educational, language-agnostic reference project. Implement the same system in many languages and frameworks to compare how each solves the same problems, and reuse it as a cheat sheet and base template for microservice applications.
+> **Status:** design v1.1 (2026-11-08); contracts and the complete local environment are built and confirmed, **no domain service is implemented yet** (see [docs/STATUS.md](docs/STATUS.md)) · **Purpose:** an educational, language-agnostic reference project. Implement the same system in many languages and frameworks to compare how each solves the same problems, and reuse it as a cheat sheet and base template for microservice applications.
 
 The domain is a community **wallpaper-sharing platform** (think Wallhaven or Unsplash). It naturally needs avatars, banners, thumbnails and wallpapers, full-text search, email, async processing and cross-service calls. The domain is deliberately incidental: the point is the technology coverage.
 
 **Deployables:** four domain services plus one edge service (the API gateway).
+
+**Where to start:** [docs/STATUS.md](docs/STATUS.md) says what exists and what does not; [docs/ROADMAP.md](docs/ROADMAP.md) cuts the rest into independent work packages; [AGENTS.md](AGENTS.md) holds the rules for working here (also for AI agents, several at once); [docs/README.md](docs/README.md) is the map of all documentation; [docs/HISTORY.md](docs/HISTORY.md) tells how the project got here and why; [docs/adr/](docs/adr/README.md) records the decisions.
 
 ---
 
@@ -661,35 +663,42 @@ resources/              migrations, config files, bundles
 
 ```text
 wallpaper-hub/
-├── README.md
-├── contracts/
-│   ├── openapi/            golden specs, one per service
+├── README.md               this design (v1.1)
+├── AGENTS.md  CLAUDE.md    rules for working here, for people and AI agents (CLAUDE.md imports AGENTS.md)
+├── Makefile                every command: make help
+├── contracts/              the source of truth
+│   ├── openapi/            golden specs, one per service, plus common.yaml
 │   ├── proto/              account/v1/account.proto
 │   ├── avro/               *.avsc per topic value
 │   ├── graphql/            catalog.graphqls
 │   ├── i18n/               shared message keys + en/de/es bundles
-│   └── db-schema/          canonical reference schema for parity checks
+│   └── db-schema/          canonical schemas (Postgres, Mongo, Elasticsearch, Redis) for parity checks
 ├── infra/
-│   ├── docker-compose.yml  profiles: infra | observability | apps
+│   ├── docker-compose.yml  profiles: infra | observability | apps | mocks | schemas | data | tools (+ overlays: chaos, loadtest, https)
 │   ├── keycloak/           realm-export.json (clients, roles, mappers)
-│   ├── alloy/              config.alloy (OTLP in; Loki, Tempo, Prometheus out)
-│   ├── grafana/            provisioning/ + dashboards/
-│   ├── prometheus/  loki/  tempo/
-│   ├── minio-init/         bucket and policy bootstrap
-│   └── schema-registry-init/
+│   ├── alloy/ grafana/ loki/ prometheus/ tempo/    observability stack; grafana/ holds the 7 dashboards
+│   ├── chaos/              Toxiproxy: edges.yaml, scenarios, generated config
+│   ├── data/ db-init/ kafka-init/ minio-init/ schema-registry-init/    jobs that prepare the stores, Kafka, S3 and the schemas
+│   └── host/ host-proxy/   host mode: run one service from the IDE
 ├── services/
-│   ├── gateway/            {envoy-or-traefik | java-spring-gateway | go | ts | ...}
-│   ├── account/            {java-spring | kotlin-ktor | go | python-fastapi | ...}
-│   ├── media/              {...}
-│   ├── catalog/            {...}
-│   └── notification/       {...}
-├── deploy/
-│   ├── helm/               one generic chart for every service + generated values per service (docs/KUBERNETES.md)
-│   └── kind/               local Kubernetes cluster (make k8s-up-mocks)
-├── e2e/                    language-agnostic scenario suite (k6, Hurl or pytest)
+│   ├── gateway/envoy/     the default gateway: an Envoy configuration (README 3.1)
+│   ├── _mock/              Prism mock generated from an OpenAPI file; stands in for a service that is not there yet
+│   ├── account/            {java-spring | kotlin-ktor | go | python-fastapi | ...}   NOT YET IMPLEMENTED
+│   ├── media/  catalog/  notification/   {...}                                      NOT YET IMPLEMENTED
+├── conformance/            checks any running service against docs/SERVICE-SPEC.md (reference stub, selftest)
+├── e2e/                    Hurl suites: gateway/ (any backend) and system/ (real services)
+├── seed/  bruno/  loadtest/   development dataset; API collection; k6 journeys
+├── deploy/                 one generic Helm chart for every service + generated values; kind cluster (docs/KUBERNETES.md)
+├── scripts/  tools/        the tooling behind the make targets; pinned contract tools
+├── .github/                workflows (ci, service, system) and Renovate configuration
 └── docs/
+    ├── README.md           the documentation map
+    ├── STATUS.md           what exists and what does not, how well verified
+    ├── ROADMAP.md          what is left, as independent work packages with lanes
+    ├── HISTORY.md          what was built in which order and why
+    ├── SERVICE-SPEC.md     what a service must do from the outside
     ├── adr/                architecture decision records: what was decided and why (make adr-new)
-    └── CHEATSHEET.md       per service: concept -> file path (one per implementation)
+    └── *.md                guides: getting started, CI, hooks, Renovate, observability, chaos, load, HTTPS, Kubernetes
 ```
 
 Each `services/<name>/<language>/` folder follows the template in section 12 and ships its own `CHEATSHEET.md` mapping concept to file (for example *"validation → `dto/CreateWallpaperRequest.*`"*).
@@ -773,15 +782,17 @@ Each `services/<name>/<language>/` folder follows the template in section 12 and
 
 ## 17. Roadmap
 
-| Phase | Deliverable |
-|---|---|
-| **0** | Infra compose, Keycloak realm, Alloy/Grafana stack, all contracts, e2e skeleton |
-| **1** | **account-service** (the template service): config, HTTP, DTOs, mappers, validation, errors, i18n, Postgres + ORM + migrations, Redis cache, gRPC server, **outbox + relay**, Kafka producer, security, audit, lint tooling, full test pyramid. Finish it completely in the first language before starting others. |
-| **2** | **media-service**: S3, image pipeline, queue, scheduling |
-| **3** | **catalog-service**: Mongo, Elasticsearch, GraphQL, REST + gRPC clients, resilience, batching, Kafka consumers |
-| **4** | **notification-service**: Redis as a database, email providers, digest, DLQ, **SSE/WebSocket push** |
-| **5** | **api-gateway**: off-the-shelf first, then a hand-written version; aggregated docs and health |
-| **6** | E2E suite complete, dashboards, Avro v2 evolution exercise, then port services to the next language one at a time |
+The phases below are the coarse plan; the state of each is in [docs/STATUS.md](docs/STATUS.md), and what is left is cut into independent work packages in [docs/ROADMAP.md](docs/ROADMAP.md).
+
+| Phase | Deliverable | State (2026-11-24) |
+|---|---|---|
+| **0** | Infra compose, Keycloak realm, Alloy/Grafana stack, all contracts, e2e skeleton | **Done and confirmed**, and much more than planned: conformance suite, host mode, contract tooling, CI, seed data, chaos, load tests, HTTPS, hooks, Renovate, ADRs, Kubernetes ([docs/HISTORY.md](docs/HISTORY.md)) |
+| **1** | **account-service** (the template service): config, HTTP, DTOs, mappers, validation, errors, i18n, Postgres + ORM + migrations, Redis cache, gRPC server, **outbox + relay**, Kafka producer, security, audit, lint tooling, full test pyramid. Finish it completely in the first language before starting others. | Not started ([WP-S1](docs/ROADMAP.md#wp-s1-account-service); first language undecided, [WP-S0](docs/ROADMAP.md#wp-s0-first-language-and-the-service-scaffold)) |
+| **2** | **media-service**: S3, image pipeline, queue, scheduling | Not started ([WP-S2](docs/ROADMAP.md#wp-s2-media-service)) |
+| **3** | **catalog-service**: Mongo, Elasticsearch, GraphQL, REST + gRPC clients, resilience, batching, Kafka consumers | Not started ([WP-S3](docs/ROADMAP.md#wp-s3-catalog-service)) |
+| **4** | **notification-service**: Redis as a database, email providers, digest, DLQ, **SSE/WebSocket push** | Not started ([WP-S4](docs/ROADMAP.md#wp-s4-notification-service)) |
+| **5** | **api-gateway**: off-the-shelf first, then a hand-written version; aggregated docs and health | Off-the-shelf **done** (Envoy, [ADR 0011](docs/adr/0011-the-gateway-is-an-envoy-configuration.md)); hand-written version not started ([WP-G1](docs/ROADMAP.md#wp-g1-gateway-follow-ups)) |
+| **6** | E2E suite complete, dashboards, Avro v2 evolution exercise, then port services to the next language one at a time | Dashboards **done**; e2e for real services and the exercises not started ([WP-E1](docs/ROADMAP.md#wp-e1-system-tests-and-the-phase-6-exercises), [WP-L1](docs/ROADMAP.md#wp-l1-more-languages)) |
 
 ---
 

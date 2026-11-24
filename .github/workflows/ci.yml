@@ -76,6 +76,8 @@ jobs:
         run: make renovate-check
       - name: Architecture decision records are well formed, linked and indexed
         run: make adr-check adr-selftest
+      - name: Documentation links, anchors, make targets and the documentation map are consistent
+        run: make docs-check docs-selftest
       - name: Helm values are generated from the compose file; the cluster names fit envoy.yaml; kind publishes the gateway
         run: make k8s-check
       - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0

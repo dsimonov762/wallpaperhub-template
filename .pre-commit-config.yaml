@@ -109,6 +109,13 @@ repos:
         pass_filenames: false
         files: ^(docs/|README\.md$|scripts/adr\.py$)
 
+      - id: wh-docs
+        name: Markdown links, anchors, make targets and the documentation map are consistent
+        entry: python3 scripts/docs-check.py
+        language: system
+        pass_filenames: false
+        files: ^(.*\.md$|Makefile$|scripts/docs-check\.py$)
+
       - id: wh-k8s
         name: Helm values are generated from the compose file, kind publishes the gateway
         entry: make k8s-check
