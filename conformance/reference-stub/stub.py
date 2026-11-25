@@ -97,6 +97,9 @@ def tr(lang, key, **args):
     return s
 
 TP = re.compile(r"^00-([0-9a-f]{32})-([0-9a-f]{16})-[0-9a-f]{2}$")
+# E6: a request id from the client goes into a response header, so it is accepted only in this plain form (no space, no control character,
+# no folded line): anything else would let a client add lines to our response (HTTP response splitting). Spec E6.
+REQUEST_ID = re.compile(r"[A-Za-z0-9._:-]{1,128}")
 
 # ---------------------------------------------------------------- authentication (spec 4)
 import jwt
@@ -160,6 +163,7 @@ class Api(BaseHTTPRequestHandler):
         lang = lang_of(self.headers.get("Accept-Language")) if "E4" not in BREAK else "en"
         # request id (E6): echo what came in, otherwise make one
         rid = self.headers.get("X-Request-Id")
+        rid = rid if rid and REQUEST_ID.fullmatch(rid) else None            # an implausible id is ignored: a new one is made
         rid_out = (str(uuid.uuid4()) if "E6" in BREAK else rid) or str(uuid.uuid4())
         carrier = {k.lower(): v for k, v in self.headers.items()}
         span_cm = tracer.start_as_current_span(f"{self.command} {u.path}", context=extract(carrier), kind=trace.SpanKind.SERVER) if tracer else None
