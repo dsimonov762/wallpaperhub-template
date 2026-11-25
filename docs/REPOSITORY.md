@@ -14,18 +14,37 @@ How `dsimonov762/wallpaperhub-template` is configured on GitHub, why, and how to
 ## Applying it
 
 ```
-gh auth login                  # once, as the owner (an admin of the repository); needs the GitHub CLI
+export GH_TOKEN=...            # a fine-grained token for this one repository (see Credentials below); needs the GitHub CLI binary, no `gh auth login`
 make github-plan               # prints every request that would be sent; sends nothing
 make github-apply              # sets everything; safe to run again. ONLY=rulesets,labels sets a part
 make github-check              # offline: the files are consistent with ci.yml and the templates (CI runs it)
 ```
 
-`apply` configures the repository that `origin` points to: an https, ssh or scp-style URL, also through an ssh host alias from `~/.ssh/config` (one alias per account is common; `ssh -G` resolves it, so any alias name works). To name it instead: `GH_REPO=OWNER/NAME make github-apply` (the variable `gh` itself reads) or `--repo OWNER/NAME` on `scripts/github-setup.py apply`; the first line of the output says which repository it is and where the name came from. With several GitHub accounts in `gh`, `gh auth status` shows the active one and `gh auth switch` changes it; it must be an admin of the repository. The name is not stored in the files, so a copy of the repository needs no edit.
+`apply` configures the repository that `origin` points to: an https, ssh or scp-style URL, also through an ssh host alias from `~/.ssh/config` (one alias per account is common; `ssh -G` resolves it, so any alias name works). To name it instead: `GH_REPO=OWNER/NAME make github-apply` (the variable `gh` itself reads) or `--repo OWNER/NAME` on `scripts/github-setup.py apply`; the first line of the output says which repository it is and where the name came from. Which account acts is decided by the credential, **not** by the ssh key or the remote (see [Credentials](#credentials)); the second line of the output says who it is, and the run stops before sending anything unless that account is an admin of the repository. The name is not stored in the files, so a copy of the repository needs no edit.
 `apply` sets only what the files say. It prints one line per request and, at the end, the requests that failed and the usual reasons (not an admin, a feature the plan does not have, code scanning already configured by a workflow); the rest is applied, and a second run is harmless.
 Steps: `about`, `settings`, `security`, `actions`, `rulesets`, `environments`, `labels`.
 
 **First time, in this order:** merge the pull request that added these files; `make github-plan` and read it; `make github-apply`; then the checklist [*Not set by the script*](#not-set-by-the-script); then [the first release](#tags-and-releases).
 After the ruleset is on, every change to `master` goes through a pull request, including the next change to these files.
+
+## Credentials
+
+`make github-apply` talks to the GitHub API through the `gh` command. An **ssh key does not authenticate `gh`**: ssh is only how `git push` reaches GitHub, so with several accounts and several keys the remote URL can name one account while `gh` is logged in as another. Three ways to give `gh` an identity, best first for a repository that is meant to look like a real one:
+
+1. **A fine-grained personal access token for this repository only, given per command** (recommended). GitHub > Settings > Developer settings > Personal access tokens > Fine-grained tokens, created **by the owner account**: *Repository access: only* `wallpaperhub-template`, expiration 7 to 30 days, repository permissions **Administration: read and write**, **Issues: read and write** (labels), **Environments: read and write**; *Metadata: read* is added automatically. Then, in the Ubuntu shell:
+
+   ```
+   read -rsp "token: " GH_TOKEN; export GH_TOKEN; echo     # typed, not stored in the shell history or in a file
+   make github-plan && make github-apply
+   unset GH_TOKEN
+   ```
+
+   Why this one: the token can touch one repository and nothing else, it expires, nothing is stored on disk (`gh` needs no `auth login`, only to be installed), it does not matter which account `gh` or the ssh agent would have picked, and **Administration: write** (the dangerous permission) exists only for the minutes the command runs. Revoke the token afterwards; create a new one for the next change of settings.
+   The list of permissions is what the requests need according to GitHub's documentation as far as it could be checked (the page is long and was read in parts); if a request fails with `403 Resource not accessible by personal access token`, the message names what is missing: add it to the token and run again, the run is repeatable.
+2. **A separate `gh` login per account**, when you would rather not paste a token: `GH_CONFIG_DIR=~/.config/gh-dsimonov762 gh auth login` once (the folder keeps this account's login apart from every other), then `GH_CONFIG_DIR=~/.config/gh-dsimonov762 make github-apply`. The login is stored on the machine and is as powerful as the scopes you gave it (the default is `repo`, which reaches every repository of the account): the price of convenience.
+3. **`gh auth login` once and `gh auth switch`** between accounts: the least safe, because the active account is a global state that the next command inherits. The check before every run (the second line, "acting as ...") exists for this case.
+
+An organization later: use a fine-grained token of an owner of the organization, or run the apply from a workflow with a GitHub App token; the script does not change.
 
 ## About
 

@@ -7,7 +7,8 @@
                                               make the repository look like the files; safe to run again, only sets what the files say
 
 Reads  .github/repository.json (description, topics, settings, security, actions, environments),  .github/rulesets/*.json,  .github/labels.json.
-Talks to GitHub through the `gh` CLI (`gh auth login` first, as an admin of the repository). GH=<path> uses another binary (the tests use a stand-in).
+Talks to GitHub through the `gh` CLI, as the account of GH_TOKEN (a fine-grained token limited to this repository: nothing is stored) or else of `gh auth login`;
+before it sends anything it says which account that is and stops unless the account is an admin of the repository. GH=<path> uses another binary (the tests use a stand-in).
 Which repository: --repo OWNER/NAME, else the variable GH_REPO (the one `gh` itself reads), else the `origin` remote: https, ssh and scp-style URLs, also
 through an ssh host alias from ~/.ssh/config (`ssh -G` says where the alias leads). The name is never stored in the files, so a copy of this repository works unchanged.
 make github-check | github-plan | github-apply.  What is set and why: docs/REPOSITORY.md, docs/adr/0022-*.md
@@ -201,6 +202,8 @@ def apply(args):
     cfg = load(".github/repository.json")
     gh = Gh(repo, args.dry_run)
     print(f"{'DRY RUN, nothing is sent: ' if args.dry_run else ''}repository {repo} ({source})")
+    if not args.dry_run:
+        preflight(gh)
 
     if "about" in only:
         print("\nAbout: description, homepage, topics")
@@ -284,6 +287,21 @@ def apply(args):
         return 1
     print("Done." if not args.dry_run else "Dry run finished: that is everything `apply` would send.")
     return 0
+
+
+def preflight(gh):
+    """Who is acting, and may they change this repository? Wrong account (several are common), a token for another repository, or no login at all stop here."""
+    me = gh.call("GET", "/user", quiet=True)
+    info = gh.call("GET", "/repos/{repo}", quiet=True)
+    gh.failed.clear()
+    who = (me or {}).get("login", "an account that GitHub did not name")
+    if not info:
+        sys.exit(f"github-setup: {gh.repo} cannot be read as {who}. Wrong account, a token that is not scoped to this repository, or no credentials: "
+                 "set GH_TOKEN (a fine-grained token for this repository, docs/REPOSITORY.md) or run `gh auth status`.")
+    perms = info.get("permissions")
+    if perms is not None and not perms.get("admin"):
+        sys.exit(f"github-setup: {who} can read {gh.repo} but is not an admin of it, so GitHub would refuse the settings. Use the owner's account or token.")
+    print(f"acting as {who}" + ("" if perms is not None else " (GitHub did not say whether as an admin: failed requests will tell)"))
 
 
 def parse_remote(url):

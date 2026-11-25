@@ -109,3 +109,4 @@ Append one line per finished piece of work, newest last: date, package or topic,
 - 2026-11-24: documentation for parallel work: STATUS, ROADMAP, AGENTS, docs map, HISTORY, `make docs-check`.
 - 2026-11-25: the GitHub repository as code: About, topics, ruleset, security features, environments, labels, community files, `make github-apply`; ADR 0022; WP-R1 done. Sandbox-verified; the first `make github-apply` is the owner's.
 - 2026-11-25: `make github-apply` finds the repository through an ssh host alias (`ssh -G`), or from `GH_REPO` / `--repo`; `make github-selftest` covers it. [REPOSITORY.md](REPOSITORY.md)
+- 2026-11-25: credentials for `make github-apply`: a fine-grained token per command is the recommended way with several accounts; the script says which account it acts as and stops unless it is an admin of the repository.

@@ -41,6 +41,7 @@ open(os.environ["LOG"], "a").write(f"{method} {path}\n")
 if method == "GET":
     if path.endswith("/rulesets"): print(os.environ.get("RULESETS", "[]"))
     elif path == "/user": print('{"id": 1, "login": "me"}')
+    elif path == "/repos/o/r": print(os.environ.get("REPO_INFO", '{"permissions": {"admin": true}}')); sys.exit(1 if os.environ.get("REPO_INFO") == "MISSING" else 0)
     elif "/labels/" in path:
         if os.environ.get("EXISTS"): print('{"name": "x"}')
         else: sys.stderr.write("HTTP 404\n"); sys.exit(1)
@@ -87,5 +88,14 @@ origin git@gh-acme:acme/widgets.git;                       GH_REPO=env/wins expe
 origin git@gh-acme:acme/widgets.git;                       GH_REPO=env/loses expect_repo "--repo beats GH_REPO" flag/wins --repo flag/wins
 origin git@gh-acme:acme/widgets.git;                       expect_repo_error "--repo that is not OWNER/NAME" "is not OWNER/NAME" --repo widgets
 fixture;                                                   expect_repo_error "no origin remote" "cannot read the 'origin' remote"
+
+# who is acting: stops unless the account is an admin of the repository; says who it is
+: > "$W/logw"
+if out="$(GH="$W/gh" LOG="$W/logw" REPO_INFO='{"permissions": {"admin": false}}' run apply --repo o/r 2>&1)"; then echo "FAIL  a non-admin was allowed to apply"; fail=1
+elif grep -q "not an admin" <<<"$out" && ! grep -q "^PATCH\|^PUT\|^POST" "$W/logw"; then echo "ok    a non-admin is refused before anything is sent"; else echo "FAIL  non-admin refusal"; echo "$out"; fail=1; fi
+if out="$(GH="$W/gh" LOG="$W/logw" REPO_INFO=MISSING run apply --repo o/r 2>&1)"; then echo "FAIL  an unreadable repository was allowed"; fail=1
+elif grep -q "cannot be read as me" <<<"$out"; then echo "ok    a repository the account cannot read stops the run, naming the account"; else echo "FAIL  unreadable repository"; echo "$out"; fail=1; fi
+if out="$(GH="$W/gh" LOG="$W/logw" run apply --repo o/r --only about 2>&1)" && grep -q "^acting as me" <<<"$out"; then echo "ok    the run says which account it acts as"; else echo "FAIL  acting-as line"; echo "$out"; fail=1; fi
+if out="$(PATH="$W/bin:$PATH" run apply --dry-run --repo o/r 2>&1)" && ! grep -q "acting as" <<<"$out"; then echo "ok    a dry run does not need credentials"; else echo "FAIL  dry run"; fail=1; fi
 
 [ "$fail" = 0 ] && echo "github-selftest: all good" || { echo "github-selftest: failed"; exit 1; }
