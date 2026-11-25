@@ -86,8 +86,8 @@ if providers:
 
 # ---------------------------------------------------------------- i18n and problems (spec 5)
 def lang_of(header):
-    m = re.match(r"\s*([a-zA-Z]{2})", header or "")
-    l = m.group(1).lower() if m else "en"
+    # the first two letters of the first tag; slicing instead of a regular expression, which a header of many spaces could make slow (polynomial ReDoS)
+    l = (header or "").lstrip()[:2].lower()
     return l if l in BUNDLES else "en"
 
 def tr(lang, key, **args):
@@ -100,6 +100,10 @@ TP = re.compile(r"^00-([0-9a-f]{32})-([0-9a-f]{16})-[0-9a-f]{2}$")
 # E6: a request id from the client goes into a response header, so it is accepted only in this plain form (no space, no control character,
 # no folded line): anything else would let a client add lines to our response (HTTP response splitting). Spec E6.
 REQUEST_ID = re.compile(r"[A-Za-z0-9._:-]{1,128}")
+
+def no_line_breaks(value):
+    """The last line of defence for any response header: no CR and no LF. (E6 above already refuses a request id that is not plain.)"""
+    return str(value).replace("\r", "").replace("\n", "")
 
 # ---------------------------------------------------------------- authentication (spec 4)
 import jwt
@@ -142,8 +146,8 @@ class Api(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(data)))
         self.send_header("X-Content-Type-Options", "nosniff")
-        for k, v in (extra or {}).items():
-            self.send_header(k, v)
+        for k, v in (extra or {}).items():       # every header that is not fixed passes here: no line break can get through (response splitting)
+            self.send_header(no_line_breaks(k), no_line_breaks(v))
         self.end_headers()
         if self.command != "HEAD":
             self.wfile.write(data)
