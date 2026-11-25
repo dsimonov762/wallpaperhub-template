@@ -1,0 +1,25 @@
+# What GitHub puts into the generated notes of a release (gh release create --generate-notes). Labels: .github/labels.json
+changelog:
+  exclude:
+    labels:
+      - duplicate
+      - wontfix
+  categories:
+    - title: Breaking changes
+      labels: [breaking]
+    - title: Contracts
+      labels: [contract]
+    - title: Services and gateway
+      labels: [area:gateway, area:account, area:media, area:catalog, area:notification]
+    - title: Environment, CI and Kubernetes
+      labels: [area:infra, area:ci, area:k8s, enhancement]
+    - title: Decisions and documentation
+      labels: [adr, documentation]
+    - title: Fixes
+      labels: [bug]
+    - title: Security
+      labels: [security]
+    - title: Dependency updates
+      labels: [dependencies]
+    - title: Other changes
+      labels: ["*"]

@@ -18,7 +18,7 @@ Status of every package: **open** unless a line in [STATUS.md](STATUS.md) says o
 | [T2](#wp-t2-event-emitter) | Event emitter for the Kafka topics | S-M | nothing | everything |
 | [E1](#wp-e1-system-tests-and-the-phase-6-exercises) | System tests and the phase 6 exercises | M | S1 (grows with S2-S4) | |
 | [D1](#wp-d1-developer-inner-loop) | Developer inner loop | S-M | nothing (better after S0) | everything |
-| [R1](#wp-r1-repository-basics) | Repository basics | S | owner decisions (license, owners) | everything |
+| [R1](#wp-r1-repository-basics) | Repository basics (**done**) | S | | |
 | [X1](#wp-x1-security-scanning) | Security scanning in CI | M | nothing | everything |
 | [C1](#wp-c1-release-and-deployment) | Release and deployment | L | decision D-4, a service with a Dockerfile | |
 | [O1](#wp-o1-alerts-slos-runbooks) | Alerts, SLOs, runbooks | M | gateway part: nothing; per service: S-packages | |
@@ -81,6 +81,7 @@ Add `make up` (the whole infrastructure) when the service needs its database, Ka
 - **Contains.** Bootstrap in the order of README section 12; typed config from environment variables that fails fast naming the variable (C1); the three management endpoints on 8081 (M1-M4); JWT validation against the JWKS with `iss`, `aud`, `exp`, `nbf`, `typ` (A1-A4); the problem+json mapper and localization from `contracts/i18n` (E1-E6); JSON logging with trace ids and no secrets (L1-L3); OpenTelemetry through OTLP (T1-T3); graceful shutdown (S1); a Dockerfile (non-root, honours the memory limit); formatter, linter and type check; unit-test layout; a `CHEATSHEET.md` skeleton.
 - **Inputs.** [SERVICE-SPEC.md](SERVICE-SPEC.md), README sections 5.2, 5.3 and 12, `contracts/i18n`, `infra/docker-compose.yml` (environment), `conformance/`.
 - **Done when.** Four scaffolded services (one per persona) pass `make conformance-all ARGS="--lifecycle"` with no domain code, in CI (`service.yml` runs them) and in `make k8s-up-apps`.
+- **Where services live.** The lanes in this file say `services/<name>/<impl>/` of this repository. The owner intends to put the first service in **a repository of its own** (decision D-2 in [STATUS.md](STATUS.md#decisions-that-are-still-open)); then this package also designs how that repository uses the template at a pinned tag (a file with the tag, a script that checks the template out into an ignored folder and the `make` targets that read `contracts/`, `conformance/` and `infra/` from there), what `service.yml` becomes there, and what `make new-service` generates. Settle it with the owner, write the ADR, then build the scaffold.
 - **Note.** The reference stub in `conformance/reference-stub/` is a throwaway Python program that satisfies the spec; read it for the details of the checks, do not copy it.
 
 ### WP-S1: account-service
@@ -149,15 +150,14 @@ Add `make up` (the whole infrastructure) when the service needs its database, Ka
 
 ### WP-R1: repository basics
 
-- **Lane.** `LICENSE`, `CONTRIBUTING.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/**`, `.github/CODEOWNERS`.
-- **Needs owner decisions.** The license; who the code owners are (CODEOWNERS needs real handles).
-- **Contains.** CONTRIBUTING: branch and PR flow, `make precommit` before pushing, when to write an ADR, the contract protocol, commit message convention; a PR template whose checklist asks about contracts changed, generated files regenerated, STATUS updated, what was verified; branch protection written down in [CI.md](CI.md) (require `ci / ok`, linear history, who may merge).
-- **Done when.** The files exist, are linked from the README and from [docs/README.md](README.md), and `make adr-check`'s link check and `make docs-check` are clean.
+**Done (2026-11-25), apart from the owner's first `make github-apply`.** `LICENSE` (MIT), `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `.github/CODEOWNERS`, the pull request template, issue forms (bug, work package, contract change), release-note categories, labels, and the protection of `master` as a ruleset; all described in [REPOSITORY.md](REPOSITORY.md) and [ADR 0022](adr/0022-master-is-protected-by-a-ruleset-and-the-repository.md).
+What is left for a real team is in [REPOSITORY.md](REPOSITORY.md#when-the-team-grows): approvals, team code owners.
 
 ### WP-X1: security scanning
 
 - **Lane.** Scan configuration and scripts; shared files: `ci.yml` (new job), `.pre-commit-config.yaml`, `Makefile`.
-- **Contains.** Secret scanning (gitleaks) as a hook and a CI step, with an allow-list for the development defaults of `infra/.env.example` and the seed passwords; image scanning (Trivy) of the images the repository builds and of the pinned third-party images; dependency review on pull requests; a license check; later an SBOM per published image (with C1). A `make security` target that runs what CI runs.
+- **Already on** (GitHub settings, [REPOSITORY.md](REPOSITORY.md#security)): secret scanning with push protection, Dependabot alerts, private vulnerability reporting, CodeQL for Actions, JavaScript and Python.
+- **Contains.** Secret scanning of the history and of the working tree (gitleaks) as a hook and a CI step, with an allow-list for the development defaults of `infra/.env.example` and the seed passwords; image scanning (Trivy) of the images the repository builds and of the pinned third-party images; dependency review on pull requests; a license check; later an SBOM per published image (with C1). A `make security` target that runs what CI runs.
 - **Rules.** Every tool is pinned and watched by Renovate like everything else ([ADR 0018](adr/0018-pin-every-version-and-let-renovate-propose-updates.md)); decide and write down (ADR) which severity fails the build. The check must not fail on third-party images the template cannot change without an exception file that explains each entry.
 - **Done when.** A planted secret and a planted vulnerable pin each fail CI; both are removed afterwards.
 

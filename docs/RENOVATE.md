@@ -9,8 +9,8 @@ newer versions and opens a pull request per update; CI is the test. The configur
 1. Install the hosted **Renovate** GitHub App (github.com/apps/renovate, free for GitHub.com) on this repository. It reads `.github/renovate.json5`; there is no onboarding pull request because the file exists.
 2. It opens an issue, the **Dependency Dashboard**: every dependency it found, every update it knows about, and what waits for a decision. Updates are created on Monday before 08:00 UTC; the dashboard
    has a checkbox per waiting update if you do not want to wait (the first run will find pins that are already behind).
-3. Settings > Branches: require `ci / ok` ([CI.md](CI.md)), so that a Renovate pull request can only be merged green. Renovate's pushes trigger CI like any other.
-4. Optional: Settings > Code security > enable Dependabot alerts. Renovate then opens a pull request for a vulnerable dependency at once, ignoring the schedule.
+3. Require the check `ok` on `master` (`make github-apply` does, [REPOSITORY.md](REPOSITORY.md)), so that a Renovate pull request can only be merged green. Renovate's pushes trigger CI like any other.
+4. Dependabot alerts (`make github-apply` turns them on; or Settings > Code security). Renovate then opens a pull request for a vulnerable dependency at once, ignoring the schedule.
 
 Self-hosted instead (a company that does not want an external app): run the [`renovatebot/github-action`](https://github.com/renovatebot/github-action) on a schedule with a token of a GitHub App or a
 fine-grained token (contents, pull requests, issues, workflows: write). The configuration file is the same. Not set up here, because it needs a secret that only you can create.

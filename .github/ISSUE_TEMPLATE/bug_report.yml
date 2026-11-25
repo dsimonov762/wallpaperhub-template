@@ -1,0 +1,36 @@
+name: Bug report
+description: Something in the template does not work as documented (a make target, a check, the stack, a document).
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect
+      description: The command you ran and its output (the last lines are enough), and what the documentation says should happen.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. make up-mocks
+        2. make e2e
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Commit or tag
+      description: "`git rev-parse --short HEAD`"
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: The output of `make doctor` (it lists Docker, memory, ports, line endings and missing tools).
+      render: text
+    validations:
+      required: true

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a vulnerability (private)
+    url: https://github.com/dsimonov762/wallpaperhub-template/security/advisories/new
+    about: Do not open a public issue for a security problem. See SECURITY.md.
+  - name: How the work is organised
+    url: https://github.com/dsimonov762/wallpaperhub-template/blob/master/docs/ROADMAP.md
+    about: Work packages, their lanes and the open decisions. Read it before proposing new work.

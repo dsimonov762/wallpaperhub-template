@@ -79,6 +79,12 @@ It was written in a sandbox without Docker or Helm and then run by the owner: th
 This pass: [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md) (work packages with exclusive lanes), [../AGENTS.md](../AGENTS.md) (rules), the [map](README.md), this history, and `make docs-check`.
 *Why:* the template phase was finished and the next work (four services in perhaps several languages) is parallel by nature. Several people or AI dialogs have to be able to take one package each, understand the project without reading each other's code, and merge in any order.
 
+### 12. The repository itself (2026-11-25)
+
+The template was pushed as `dsimonov762/wallpaperhub-template` and given the settings of a real small-organisation repository: About text and topics, license, contributing guide, security policy, code of conduct, code owners, issue forms and a pull request template, labels, a ruleset that makes `master` reachable only through a pull request with the check `ok` (squash only), tag protection, secret scanning, Dependabot alerts, CodeQL, a read-only Actions token, and the environments `staging` and `production`.
+The settings are **files applied by a script** so that they are reviewed and repeatable ([ADR 0022](adr/0022-master-is-protected-by-a-ruleset-and-the-repository.md), [REPOSITORY.md](REPOSITORY.md)). This also fixed a small imprecision found on the way: GitHub registers the job name `ok`, not the label `ci / ok` that its interface shows.
+Next: the first service in a repository of its own, which needs the open decision D-2 ([STATUS.md](STATUS.md#decisions-that-are-still-open)).
+
 ## Lessons from running it for real
 
 | What happened | Cause | What changed |
@@ -101,3 +107,4 @@ Append one line per finished piece of work, newest last: date, package or topic,
 - 2026-11-20: ADRs 0001 to 0019 written; the checker `make adr-check` in CI.
 - 2026-11-23: Kubernetes: Helm chart, kind cluster, CI job, ADRs 0020 and 0021. Confirmed on the owner's machine and in CI in mocks mode.
 - 2026-11-24: documentation for parallel work: STATUS, ROADMAP, AGENTS, docs map, HISTORY, `make docs-check`.
+- 2026-11-25: the GitHub repository as code: About, topics, ruleset, security features, environments, labels, community files, `make github-apply`; ADR 0022; WP-R1 done. Sandbox-verified; the first `make github-apply` is the owner's.

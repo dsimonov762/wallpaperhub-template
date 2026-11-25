@@ -116,6 +116,13 @@ repos:
         pass_filenames: false
         files: ^(.*\.md$|Makefile$|scripts/docs-check\.py$)
 
+      - id: wh-github
+        name: GitHub settings files are consistent with ci.yml and the issue templates
+        entry: make github-check
+        language: system
+        pass_filenames: false
+        files: ^(\.github/|scripts/github-setup\.py$)
+
       - id: wh-k8s
         name: Helm values are generated from the compose file, kind publishes the gateway
         entry: make k8s-check

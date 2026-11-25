@@ -51,10 +51,11 @@ Edit them minimally, in your own hunk, and never reformat or reorder:
 | Shared file | Rule |
 |---|---|
 | `Makefile` | add targets in the section they belong to, with a `## help text` (that is what `make help` prints) and an entry in `.PHONY`; do not rename or reorder existing targets |
-| `.github/workflows/ci.yml` | a new job or step; a new job is added to `needs` of the `ok` job (the single required check is `ci / ok`) |
+| `.github/workflows/ci.yml` | a new job or step; a new job is added to `needs` of the `ok` job (the single required check is the job `ok`, shown as `ci / ok`) |
 | `infra/docker-compose.yml` | **only the block of your own service**, and only its `environment`, ports and limits; then `make k8s-gen`. New infrastructure is a decision: ADR first |
 | `infra/.env.example` | add your variables at the end of the section they belong to |
 | `.pre-commit-config.yaml`, `.github/renovate.json5` | add a hook or a rule; keep existing ones as they are |
+| `.github/repository.json`, `.github/rulesets/`, `.github/labels.json` | the settings of the GitHub repository ([docs/REPOSITORY.md](docs/REPOSITORY.md)); the owner changes them, then runs `make github-apply`. A new label that a template or a package needs is added to `labels.json` |
 | `README.md` | the design document. Change it only for a design change, together with an ADR |
 | `docs/STATUS.md`, `docs/HISTORY.md` | your own rows and your own line |
 
@@ -74,7 +75,7 @@ Contracts are shared by every package, so a contract change is its own small pie
 
 | Run | What it tells you | Needs |
 |---|---|---|
-| `make lint check-contracts seed-check bruno-check dashboards-check chaos-check load-check https-check adr-check docs-check k8s-check` | the repository is consistent, generated files are current | no containers, Python 3 |
+| `make lint check-contracts seed-check bruno-check dashboards-check chaos-check load-check https-check adr-check docs-check github-check k8s-check` | the repository is consistent, generated files are current | no containers, Python 3 |
 | `make precommit` | all of the above plus shellcheck, actionlint, hadolint and the file checks, on every file | pre-commit |
 | `make contracts-lint`, `make contracts-breaking BASE=origin/master` | the contract style rules and no breaking change | Docker (or `CONTRACT_TOOLS=native` with Node) |
 | `make up-mocks && make e2e` | gateway behaviour through real Envoy and Keycloak | Docker, about 2 GB |

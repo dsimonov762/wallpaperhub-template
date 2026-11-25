@@ -1,0 +1,12 @@
+# Who is asked to review a pull request. One maintainer today. When a team joins, give each area its owners, for example:
+#   /contracts/                 @org/architects
+#   /services/account/          @org/account-team
+#   /infra/ /deploy/ /.github/  @org/platform
+# and turn on "require review from code owners" in .github/rulesets/master.json (docs/REPOSITORY.md, "When the team grows").
+*                       @dsimonov762
+/contracts/             @dsimonov762
+/.github/               @dsimonov762
+/infra/                 @dsimonov762
+/deploy/                @dsimonov762
+/services/              @dsimonov762
+/docs/adr/              @dsimonov762

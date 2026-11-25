@@ -1,0 +1,122 @@
+[
+  {
+    "name": "bug",
+    "color": "d73a4a",
+    "description": "Something does not work as documented"
+  },
+  {
+    "name": "enhancement",
+    "color": "a2eeef",
+    "description": "An improvement of something that exists"
+  },
+  {
+    "name": "work-package",
+    "color": "1d76db",
+    "description": "A work package of docs/ROADMAP.md"
+  },
+  {
+    "name": "contract",
+    "color": "5319e7",
+    "description": "Changes something in contracts/"
+  },
+  {
+    "name": "breaking",
+    "color": "b60205",
+    "description": "Breaks a contract, a make target or a documented command"
+  },
+  {
+    "name": "adr",
+    "color": "fbca04",
+    "description": "A decision record, or a decision that needs one"
+  },
+  {
+    "name": "documentation",
+    "color": "0075ca",
+    "description": "Documentation only"
+  },
+  {
+    "name": "dependencies",
+    "color": "0366d6",
+    "description": "A version update (Renovate)"
+  },
+  {
+    "name": "security",
+    "color": "e11d21",
+    "description": "A vulnerability or a hardening"
+  },
+  {
+    "name": "needs-decision",
+    "color": "d4c5f9",
+    "description": "Waits for a decision of the owner (docs/STATUS.md lists the open ones)"
+  },
+  {
+    "name": "blocked",
+    "color": "000000",
+    "description": "Cannot continue until something else is done"
+  },
+  {
+    "name": "good first issue",
+    "color": "7057ff",
+    "description": "Small and self-contained"
+  },
+  {
+    "name": "help wanted",
+    "color": "008672",
+    "description": "Somebody else is welcome to take this"
+  },
+  {
+    "name": "question",
+    "color": "d876e3",
+    "description": "A question about how something works"
+  },
+  {
+    "name": "duplicate",
+    "color": "cfd3d7",
+    "description": "Already reported or already planned"
+  },
+  {
+    "name": "wontfix",
+    "color": "ffffff",
+    "description": "Will not be done, with a reason in the thread"
+  },
+  {
+    "name": "area:gateway",
+    "color": "bfd4f2",
+    "description": "Envoy gateway and its mocks"
+  },
+  {
+    "name": "area:account",
+    "color": "bfd4f2",
+    "description": "account-service"
+  },
+  {
+    "name": "area:media",
+    "color": "bfd4f2",
+    "description": "media-service"
+  },
+  {
+    "name": "area:catalog",
+    "color": "bfd4f2",
+    "description": "catalog-service"
+  },
+  {
+    "name": "area:notification",
+    "color": "bfd4f2",
+    "description": "notification-service"
+  },
+  {
+    "name": "area:infra",
+    "color": "c5def5",
+    "description": "Compose, Keycloak, data stores, observability"
+  },
+  {
+    "name": "area:ci",
+    "color": "c5def5",
+    "description": "Workflows, hooks, Renovate"
+  },
+  {
+    "name": "area:k8s",
+    "color": "c5def5",
+    "description": "Helm chart and the local kind cluster"
+  }
+]

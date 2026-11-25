@@ -6,7 +6,7 @@ The domain is a community **wallpaper-sharing platform** (think Wallhaven or Uns
 
 **Deployables:** four domain services plus one edge service (the API gateway).
 
-**Where to start:** [docs/STATUS.md](docs/STATUS.md) says what exists and what does not; [docs/ROADMAP.md](docs/ROADMAP.md) cuts the rest into independent work packages; [AGENTS.md](AGENTS.md) holds the rules for working here (also for AI agents, several at once); [docs/README.md](docs/README.md) is the map of all documentation; [docs/HISTORY.md](docs/HISTORY.md) tells how the project got here and why; [docs/adr/](docs/adr/README.md) records the decisions.
+**Where to start:** [docs/STATUS.md](docs/STATUS.md) says what exists and what does not; [docs/ROADMAP.md](docs/ROADMAP.md) cuts the rest into independent work packages; [AGENTS.md](AGENTS.md) holds the rules for working here (also for AI agents, several at once); [docs/README.md](docs/README.md) is the map of all documentation; [docs/HISTORY.md](docs/HISTORY.md) tells how the project got here and why; [docs/adr/](docs/adr/README.md) records the decisions; [CONTRIBUTING.md](CONTRIBUTING.md) is the way to a pull request and [docs/REPOSITORY.md](docs/REPOSITORY.md) describes how the GitHub repository is protected and configured.
 
 ---
 
@@ -665,6 +665,7 @@ resources/              migrations, config files, bundles
 wallpaper-hub/
 ├── README.md               this design (v1.1)
 ├── AGENTS.md  CLAUDE.md    rules for working here, for people and AI agents (CLAUDE.md imports AGENTS.md)
+├── LICENSE  CONTRIBUTING.md  SECURITY.md  CODE_OF_CONDUCT.md
 ├── Makefile                every command: make help
 ├── contracts/              the source of truth
 │   ├── openapi/            golden specs, one per service, plus common.yaml
@@ -690,7 +691,7 @@ wallpaper-hub/
 ├── seed/  bruno/  loadtest/   development dataset; API collection; k6 journeys
 ├── deploy/                 one generic Helm chart for every service + generated values; kind cluster (docs/KUBERNETES.md)
 ├── scripts/  tools/        the tooling behind the make targets; pinned contract tools
-├── .github/                workflows (ci, service, system) and Renovate configuration
+├── .github/                workflows (ci, service, system), Renovate; repository settings as files (repository.json, rulesets/, labels.json), issue forms, PR template, CODEOWNERS
 └── docs/
     ├── README.md           the documentation map
     ├── STATUS.md           what exists and what does not, how well verified

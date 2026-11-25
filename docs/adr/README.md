@@ -64,6 +64,7 @@ that fit your system, and where you decide differently write a new record that s
 | [0019](0019-pgsty-silo-as-the-local-s3.md) | PGSTY Silo as the local S3-compatible store | Accepted | 2026-11-20 |
 | [0020](0020-one-generic-helm-chart-for-every-service-with-values.md) | One generic Helm chart for every service, with values generated from the compose file | Accepted | 2026-11-23 |
 | [0021](0021-the-local-cluster-is-kind-with-the-infrastructure-left-in.md) | The local cluster is kind, with the infrastructure left in Compose | Accepted | 2026-11-23 |
+| [0022](0022-master-is-protected-by-a-ruleset-and-the-repository.md) | master is protected by a ruleset, and the repository settings are files applied by a script | Accepted | 2026-11-24 |
 
 <!-- adr-index:end -->
 

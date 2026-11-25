@@ -21,7 +21,7 @@ Where to find what. `make docs-check` verifies that every document in `docs/` is
 | What is left to build and who can build it in parallel? | [ROADMAP.md](ROADMAP.md) |
 | How did we get here, and what went wrong on the way? | [HISTORY.md](HISTORY.md) |
 | What are the working rules (also for AI agents)? | [../AGENTS.md](../AGENTS.md) |
-| Why was X decided? | [adr/README.md](adr/README.md) (21 records, indexed) |
+| Why was X decided? | [adr/README.md](adr/README.md) (22 records, indexed) |
 | What must a service do from the outside? | [SERVICE-SPEC.md](SERVICE-SPEC.md) (23 numbered checks) |
 | How do I start, stop, reset the stack; what do I open; how much memory? | [GETTING-STARTED.md](GETTING-STARTED.md) |
 | How do I check a running service against the spec? | [../conformance/README.md](../conformance/README.md) |
@@ -31,6 +31,7 @@ Where to find what. `make docs-check` verifies that every document in `docs/` is
 | How do I use HTTPS locally? | [HTTPS.md](HTTPS.md) |
 | How do I run on Kubernetes (local kind cluster, Helm chart)? | [KUBERNETES.md](KUBERNETES.md) |
 | What does CI check, and what is deliberately not in it? | [CI.md](CI.md) |
+| How is the GitHub repository configured (protection, security, releases, labels)? | [REPOSITORY.md](REPOSITORY.md) |
 | What do the git hooks do? | [PRE-COMMIT.md](PRE-COMMIT.md) |
 | How are versions kept current? | [RENOVATE.md](RENOVATE.md) |
 | What test data exists, and who are the seeded users? | [../seed/README.md](../seed/README.md), [../seed/CATALOG.md](../seed/CATALOG.md) |
@@ -53,6 +54,7 @@ Where to find what. `make docs-check` verifies that every document in `docs/` is
 | [LOAD.md](LOAD.md) | guide | k6 journeys, profiles, latency budgets |
 | [HTTPS.md](HTTPS.md) | guide | mkcert, the HTTPS stack |
 | [KUBERNETES.md](KUBERNETES.md) | guide | the Helm chart, the kind cluster, what is verified |
+| [REPOSITORY.md](REPOSITORY.md) | guide | the GitHub settings as files: About text, protection of `master`, security features, environments, labels, releases and tags |
 | [CI.md](CI.md) | guide | the workflows, jobs, branch protection |
 | [PRE-COMMIT.md](PRE-COMMIT.md) | guide | the hooks and how they skip |
 | [RENOVATE.md](RENOVATE.md) | guide | what Renovate manages and how to mark a pin |

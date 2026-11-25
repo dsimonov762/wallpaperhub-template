@@ -1,6 +1,6 @@
 # Pull requests and pushes to `master`. Language-agnostic: whichever services/<service>/<impl>/Dockerfile exists is built and
 # held to docs/SERVICE-SPEC.md by the conformance suite (service.yml); with no implementation yet only the contract,
-# gateway and suite jobs run. Add a branch protection rule that requires the single check "ci / ok".
+# gateway and suite jobs run. The ruleset in .github/rulesets/master.json requires the single check "ok" (shown as "ci / ok"); docs/REPOSITORY.md.
 # Actions are pinned to a major version; let Dependabot or Renovate bump them.
 name: ci
 
@@ -76,6 +76,8 @@ jobs:
         run: make renovate-check
       - name: Architecture decision records are well formed, linked and indexed
         run: make adr-check adr-selftest
+      - name: GitHub settings files (rulesets, labels, repository.json) are consistent with this workflow and the issue templates
+        run: make github-check github-selftest
       - name: Documentation links, anchors, make targets and the documentation map are consistent
         run: make docs-check docs-selftest
       - name: Helm values are generated from the compose file; the cluster names fit envoy.yaml; kind publishes the gateway

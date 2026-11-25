@@ -29,7 +29,7 @@ Nothing is marked "done" in this file without one of the first two.
 | Area | State | Where |
 |---|---|---|
 | Architecture, scenarios, resilience matrix, data model, security, observability design | **Done** (v1.1) | [README.md](../README.md) |
-| 21 decision records (9 from the README's decision log, 12 about principles and tooling) | **Done**, [index](adr/README.md); `make adr-check` is a CI gate | [adr/](adr/README.md) |
+| 22 decision records (9 from the README's decision log, 13 about principles, tooling and the repository) | **Done**, [index](adr/README.md); `make adr-check` is a CI gate | [adr/](adr/README.md) |
 | OpenAPI for the four services (39 operations), shared `common.yaml` (Problem, pagination) | **Confirmed**: linted (Spectral), breaking-change checked (oasdiff), served by Prism, TypeScript generation compiles | `contracts/openapi/` |
 | gRPC `AccountService`, 7 Avro events (BACKWARD compatible), GraphQL SDL, i18n bundles en/de/es, DB schemas (Postgres, Mongo, Elasticsearch, Redis) | **Confirmed**: `make check-contracts contracts-lint`, schemas applied by `make schemas` | `contracts/` |
 | What a service must do from the outside (ports, health, config, auth, errors, logs, telemetry, shutdown, image) | **Done**, 23 checks have IDs | [SERVICE-SPEC.md](SERVICE-SPEC.md) |
@@ -56,10 +56,16 @@ Nothing is marked "done" in this file without one of the first two.
 
 | Capability | State | Doc |
 |---|---|---|
+| GitHub repository as code: About text and topics, ruleset on `master` (pull request, check `ok`, squash only), tag protection, secret scanning + push protection, Dependabot alerts, CodeQL, read-only Actions token, environments `staging`/`production`, labels, issue forms, PR template, CODEOWNERS, LICENSE (MIT), CONTRIBUTING, SECURITY; applied by `make github-apply` | **Sandbox**: the files are checked (`make github-check`) and the 68 requests of a full run validate against GitHub's published API description; **no request has been sent to GitHub yet**. Becomes Confirmed after the owner's first `make github-apply` | [REPOSITORY](REPOSITORY.md) |
+
+The rest of this section is confirmed:
+
+| Capability | State | Doc |
+|---|---|---|
 | CI on GitHub Actions: `static`, `seed`, `breaking`, `gateway`, `kubernetes`, `detect` + `services`, `ok` (the one required check); `service.yml` (one implementation), `system.yml` (nightly, all services) | **Confirmed green**; `service.yml` and `system.yml` have **never run with a real service** (no Dockerfile, so they skip) | [CI](CI.md) |
-| Pre-commit hooks: file checks, shellcheck, actionlint, hadolint and 14 `wh-*` hooks that run the repo's own checks; skip gracefully without Docker or Node | **Confirmed** | [PRE-COMMIT](PRE-COMMIT.md) |
+| Pre-commit hooks: file checks, shellcheck, actionlint, hadolint and 15 `wh-*` hooks that run the repo's own checks; skip gracefully without Docker or Node | **Confirmed** | [PRE-COMMIT](PRE-COMMIT.md) |
 | Renovate: every pin of the repository (images, actions, npm, pip, hooks, tool versions), grouped updates, majors wait for approval | **Confirmed**: dashboard seen, a k6 update went through branch, PR, CI and merge | [RENOVATE](RENOVATE.md) |
-| 74 `make` targets; every check is one, CI calls the same ones | **Confirmed** | `make help` |
+| 78 `make` targets; every check is one, CI calls the same ones | **Confirmed** | `make help` |
 | Generated files are committed and checked for staleness (gateway error mappers, Bruno collection, chaos config, load-test and HTTPS gateway variants, seed output, Grafana dashboards, Helm values, ADR index) and the documentation itself (`make docs-check`: links, anchors, `make` targets named in the text, the documentation map) | **Confirmed** for all but `docs-check`, which is **Sandbox** until its first CI run | [ADR 0016](adr/0016-generated-files-are-committed-and-checked-for-staleness.md) |
 
 ## What does not exist yet
@@ -70,8 +76,7 @@ Nothing is marked "done" in this file without one of the first two.
 | A service scaffold / golden path per language | The conformance suite says what a service must do; nothing generates a service that does it | [WP-S0](ROADMAP.md#wp-s0-first-language-and-the-service-scaffold) |
 | A gRPC mock of `AccountService` and an event emitter for the Kafka topics | Catalog and notification depend on account (gRPC) and on events; today they cannot be developed without a running account service | [WP-T1](ROADMAP.md#wp-t1-grpc-mock-for-accountservice), [WP-T2](ROADMAP.md#wp-t2-event-emitter) |
 | Inner-loop tooling: `.editorconfig`, devcontainer, IDE run configurations, hot-reload guidance | Every developer builds this alone otherwise | [WP-D1](ROADMAP.md#wp-d1-developer-inner-loop) |
-| Repository basics: `LICENSE`, `CONTRIBUTING.md`, PR template, `CODEOWNERS`, branch protection written down | A team cannot join without them | [WP-R1](ROADMAP.md#wp-r1-repository-basics) |
-| Security scanning in CI beyond `detect-private-key`: secrets, images, dependencies, licenses | | [WP-X1](ROADMAP.md#wp-x1-security-scanning) |
+| Security scanning in CI beyond what GitHub's settings give (secret scanning, CodeQL, alerts): images, dependency review, licenses, SBOM | | [WP-X1](ROADMAP.md#wp-x1-security-scanning) |
 | Build and publish images, versioning, environments, promotion, deployment pipeline | The chart is proven locally only; CI deliberately does not build or push ([CI](CI.md#not-included-on-purpose)) | [WP-C1](ROADMAP.md#wp-c1-release-and-deployment) |
 | Alert rules, SLOs, runbooks; a secrets story for real environments | Dashboards exist, nobody is paged | [WP-O1](ROADMAP.md#wp-o1-alerts-slos-runbooks), [WP-O2](ROADMAP.md#wp-o2-secrets-for-real-environments) |
 | Web client | The `web-spa` Keycloak client and the CORS origins 5173 and 4200 are prepared | [WP-W1](ROADMAP.md#wp-w1-web-client-optional) |
@@ -82,7 +87,7 @@ Nothing is marked "done" in this file without one of the first two.
 | # | Question | Today |
 |---|---|---|
 | D-1 | **Which language implements the first service (account)?** | `infra/.env.example` defaults to `services/<name>/java-spring`, but the owner has not chosen. It decides which scaffold WP-S0 produces |
-| D-2 | One repository for all languages (as designed) or a repository per implementation? | One repository: the pipeline builds every `services/<name>/<impl>/` ([CI](CI.md)) |
+| D-2 | **How does a service repository use this template?** The owner is going to create a separate repository for the first service (one per language and framework). The template stays the source of the contracts, the service specification, the conformance suite, the infrastructure and the tools | Not designed. Options: the service repository pins a template tag (`v0.1.0`, [REPOSITORY](REPOSITORY.md#tags-and-releases)) in a file and a script checks it out into an ignored folder, so `make` targets and contracts are read from there; a git submodule; or copying the needed folders. It decides what [WP-S0](ROADMAP.md#wp-s0-first-language-and-the-service-scaffold) builds and whether `service.yml` lives here or there |
 | D-3 | Is a web client part of this template? | Optional, not started |
 | D-4 | Which registry and environments for publishing images? | Not decided; blocks WP-C1 |
 

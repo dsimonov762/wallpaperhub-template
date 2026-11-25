@@ -320,6 +320,19 @@ docs-check: ## Markdown documentation: relative links and anchors, `make` target
 docs-selftest: ## test scripts/docs-check.py itself on a fixture (what it catches)
 	@bash scripts/ci/docs-selftest.sh
 
+github-check: ## .github/repository.json, rulesets and labels are consistent with ci.yml and the issue templates (CI runs it; no network)
+	$(VENV)
+	.venv-validate/bin/python scripts/github-setup.py check
+
+github-selftest: ## test scripts/github-setup.py on a fixture with a stand-in for gh (what it catches; second run updates instead of creating)
+	@bash scripts/ci/github-selftest.sh
+
+github-plan: ## show every call that github-apply would make, send nothing (ONLY=rulesets,labels limits the steps)
+	@python3 scripts/github-setup.py apply --dry-run $(if $(ONLY),--only $(ONLY))
+
+github-apply: ## make the GitHub repository match .github/ (About, topics, rulesets, security, environments, labels); needs gh logged in as admin; ONLY=rulesets,labels
+	@python3 scripts/github-setup.py apply $(if $(ONLY),--only $(ONLY))
+
 adr-index: ## rewrite the table in docs/adr/README.md from the records
 	@python3 scripts/adr.py index
 
@@ -327,4 +340,4 @@ adr-new: ## a new decision record:  make adr-new T="Use gRPC between catalog and
 	@[ -n "$(T)" ] || { echo 'usage: make adr-new T="Title of the decision" [SUPERSEDES=0007]'; exit 1; }
 	@python3 scripts/adr.py new "$(T)" $(if $(SUPERSEDES),--supersedes $(SUPERSEDES))
 
-.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-chaos certs up-https up-https-mocks https-check up-load up-load-mocks load-run load-smoke load-data load-check chaos chaos-run chaos-list chaos-gen chaos-check up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen hooks precommit renovate-check adr-check adr-selftest adr-index adr-new docs-check docs-selftest k8s-gen k8s-check k8s-lint k8s-up-mocks k8s-up-apps k8s-down k8s-status k8s-net k8s-logs
+.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-chaos certs up-https up-https-mocks https-check up-load up-load-mocks load-run load-smoke load-data load-check chaos chaos-run chaos-list chaos-gen chaos-check up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen hooks precommit renovate-check adr-check adr-selftest adr-index adr-new docs-check docs-selftest github-check github-selftest github-plan github-apply k8s-gen k8s-check k8s-lint k8s-up-mocks k8s-up-apps k8s-down k8s-status k8s-net k8s-logs

@@ -40,6 +40,7 @@ The first run clones the hook repositories and builds their environments (needs 
 | `wh-gateway-overlays` | `make load-check https-check` | `envoy.yaml`, the two generators |
 | `wh-adr` | `python3 scripts/adr.py check` (`make adr-check`) | `docs/`, `README.md`, `scripts/adr.py`: records, their links and the index, see [adr/README.md](adr/README.md) |
 | `wh-docs` | `python3 scripts/docs-check.py` (`make docs-check`) | every `*.md`, `Makefile`: links, anchors, `make` targets named in the text, the documentation map, see [README.md](README.md) |
+| `wh-github` | `make github-check` | `.github/**`, `scripts/github-setup.py`: the settings files agree with `ci.yml` and the issue templates, see [REPOSITORY.md](REPOSITORY.md) |
 | `wh-k8s` | `make k8s-check` | `deploy/`, `infra/docker-compose.yml`, `envoy.yaml`, `scripts/k8s-gen.py`: Helm values current, cluster names fit envoy.yaml, kind config, see [KUBERNETES.md](KUBERNETES.md) |
 | `wh-k8s-lint` | `scripts/k8s-lint.sh --if-possible` | `deploy/helm/`: `helm lint`, `helm template`, kubeconform; skips with a note when `helm` or `kubeconform` is missing |
 | `wh-renovate` | `make renovate-check` | `.github/renovate.json5` (needs Node 24.11+ or Docker, see [RENOVATE.md](RENOVATE.md)) |

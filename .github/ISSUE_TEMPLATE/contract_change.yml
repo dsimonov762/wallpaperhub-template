@@ -1,0 +1,29 @@
+name: Contract change
+description: Propose a change to contracts/ (OpenAPI, protobuf, Avro, GraphQL, i18n, database schemas). Merged before the code that needs it.
+title: "Contract: "
+labels: ["contract"]
+body:
+  - type: textarea
+    id: change
+    attributes:
+      label: The change
+      description: Which contract, which operation, field or event, and why the current one is not enough.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Compatibility
+      description: Additive (new optional field, endpoint, key) or breaking. A breaking change needs a new version and a decision record (AGENTS.md, "Changing a contract").
+      options:
+        - Additive
+        - Breaking
+    validations:
+      required: true
+  - type: textarea
+    id: consumers
+    attributes:
+      label: Who consumes it
+      description: The services, the gateway, tests and generated files that are affected.
+    validations:
+      required: true

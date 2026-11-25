@@ -1,0 +1,89 @@
+{
+  "description": "Language-agnostic microservice reference: OpenAPI, gRPC, Avro and GraphQL contracts, a complete local dev environment (Compose, Envoy gateway, Keycloak, Kafka, observability, kind and Helm), a conformance suite and CI. Implement the same four services in any language.",
+  "homepage": "",
+  "topics": [
+    "microservices",
+    "polyglot",
+    "reference-architecture",
+    "template",
+    "contract-first",
+    "openapi",
+    "grpc",
+    "graphql",
+    "avro",
+    "kafka",
+    "envoy",
+    "docker-compose",
+    "kubernetes",
+    "helm",
+    "opentelemetry",
+    "keycloak",
+    "conformance-testing",
+    "developer-experience",
+    "platform-engineering",
+    "github-actions"
+  ],
+  "settings": {
+    "has_issues": true,
+    "has_wiki": false,
+    "has_projects": false,
+    "is_template": true,
+    "allow_squash_merge": true,
+    "allow_merge_commit": false,
+    "allow_rebase_merge": false,
+    "allow_auto_merge": true,
+    "allow_update_branch": true,
+    "delete_branch_on_merge": true,
+    "squash_merge_commit_title": "PR_TITLE",
+    "squash_merge_commit_message": "PR_BODY",
+    "web_commit_signoff_required": false
+  },
+  "security": {
+    "secret_scanning": true,
+    "secret_scanning_push_protection": true,
+    "dependabot_alerts": true,
+    "dependabot_security_updates": false,
+    "private_vulnerability_reporting": true,
+    "code_scanning": {
+      "state": "configured",
+      "query_suite": "default",
+      "languages": [
+        "actions",
+        "javascript-typescript",
+        "python"
+      ]
+    }
+  },
+  "actions": {
+    "default_workflow_permissions": "read",
+    "can_approve_pull_request_reviews": false
+  },
+  "environments": {
+    "staging": {
+      "reviewers": [],
+      "prevent_self_review": false,
+      "wait_timer": 0,
+      "deploy_from": {
+        "branches": [
+          "master"
+        ],
+        "tags": [
+          "v*"
+        ]
+      }
+    },
+    "production": {
+      "reviewers": [
+        "owner"
+      ],
+      "prevent_self_review": false,
+      "wait_timer": 0,
+      "deploy_from": {
+        "branches": [],
+        "tags": [
+          "v*"
+        ]
+      }
+    }
+  }
+}
