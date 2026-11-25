@@ -98,7 +98,10 @@ routing (unknown path, unsupported method, malformed JSON, oversize body). Shape
   `errors[].message` come from the bundle `contracts/i18n/messages.<lang>.json`; the response has `Content-Language`.
 - **E5** pagination: `size` above 100 is rejected with `400` and code `pagination.size-too-large`, never clamped.
 - **E6** `X-Request-Id`: when the request has one it is echoed unchanged in the response, otherwise one is generated.
-  (The gateway replaces client-supplied values; a service reached directly keeps them.)
+  (The gateway replaces client-supplied values; a service reached directly keeps them.) **Only a plain id is echoed:** 1 to 128 characters
+  of `A-Z a-z 0-9 . _ : -`. Anything else (a space, a control character, a folded header line) is ignored and a new id is generated, because
+  a value that a client chose must never reach a response header unchecked (HTTP response splitting; CodeQL flags exactly this). The same
+  holds for every other request value that you copy into a header. The suite checks the echo; it does not yet send a malformed id.
 - Never leak internals: no stack traces, SQL, hostnames or class names in `detail`.
 
 ## 6. Logs
