@@ -327,10 +327,10 @@ github-check: ## .github/repository.json, rulesets and labels are consistent wit
 github-selftest: ## test scripts/github-setup.py on a fixture with a stand-in for gh (what it catches; second run updates instead of creating)
 	@bash scripts/ci/github-selftest.sh
 
-github-plan: ## show every call that github-apply would make, send nothing (ONLY=rulesets,labels limits the steps)
+github-plan: ## show every call that github-apply would make, send nothing (ONLY=rulesets,labels limits the steps; GH_REPO=OWNER/NAME instead of the origin remote)
 	@python3 scripts/github-setup.py apply --dry-run $(if $(ONLY),--only $(ONLY))
 
-github-apply: ## make the GitHub repository match .github/ (About, topics, rulesets, security, environments, labels); needs gh logged in as admin; ONLY=rulesets,labels
+github-apply: ## make the GitHub repository match .github/ (About, topics, rulesets, security, environments, labels); needs gh logged in as admin; ONLY=rulesets,labels; GH_REPO=OWNER/NAME instead of the origin remote
 	@python3 scripts/github-setup.py apply $(if $(ONLY),--only $(ONLY))
 
 adr-index: ## rewrite the table in docs/adr/README.md from the records

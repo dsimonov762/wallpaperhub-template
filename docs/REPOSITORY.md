@@ -20,6 +20,7 @@ make github-apply              # sets everything; safe to run again. ONLY=rulese
 make github-check              # offline: the files are consistent with ci.yml and the templates (CI runs it)
 ```
 
+`apply` configures the repository that `origin` points to: an https, ssh or scp-style URL, also through an ssh host alias from `~/.ssh/config` (one alias per account is common; `ssh -G` resolves it, so any alias name works). To name it instead: `GH_REPO=OWNER/NAME make github-apply` (the variable `gh` itself reads) or `--repo OWNER/NAME` on `scripts/github-setup.py apply`; the first line of the output says which repository it is and where the name came from. With several GitHub accounts in `gh`, `gh auth status` shows the active one and `gh auth switch` changes it; it must be an admin of the repository. The name is not stored in the files, so a copy of the repository needs no edit.
 `apply` sets only what the files say. It prints one line per request and, at the end, the requests that failed and the usual reasons (not an admin, a feature the plan does not have, code scanning already configured by a workflow); the rest is applied, and a second run is harmless.
 Steps: `about`, `settings`, `security`, `actions`, `rulesets`, `environments`, `labels`.
 

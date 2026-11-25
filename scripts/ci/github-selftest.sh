@@ -58,4 +58,34 @@ chk log2 "^PUT /repos/o/r/rulesets/7$" "second run updates the ruleset it finds"
 chk log2 "^PATCH /repos/o/r/labels/area%3Agateway$" "second run updates the labels it finds"
 if grep -q "^POST /repos/o/r/rulesets$\|^POST /repos/o/r/labels$" "$W/log2"; then echo "FAIL  second run created something"; fail=1; else echo "ok    second run creates no ruleset and no label"; fi
 
+# which repository: --repo, then GH_REPO, then the origin remote (plain URLs, and ssh host aliases that `ssh -G` resolves to github.com)
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
+mkdir -p "$W/bin"
+cat > "$W/bin/ssh" <<'SSH'
+#!/bin/sh
+# stand-in for `ssh -G <alias>`: what the alias would resolve to
+case "$2" in gh-acme) echo "hostname github.com" ;; *) echo "hostname gitlab.com" ;; esac
+SSH
+chmod +x "$W/bin/ssh"
+origin() { fixture; git init -q "$W/t"; git -C "$W/t" remote add origin "$1"; }
+repo_of() { PATH="$W/bin:$PATH" run apply --dry-run "$@" 2>&1 | sed -n '1s/^DRY RUN, nothing is sent: repository \([^ ]*\) (.*$/\1/p'; }
+expect_repo() {  # description, expected OWNER/NAME, then the arguments of apply; the origin (and variables) are set by the caller
+  got="$(repo_of "${@:3}")"
+  if [ "$got" = "$2" ]; then echo "ok    $1"; else echo "FAIL  $1 (got '$got', wanted '$2')"; fail=1; fi
+}
+expect_repo_error() {  # description, text of the error, then the arguments of apply
+  if out="$(PATH="$W/bin:$PATH" run apply --dry-run "${@:3}" 2>&1)"; then echo "FAIL  $1 (expected an error, got a pass)"; fail=1
+  elif grep -qF -- "$2" <<<"$out"; then echo "ok    $1"; else echo "FAIL  $1 (error without '$2')"; echo "$out"; fail=1; fi
+}
+origin https://github.com/acme/widgets.git;                expect_repo "origin: https URL" acme/widgets
+origin git@github.com:acme/widgets.git;                    expect_repo "origin: scp-style URL" acme/widgets
+origin ssh://git@ssh.github.com:443/acme/widgets.git;      expect_repo "origin: ssh over port 443" acme/widgets
+origin git@gh-acme:acme/widgets.git;                       expect_repo "origin: ssh host alias that leads to github.com" acme/widgets
+origin git@gl-acme:acme/widgets.git;                       expect_repo_error "origin: ssh host alias that leads elsewhere" "does not lead to GitHub"
+origin https://gitlab.com/acme/widgets.git;                expect_repo_error "origin: another forge" "does not lead to GitHub"
+origin git@gh-acme:acme/widgets.git;                       GH_REPO=env/wins expect_repo "GH_REPO beats the origin remote" env/wins
+origin git@gh-acme:acme/widgets.git;                       GH_REPO=env/loses expect_repo "--repo beats GH_REPO" flag/wins --repo flag/wins
+origin git@gh-acme:acme/widgets.git;                       expect_repo_error "--repo that is not OWNER/NAME" "is not OWNER/NAME" --repo widgets
+fixture;                                                   expect_repo_error "no origin remote" "cannot read the 'origin' remote"
+
 [ "$fail" = 0 ] && echo "github-selftest: all good" || { echo "github-selftest: failed"; exit 1; }

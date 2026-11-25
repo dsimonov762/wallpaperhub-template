@@ -8,6 +8,8 @@
 
 Reads  .github/repository.json (description, topics, settings, security, actions, environments),  .github/rulesets/*.json,  .github/labels.json.
 Talks to GitHub through the `gh` CLI (`gh auth login` first, as an admin of the repository). GH=<path> uses another binary (the tests use a stand-in).
+Which repository: --repo OWNER/NAME, else the variable GH_REPO (the one `gh` itself reads), else the `origin` remote: https, ssh and scp-style URLs, also
+through an ssh host alias from ~/.ssh/config (`ssh -G` says where the alias leads). The name is never stored in the files, so a copy of this repository works unchanged.
 make github-check | github-plan | github-apply.  What is set and why: docs/REPOSITORY.md, docs/adr/0022-*.md
 """
 import argparse
@@ -24,6 +26,8 @@ GH = os.environ.get("GH", "gh")
 API_VERSION = "2022-11-28"
 STEPS = ("about", "settings", "security", "actions", "rulesets", "environments", "labels")
 TOPIC_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,49}$")
+REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+GITHUB_HOSTS = {"github.com", "ssh.github.com"}  # GitHub Enterprise: the host in GH_HOST is accepted as well
 
 
 def load(path):
@@ -189,14 +193,14 @@ class Gh:
 
 
 def apply(args):
-    repo = args.repo or detect_repo()
+    repo, source = resolve_repo(args.repo)
     only = set(args.only.split(",")) if args.only else set(STEPS)
     unknown = only - set(STEPS)
     if unknown:
         sys.exit(f"github-setup: unknown step(s) {', '.join(sorted(unknown))}; steps: {', '.join(STEPS)}")
     cfg = load(".github/repository.json")
     gh = Gh(repo, args.dry_run)
-    print(f"{'DRY RUN, nothing is sent: ' if args.dry_run else ''}repository {repo}")
+    print(f"{'DRY RUN, nothing is sent: ' if args.dry_run else ''}repository {repo} ({source})")
 
     if "about" in only:
         print("\nAbout: description, homepage, topics")
@@ -282,15 +286,47 @@ def apply(args):
     return 0
 
 
-def detect_repo():
+def parse_remote(url):
+    """(host, 'OWNER/NAME') of a git remote URL: https://, ssh://, git:// or scp-style [user@]host:OWNER/NAME; None for anything else (a path, say)."""
+    m = (re.match(r"^[a-z][a-z0-9+.-]*://(?:[^@/]+@)?([^/:]+)(?::\d+)?/+([^/]+)/([^/]+?)(?:\.git)?/?$", url, re.I)
+         or re.match(r"^(?:[^@/]+@)?([^/:]+):/*([^/]+)/([^/]+?)(?:\.git)?/?$", url))
+    return (m.group(1), f"{m.group(2)}/{m.group(3)}") if m else None
+
+
+def github_host(host):
+    """The GitHub host that `host` stands for, or None. `host` is github.com itself, or an ssh alias (a Host block in ~/.ssh/config, one per account
+    or key is common) that `ssh -G` resolves to it: the same resolution git's ssh transport uses, so nothing here guesses from the alias name."""
+    allowed = GITHUB_HOSTS | ({os.environ["GH_HOST"].lower()} if os.environ.get("GH_HOST") else set())
+    if host.lower() in allowed:
+        return host.lower()
+    try:
+        out = subprocess.run(["ssh", "-G", host], capture_output=True, text=True, check=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    for line in out.splitlines():
+        key, _, value = line.partition(" ")
+        if key.lower() == "hostname":
+            return value.strip().lower() if value.strip().lower() in allowed else None
+    return None
+
+
+def resolve_repo(flag):
+    """('OWNER/NAME', where it came from): --repo, then GH_REPO, then the `origin` remote. Explicit beats implied, and the variable is gh's own."""
+    for value, source in ((flag, "--repo"), (os.environ.get("GH_REPO"), "GH_REPO")):
+        if value:
+            if not REPO_RE.match(value):
+                sys.exit(f"github-setup: {source} '{value}' is not OWNER/NAME (for GitHub Enterprise give OWNER/NAME and set GH_HOST)")
+            return value, source
     try:
         url = subprocess.run(["git", "-C", ROOT, "remote", "get-url", "origin"], capture_output=True, text=True, check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
-        sys.exit("github-setup: cannot read the 'origin' remote; pass --repo OWNER/NAME")
-    m = re.search(r"github\.com[:/]+([^/]+)/([^/]+?)(?:\.git)?/?$", url)
-    if not m:
-        sys.exit(f"github-setup: '{url}' is not a GitHub remote; pass --repo OWNER/NAME")
-    return f"{m.group(1)}/{m.group(2)}"
+        sys.exit("github-setup: cannot read the 'origin' remote; pass --repo OWNER/NAME or set GH_REPO")
+    parsed = parse_remote(url)
+    host = github_host(parsed[0]) if parsed else None
+    if not host:
+        sys.exit(f"github-setup: the 'origin' remote '{url}' does not lead to GitHub; pass --repo OWNER/NAME or set GH_REPO")
+    via = "" if host == parsed[0].lower() else f" via the ssh host '{parsed[0]}'"
+    return parsed[1], f"origin remote{via}"
 
 
 def main():
