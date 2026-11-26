@@ -21,7 +21,7 @@ Where to find what. `make docs-check` verifies that every document in `docs/` is
 | What is left to build and who can build it in parallel? | [ROADMAP.md](ROADMAP.md) |
 | How did we get here, and what went wrong on the way? | [HISTORY.md](HISTORY.md) |
 | What are the working rules (also for AI agents)? | [../AGENTS.md](../AGENTS.md) |
-| Why was X decided? | [adr/README.md](adr/README.md) (22 records, indexed) |
+| Why was X decided? | [adr/README.md](adr/README.md) (23 records, indexed) |
 | What must a service do from the outside? | [SERVICE-SPEC.md](SERVICE-SPEC.md) (23 numbered checks) |
 | How do I start, stop, reset the stack; what do I open; how much memory? | [GETTING-STARTED.md](GETTING-STARTED.md) |
 | How do I check a running service against the spec? | [../conformance/README.md](../conformance/README.md) |

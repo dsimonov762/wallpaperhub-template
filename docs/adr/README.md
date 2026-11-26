@@ -65,6 +65,7 @@ that fit your system, and where you decide differently write a new record that s
 | [0020](0020-one-generic-helm-chart-for-every-service-with-values.md) | One generic Helm chart for every service, with values generated from the compose file | Accepted | 2026-11-23 |
 | [0021](0021-the-local-cluster-is-kind-with-the-infrastructure-left-in.md) | The local cluster is kind, with the infrastructure left in Compose | Accepted | 2026-11-23 |
 | [0022](0022-master-is-protected-by-a-ruleset-and-the-repository.md) | master is protected by a ruleset, and the repository settings are files applied by a script | Accepted | 2026-11-24 |
+| [0023](0023-service-repositories-one-per-language-and-framework-pinned.md) | Service repositories: one per language and framework, pinned to a template tag | Accepted | 2026-11-26 |
 
 <!-- adr-index:end -->
 

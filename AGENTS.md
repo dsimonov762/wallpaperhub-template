@@ -123,6 +123,7 @@ README.md          the design (v1.1)                    contracts/     the sourc
 AGENTS.md          this file                            conformance/   does a running service obey the spec
 docs/              guides; docs/README.md is the map    e2e/           user-flow and gateway tests (Hurl)
 docs/adr/          why things are as they are           infra/         Compose, Keycloak, observability, chaos, data jobs
-services/          gateway (Envoy), _mock, your services   deploy/     Helm chart and kind cluster
+services/          gateway (Envoy), _mock, small stubs     deploy/     Helm chart and kind cluster
 scripts/           tooling behind the make targets       seed/ bruno/ loadtest/   development data, API collection, k6
 ```
+The service implementations are **not** in this repository: each language and framework has a repository of its own (`wallpaperhub-java-spring` is the first) that pins a tag of this one, vendors `contracts/` and runs `conformance/` and `infra/` from an ignored checkout ([ADR 0023](docs/adr/0023-service-repositories-one-per-language-and-framework-pinned.md)). A change to a contract or to the service specification is made **here**, then tagged, then followed there.

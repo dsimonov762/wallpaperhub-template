@@ -1,6 +1,6 @@
 # Project status
 
-**As of 2026-11-24.** Update this file in the same change as the work it describes (see [How to keep this file true](#how-to-keep-this-file-true)).
+**As of 2026-11-26.** Update this file in the same change as the work it describes (see [How to keep this file true](#how-to-keep-this-file-true)).
 For the story of how it got here see [HISTORY.md](HISTORY.md); for what is left and how to cut it into independent pieces see [ROADMAP.md](ROADMAP.md);
 for the rules of working on it (also with several AI agents at once) see [../AGENTS.md](../AGENTS.md).
 
@@ -10,7 +10,7 @@ Wallpaper Hub is a polyglot microservice reference project: four domain services
 [README.md](../README.md) (design v1.1, 2026-11-08). **The design, the contracts and the whole local development environment are done and run on the owner's machine
 (Windows 11, Docker Desktop with WSL2) and in GitHub Actions. No domain service is implemented yet:** `services/` holds the Envoy gateway and a Prism mock, nothing else.
 Everything a service needs in order to be developed, tested, observed, load-tested, broken on purpose and deployed to a local Kubernetes cluster exists and
-is exercised by CI with mocks and a throwaway reference stub. The next step is the first real service ([ROADMAP.md](ROADMAP.md), WP-S1).
+is exercised by CI with mocks and a throwaway reference stub. The first service implementation is being started in a repository of its own, `wallpaperhub-java-spring` (Java 25, Spring Boot 4.2, Maven), which consumes this template at a pinned tag ([ADR 0023](adr/0023-service-repositories-one-per-language-and-framework-pinned.md)); the work is tracked in [ROADMAP.md](ROADMAP.md), WP-S0 and WP-S1.
 
 ## Verification levels used in this file
 
@@ -72,8 +72,8 @@ The rest of this section is confirmed:
 
 | Gap | Why it matters | Planned as |
 |---|---|---|
-| **The four domain services** (`services/<name>/<impl>/`), in any language | Nothing behind the gateway but mocks. `make up-apps`, `make e2e-system`, `make k8s-up-apps`, `service.yml`, `system.yml`, the chaos scenarios against real services and the load test against real services have **never run** | [WP-S1 to S4](ROADMAP.md#services) |
-| A service scaffold / golden path per language | The conformance suite says what a service must do; nothing generates a service that does it | [WP-S0](ROADMAP.md#wp-s0-first-language-and-the-service-scaffold) |
+| **The four domain services**, in any language, each language in a repository of its own ([ADR 0023](adr/0023-service-repositories-one-per-language-and-framework-pinned.md)); the Java one has a scaffold, nothing of the domain | Nothing behind the gateway but mocks. `make up-apps`, `make e2e-system`, `make k8s-up-apps`, `service.yml`, `system.yml`, the chaos scenarios against real services and the load test against real services have **never run** | [WP-S1 to S4](ROADMAP.md#services) |
+| A service scaffold / golden path per language | The conformance suite says what a service must do. For Java the scaffold is being written in `wallpaperhub-java-spring` (**Design only** until its owner has built and run it); other languages have none | [WP-S0](ROADMAP.md#wp-s0-first-language-and-the-service-scaffold) |
 | A gRPC mock of `AccountService` and an event emitter for the Kafka topics | Catalog and notification depend on account (gRPC) and on events; today they cannot be developed without a running account service | [WP-T1](ROADMAP.md#wp-t1-grpc-mock-for-accountservice), [WP-T2](ROADMAP.md#wp-t2-event-emitter) |
 | Inner-loop tooling: `.editorconfig`, devcontainer, IDE run configurations, hot-reload guidance | Every developer builds this alone otherwise | [WP-D1](ROADMAP.md#wp-d1-developer-inner-loop) |
 | Security scanning in CI beyond what GitHub's settings give (secret scanning, CodeQL, alerts): images, dependency review, licenses, SBOM | | [WP-X1](ROADMAP.md#wp-x1-security-scanning) |
@@ -86,8 +86,6 @@ The rest of this section is confirmed:
 
 | # | Question | Today |
 |---|---|---|
-| D-1 | **Which language implements the first service (account)?** | `infra/.env.example` defaults to `services/<name>/java-spring`, but the owner has not chosen. It decides which scaffold WP-S0 produces |
-| D-2 | **How does a service repository use this template?** The owner is going to create a separate repository for the first service (one per language and framework). The template stays the source of the contracts, the service specification, the conformance suite, the infrastructure and the tools | Not designed. Options: the service repository pins a template tag (`v0.1.0`, [REPOSITORY](REPOSITORY.md#tags-and-releases)) in a file and a script checks it out into an ignored folder, so `make` targets and contracts are read from there; a git submodule; or copying the needed folders. It decides what [WP-S0](ROADMAP.md#wp-s0-first-language-and-the-service-scaffold) builds and whether `service.yml` lives here or there |
 | D-3 | Is a web client part of this template? | Optional, not started |
 | D-4 | Which registry and environments for publishing images? | Not decided; blocks WP-C1 |
 

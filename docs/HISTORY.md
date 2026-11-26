@@ -1,7 +1,7 @@
 # History: how the project got here, and why
 
 This is the story, in the order it happened. **What exists now** is in [STATUS.md](STATUS.md); **why a particular choice was made** is in its [ADR](adr/README.md) (linked below); this file connects them and records what we learned by running things.
-Append a line when you finish work, never rewrite earlier lines. Dates are given only where they are known: the design (README v1.1) is dated 2026-11-08, ADRs 0001 to 0019 were written on 2026-11-20, Kubernetes and ADRs 0020 and 0021 on 2026-11-23, this documentation pass on 2026-11-24.
+Append a line when you finish work, never rewrite earlier lines. Dates are given only where they are known: the design (README v1.1) is dated 2026-11-08, ADRs 0001 to 0019 were written on 2026-11-20, Kubernetes and ADRs 0020 and 0021 on 2026-11-23, this documentation pass and ADR 0022 on 2026-11-24, ADR 0023 on 2026-11-26.
 
 ## The idea
 
@@ -83,7 +83,13 @@ This pass: [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md) (work packages with 
 
 The template was pushed as `dsimonov762/wallpaperhub-template` and given the settings of a real small-organisation repository: About text and topics, license, contributing guide, security policy, code of conduct, code owners, issue forms and a pull request template, labels, a ruleset that makes `master` reachable only through a pull request with the check `ok` (squash only), tag protection, secret scanning, Dependabot alerts, CodeQL, a read-only Actions token, and the environments `staging` and `production`.
 The settings are **files applied by a script** so that they are reviewed and repeatable ([ADR 0022](adr/0022-master-is-protected-by-a-ruleset-and-the-repository.md), [REPOSITORY.md](REPOSITORY.md)). This also fixed a small imprecision found on the way: GitHub registers the job name `ok`, not the label `ci / ok` that its interface shows.
-Next: the first service in a repository of its own, which needs the open decision D-2 ([STATUS.md](STATUS.md#decisions-that-are-still-open)).
+Next: the first service in a repository of its own.
+
+### 13. The first service repository (2026-11-26)
+
+The owner chose Java 25 (Temurin), Spring Boot 4.2.0 and Maven (wrapper 3.3.4) for the first implementation, one repository per language and framework with all four services in it, and a shared `platform` module.
+The open question was how such a repository uses this one; [ADR 0023](adr/0023-service-repositories-one-per-language-and-framework-pinned.md) answers it: a pinned template tag, an ignored checkout for the tools, vendored contracts, a forwarding `Makefile`, and one new Compose variable (`*_DOCKERFILE`).
+The agent that wrote it works in a sandbox that reaches neither Maven Central nor the Temurin downloads, so **nothing Java in that repository was compiled by its author**: the owner's first `./mvnw verify` is the first build, and the delivery says so.
 
 ## Lessons from running it for real
 
@@ -113,3 +119,4 @@ Append one line per finished piece of work, newest last: date, package or topic,
 - 2026-11-25: Pillow 12.3.0 to 13.0.0 (the pin of the seed image generator): 42 advisories fixed in 13.0.0 raised Dependabot alerts. `seed/build.py --regen` with 13.0.0 gives byte-identical images, so nothing else changed; the generator only processes the repository's own files, so the exposure was low.
 - 2026-11-25: CodeQL alert (HTTP response splitting) in the reference stub: `X-Request-Id` from the request was copied into the response unchecked, so a folded header line got through (reproduced with a raw socket, gone after the fix). Spec E6 now says that only a plain id (1-128 characters of `A-Za-z0-9._:-`) is echoed; every implementation inherits that rule. The conformance suite does not yet send a malformed id (needs Docker to prove the new check can fail).
 - 2026-11-25: both CodeQL alerts of the reference stub closed, checked locally with the CodeQL CLI 2.27.6 and the same queries as GitHub (the full Python code-scanning suite over the repository: no other result). HTTP response splitting: CodeQL does not accept a regular expression as a sanitizer, so every header that is not fixed now passes `no_line_breaks()` at the sink. Polynomial ReDoS: `lang_of` takes the first two letters by slicing instead of `re.match(r"\s*...")`.
+- 2026-11-26: D-1 (Java, Spring Boot 4.2) and D-2 (service repositories) decided: [ADR 0023](adr/0023-service-repositories-one-per-language-and-framework-pinned.md); the Compose variable `*_DOCKERFILE`; scaffold of `wallpaperhub-java-spring` delivered, not yet built by anyone.

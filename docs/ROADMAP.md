@@ -9,7 +9,7 @@ Status of every package: **open** unless a line in [STATUS.md](STATUS.md) says o
 
 | WP | Package | Size | Needs first | Can run in parallel with |
 |---|---|---|---|---|
-| [S0](#wp-s0-first-language-and-the-service-scaffold) | First language and the service scaffold | M | decision D-1 | T1, T2, D1, R1, X1, O1 (gateway part), G1 |
+| [S0](#wp-s0-first-language-and-the-service-scaffold) | First language and the service scaffold | M | nothing (D-1 and D-2 are decided) | T1, T2, D1, R1, X1, O1 (gateway part), G1 |
 | [S1](#wp-s1-account-service) | account-service | L | S0 | T1, T2, D1, R1, X1, G1 |
 | [S2](#wp-s2-media-service) | media-service | L | S0 | S1, S3, S4 |
 | [S3](#wp-s3-catalog-service) | catalog-service | L | S0, T1, T2 (or a running S1) | S1, S2, S4 |
@@ -27,7 +27,7 @@ Status of every package: **open** unless a line in [STATUS.md](STATUS.md) says o
 | [W1](#wp-w1-web-client-optional) | Web client (optional) | L | decision D-3, ideally S1 | |
 | [L1](#wp-l1-more-languages) | More languages (README phase 6) | L each | S0 and the first implementation of that service | |
 
-**Suggested order.** Now, in parallel: S0 (after D-1), T1, T2, R1, X1, D1, G1. Then S1 on its own until it is a walking skeleton through the whole pipeline (conformance, system flows for account, `make k8s-up-apps`), because it settles the patterns the others copy.
+**Suggested order.** Now, in parallel: S0, T1, T2, R1, X1, D1, G1. Then S1 on its own until it is a walking skeleton through the whole pipeline (conformance, system flows for account, `make k8s-up-apps`), because it settles the patterns the others copy.
 Then S2, S3 and S4 in parallel, E1 growing with each. C1, O1, O2 once a service image exists. W1 and L1 when wanted. The README's phase table (section 17) is the same sequence at a coarser grain.
 
 ## Lanes: who may change what
@@ -76,12 +76,13 @@ Add `make up` (the whole infrastructure) when the service needs its database, Ka
 
 ### WP-S0: first language and the service scaffold
 
-- **Goal.** A scaffold so that a new service starts at "passes conformance" instead of at an empty folder. **Needs decision D-1** (the language): ask the owner; the default in `infra/.env.example` is `java-spring`.
-- **Lane.** `services/_template/<impl>/` (the underscore keeps it out of CI's service detection) and `scripts/new-service.sh`; `make new-service SVC=account IMPL=java-spring` copies it to `services/account/java-spring/` with the names, ports and variables substituted.
+- **Goal.** A scaffold so that a new service starts at "passes conformance" instead of at an empty folder. **Decided:** the first language is **Java 25 (Temurin) with Spring Boot 4.2 and Maven (wrapper 3.3.4)**, in a repository of its own (`wallpaperhub-java-spring`, one Maven multi-module build: `platform`, `account`, `media`, `catalog`, `notification`); every further language gets a repository of its own as well ([ADR 0023](adr/0023-service-repositories-one-per-language-and-framework-pinned.md)).
+- **Lane.** The root of the service repository: the parent build, `platform/` (what the four services share: request id, problem+json and localization, JWT validation, JSON logs, the management port, fail-fast configuration), the `Dockerfile` of each service, its CI. `make new-service` of the earlier plan is dropped: a scaffold is a module of the repository, not a generator.
 - **Contains.** Bootstrap in the order of README section 12; typed config from environment variables that fails fast naming the variable (C1); the three management endpoints on 8081 (M1-M4); JWT validation against the JWKS with `iss`, `aud`, `exp`, `nbf`, `typ` (A1-A4); the problem+json mapper and localization from `contracts/i18n` (E1-E6); JSON logging with trace ids and no secrets (L1-L3); OpenTelemetry through OTLP (T1-T3); graceful shutdown (S1); a Dockerfile (non-root, honours the memory limit); formatter, linter and type check; unit-test layout; a `CHEATSHEET.md` skeleton.
 - **Inputs.** [SERVICE-SPEC.md](SERVICE-SPEC.md), README sections 5.2, 5.3 and 12, `contracts/i18n`, `infra/docker-compose.yml` (environment), `conformance/`.
 - **Done when.** Four scaffolded services (one per persona) pass `make conformance-all ARGS="--lifecycle"` with no domain code, in CI (`service.yml` runs them) and in `make k8s-up-apps`.
-- **Where services live.** The lanes in this file say `services/<name>/<impl>/` of this repository. The owner intends to put the first service in **a repository of its own** (decision D-2 in [STATUS.md](STATUS.md#decisions-that-are-still-open)); then this package also designs how that repository uses the template at a pinned tag (a file with the tag, a script that checks the template out into an ignored folder and the `make` targets that read `contracts/`, `conformance/` and `infra/` from there), what `service.yml` becomes there, and what `make new-service` generates. Settle it with the owner, write the ADR, then build the scaffold.
+- **Where services live.** In a service repository that pins a tag of this template, vendors `contracts/` and reads `conformance/`, `infra/` and the tools from an ignored checkout ([ADR 0023](adr/0023-service-repositories-one-per-language-and-framework-pinned.md)). The *Lane* of the packages S1 to S4 below, written as `services/<name>/<impl>/`, therefore means "the module of that service in the repository of the language"; this repository keeps `services/` for the gateway, the mocks and small stubs.
+- **Progress.** Increment 1 (2026-11-26): the parent build, `platform`, an `account` module that has only stand-ins for three endpoints so that the suite can run (health, authentication, errors, localization, validation, logs, fail-fast, shutdown; **not** telemetry T1-T3), the Dockerfile, CI. Increment 2: OpenTelemetry (T1-T3), formatter and linter. Then WP-S1 proper.
 - **Note.** The reference stub in `conformance/reference-stub/` is a throwaway Python program that satisfies the spec; read it for the details of the checks, do not copy it.
 
 ### WP-S1: account-service

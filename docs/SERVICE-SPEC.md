@@ -182,7 +182,8 @@ accepted for runtimes that cannot map SIGTERM to a clean exit). `/health/ready` 
 - JVM images honor the container memory limit (`JAVA_TOOL_OPTIONS` is set by compose); other runtimes MUST fit in
   `mem_limit` of the compose file (640 MB per service) while idle and under the e2e load.
 - Build context is `services/<name>/<impl>/`, selected by `*_DIR` in `infra/.env`; the image is tagged
-  `wallpaperhub/<name>:local`.
+  `wallpaperhub/<name>:local`. A service repository ([ADR 0023](adr/0023-service-repositories-one-per-language-and-framework-pinned.md)) sets `*_DIR` to its own root and `*_DOCKERFILE` to the path of the Dockerfile in it.
+- **Nothing but JSON on stdout and stderr.** The log checks read both streams. A JVM that finds `JAVA_TOOL_OPTIONS` in its environment prints `Picked up JAVA_TOOL_OPTIONS: ...` to stderr, which is not JSON: a JVM image reads the variable in its entrypoint, unsets it and passes the options as arguments. The same goes for a framework banner.
 
 ## 13. What `conformance/` does not check
 
