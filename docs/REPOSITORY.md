@@ -142,7 +142,7 @@ The API has no endpoint for these, or they are decisions about people:
 
 ## Service repositories
 
-The first real service is going to live in a repository of its own (the open decision D-2 in [STATUS.md](STATUS.md#decisions-that-are-still-open)). The files here are written to be reused: copy `.github/` (change the names in `CODEOWNERS`, the issue-form links and the topics), `scripts/github-setup.py`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, run `make github-apply`, and the new repository protects itself the same way. The required check there is the job that ends that repository's workflow, again named `ok`.
+Every language implementation lives in a repository of its own that pins a tag of this one ([ADR 0023](adr/0023-service-repositories-one-per-language-and-framework-pinned.md)); the first is `wallpaperhub-java-spring`. The files here are written to be reused: copy `.github/` (change the description, topics, the names in `CODEOWNERS`, the issue-form links and the languages of code scanning), `scripts/github-setup.py`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, run `make github-apply`, and the new repository protects itself the same way. The required check there is the job that ends that repository's workflow, again named `ok`. **Cut the tag `v0.1.0` (above) before a service repository pins it**; until then it may pin `master`.
 
 ## What is verified, what is not
 
