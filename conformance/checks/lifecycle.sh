@@ -38,7 +38,7 @@ if [ -n "${SERVICE_CMD:-}" ]; then
 elif [ -n "${CONTAINER:-}" ]; then
   svc="${COMPOSE_SERVICE:?set COMPOSE_SERVICE}"
   out="$(docker compose --project-directory "${REPO_ROOT:-.}/infra" -f "${REPO_ROOT:-.}/infra/docker-compose.yml" --profile infra --profile apps \
-         run --rm --no-deps -e "$VAR=" "$svc" 2>&1 & sleep 0; wait)" ; code=$?
+         run --rm --no-deps -e "$VAR=" "$svc" 2>&1)"; code=$?
   # `timeout` around docker run would kill the client, not the container: judge by exit code and output instead
   if [ "$code" = 0 ]; then fail C1 "exited 0 with an empty $VAR"
   elif ! grep -q "$VAR" <<< "$out"; then fail C1 "exited $code but the output does not name $VAR"
