@@ -76,6 +76,8 @@ jobs:
           [ "$TELEMETRY" = true ] && profiles+=(--profile observability)
           docker compose --project-directory infra -f infra/docker-compose.yml "${profiles[@]}" up -d --build --no-deps "$SERVICE"
           bash scripts/wait-healthy.sh 300
+          # the app containers have no Compose healthcheck (an image may have no client): wait for /health/ready from the host
+          bash scripts/wait-ready.sh "$SERVICE" 180
       - name: Conformance
         env:
           LIFECYCLE: ${{ inputs.lifecycle }}

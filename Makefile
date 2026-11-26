@@ -153,6 +153,9 @@ codegen: ## generate code from contracts/ into gen/:  make codegen TARGET=typesc
 conformance: ## does a service obey docs/SERVICE-SPEC.md?  make conformance SVC=account [ARGS="--lifecycle --no-telemetry ..."]
 	@./conformance/run.sh $(SVC) $(ARGS)
 
+wait-ready: ## wait until a service container answers 200 on /health/ready:  make wait-ready SVC=account [ARGS=timeout-seconds]
+	@bash scripts/wait-ready.sh $(SVC) $(ARGS)
+
 conformance-selftest: ## test the conformance suite itself with the reference stub (needs Keycloak: make up-mocks)
 	@./conformance/selftest.sh
 
@@ -340,4 +343,4 @@ adr-new: ## a new decision record:  make adr-new T="Use gRPC between catalog and
 	@[ -n "$(T)" ] || { echo 'usage: make adr-new T="Title of the decision" [SUPERSEDES=0007]'; exit 1; }
 	@python3 scripts/adr.py new "$(T)" $(if $(SUPERSEDES),--supersedes $(SUPERSEDES))
 
-.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-chaos certs up-https up-https-mocks https-check up-load up-load-mocks load-run load-smoke load-data load-check chaos chaos-run chaos-list chaos-gen chaos-check up-mocks down nuke stats ps logs host unhost env-matrix conformance conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen hooks precommit renovate-check adr-check adr-selftest adr-index adr-new docs-check docs-selftest github-check github-selftest github-plan github-apply k8s-gen k8s-check k8s-lint k8s-up-mocks k8s-up-apps k8s-down k8s-status k8s-net k8s-logs
+.PHONY: help doctor env up up-tools up-obs schemas seed reset reseed seed-build seed-check seed-test-sql token bruno-run bruno-gen bruno-check dashboards-check dashboards-coverage up-apps up-chaos certs up-https up-https-mocks https-check up-load up-load-mocks load-run load-smoke load-data load-check chaos chaos-run chaos-list chaos-gen chaos-check up-mocks down nuke stats ps logs host unhost env-matrix conformance wait-ready conformance-selftest conformance-all e2e e2e-system e2e-all lint check-contracts contracts-lint contracts-breaking codegen hooks precommit renovate-check adr-check adr-selftest adr-index adr-new docs-check docs-selftest github-check github-selftest github-plan github-apply k8s-gen k8s-check k8s-lint k8s-up-mocks k8s-up-apps k8s-down k8s-status k8s-net k8s-logs

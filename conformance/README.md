@@ -6,6 +6,7 @@ the observability stack.
 
 ```
 make conformance SVC=account            # the container started by make up-apps
+make wait-ready SVC=account             # first, if the container has just been started: waits for /health/ready (default 180 s)
 make conformance-all                    # all four
 make conformance SVC=catalog ARGS="--lifecycle"        # also C1 and S1 (this stops the service)
 ```

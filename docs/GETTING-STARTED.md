@@ -215,7 +215,7 @@ AGENTS.md, CLAUDE.md      the rules for working in this repository, for people a
 docs/                     README.md is the map; STATUS.md (what exists), ROADMAP.md (what is left, as work packages), HISTORY.md (how we got here), guides
 docs/adr/                 architecture decision records (what was decided and why), see docs/adr/README.md
 deploy/                   Helm chart + generated values per service, kind cluster config; docs/KUBERNETES.md
-scripts/                  adr.py (decision records), docs-check.py (Markdown links, anchors, make targets), k8s.sh + k8s-gen.py + k8s-lint.sh (Kubernetes), doctor.sh, wait-healthy.sh, validate/ (contract cross-checks), contracts.sh + contracts/ (lint, breaking), codegen.sh, ct.sh
+scripts/                  adr.py (decision records), docs-check.py (Markdown links, anchors, make targets), k8s.sh + k8s-gen.py + k8s-lint.sh (Kubernetes), doctor.sh, wait-healthy.sh, wait-ready.sh, validate/ (contract cross-checks), contracts.sh + contracts/ (lint, breaking), codegen.sh, ct.sh
 tools/contract-tools/     pinned Spectral, buf, openapi-typescript (package.json, Dockerfile)
 .pre-commit-config.yaml   git hooks (pre-commit), see docs/PRE-COMMIT.md; .hadolint.yaml and .github/actionlint.yaml configure two of them
 .github/renovate.json5    dependency updates (Renovate), see docs/RENOVATE.md
