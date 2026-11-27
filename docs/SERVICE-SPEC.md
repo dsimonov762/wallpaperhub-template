@@ -178,12 +178,12 @@ accepted for runtimes that cannot map SIGTERM to a clean exit). `/health/ready` 
 
 ## 12. Container image
 
-- Listens on 0.0.0.0, runs as a non-root user, has a `HEALTHCHECK` or relies on the compose one against 8081.
+- Listens on 0.0.0.0, runs as a non-root user. The compose file has no healthcheck for services (an image may contain no HTTP client): `scripts/wait-ready.sh` (`make wait-ready SVC=<name>`) waits from the host until `/health/ready` on the management port answers 200, and `service.yml` calls it. An image MAY have its own `HEALTHCHECK` for other platforms.
 - JVM images honor the container memory limit (`JAVA_TOOL_OPTIONS` is set by compose); other runtimes MUST fit in
   `mem_limit` of the compose file (640 MB per service) while idle and under the e2e load.
 - Build context is `services/<name>/<impl>/`, selected by `*_DIR` in `infra/.env`; the image is tagged
   `wallpaperhub/<name>:local`. A service repository ([ADR 0023](adr/0023-service-repositories-one-per-language-and-framework-pinned.md)) sets `*_DIR` to its own root and `*_DOCKERFILE` to the path of the Dockerfile in it.
-- **Nothing but JSON on stdout and stderr.** The log checks read both streams. A JVM that finds `JAVA_TOOL_OPTIONS` in its environment prints `Picked up JAVA_TOOL_OPTIONS: ...` to stderr, which is not JSON: a JVM image reads the variable in its entrypoint, unsets it and passes the options as arguments. The same goes for a framework banner.
+- **Nothing but JSON on stdout and stderr.** The log checks read both streams. A JVM that finds `JAVA_TOOL_OPTIONS` in its environment prints `Picked up JAVA_TOOL_OPTIONS: ...` to stderr, which is not JSON: a JVM image reads the variable in its entrypoint, unsets it and passes the options as arguments. The same goes for a framework banner, and for any other notice that the runtime prints by itself: a JVM with an agent that appends to the bootstrap class path (the OpenTelemetry Java agent) prints a class-data-sharing notice (`Sharing is only supported for boot loader classes because bootstrap classpath has been appended`), which `-Xshare:off` prevents (found by the first Java service, 2026-11-27). Check `docker logs` of a new image for lines that are not JSON before the first conformance run.
 
 ## 13. What `conformance/` does not check
 
