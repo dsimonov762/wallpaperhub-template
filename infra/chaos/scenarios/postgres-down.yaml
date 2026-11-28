@@ -1,12 +1,19 @@
 title: account's PostgreSQL unreachable
-readme: "a database outage is a clean, fast 503 (upstream.unavailable), never a 500 or a hang; services using other stores are unaffected; the pool reconnects by itself"
+readme: "a database outage is a clean, fast 503 (upstream.unavailable) for everything that needs the database, never a 500 or a hang; a read that a cache can answer may stay 200; services using other stores are unaffected; the pool reconnects by itself"
 faults:
   - { edge: "account-postgres", fault: down }
 probes:
-  - name: own profile (needs the account database)
-    request: GET /api/v1/users/me
+  - name: change own profile (a write always needs the database)
+    request: PATCH /api/v1/users/me
+    body: { bio: "chaos {rand}" }
     expect: [200]
     expect_during: [503]
+    max_ms_during: 6000
+    recover_within: 60
+  - name: own profile (a cache may answer this read, so 200 is as good as 503)
+    request: GET /api/v1/users/me
+    expect: [200]
+    expect_during: [200, 503]
     max_ms_during: 6000
   - name: wallpaper (catalog uses MongoDB)
     request: GET /api/v1/wallpapers/{wallpaper_id}
@@ -15,3 +22,4 @@ probes:
     recover_within: 60
 watch:
   - "no restart needed: after the fault the connection pool must heal within seconds (recovery above)"
+  - "an implementation without a cache answers 503 to the second probe too; both are correct, a 500 or a wait of more than the limit is not"

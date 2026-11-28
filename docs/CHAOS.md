@@ -60,7 +60,7 @@ then removes the fault and waits until the answers are normal again (recovery wi
 | `account-slow` | account answers in 1.5 s | the 300 ms deadline fires; catalog answers in about a second, not 1.5 s per call (README section 8) |
 | `elasticsearch-down` | Elasticsearch down | search `200` from the degraded Mongo query (README section 8, catalog.yaml `searchWallpapers`) |
 | `elasticsearch-slow` | Elasticsearch hangs | the 2 s timeout ends the wait: `200` in under 6.5 s (README section 8) |
-| `postgres-down` | account's database down | a fast `503`, never a `500` or a hang; catalog unaffected; the pool reconnects without a restart |
+| `postgres-down` | account's database down | a fast `503` for what needs the database (a profile update), never a `500` or a hang; a read that a cache answers may stay `200`; catalog unaffected; the pool reconnects without a restart |
 | `mongo-down` | catalog's database down | same, the other way round |
 | `redis-down` | every Redis down | reads keep working, slower (this repo's rule; the README does not specify the policy of the rate limiter) |
 | `keycloak-down` | Keycloak unreachable from the services | already valid tokens keep working: the signing keys are cached |
