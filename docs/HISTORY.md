@@ -126,3 +126,4 @@ Append one line per finished piece of work, newest last: date, package or topic,
 - 2026-11-26: first Java service scaffold built and run by the owner: `./mvnw verify` and the conformance run pass (T1-T3 skipped); the run found one bug in the template, the C1 check in Docker mode (fixed).
 - 2026-11-26: the start race (see the lessons table): `scripts/wait-ready.sh`, `make wait-ready`; `service.yml` calls it after `wait-healthy.sh`.
 - 2026-11-27: SERVICE-SPEC section 12: the class-data-sharing notice of JVM agents, and the healthcheck sentence corrected (`wait-ready.sh` instead of a compose healthcheck that does not exist).
+- 2026-11-28: the `postgres-down` chaos scenario failed against the first real implementation (java-spring): `GET /users/me` answered 200 from the Redis cache while PostgreSQL was down. The scenario now probes a write (`PATCH /users/me`, always 503) and accepts 200 or 503 for the cacheable read; a 500 or a hang still fails.
